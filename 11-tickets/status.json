@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tickets": {
+    "T-0001": "done",
+    "T-0002": "done",
+    "T-0003": "done",
+    "T-0004": "done_gate_failed_K1",
+    "T-0005": "done",
+    "T-0006": "done",
+    "T-0007": "superseded_split_into_T-0007a_T-0007b",
+    "T-0008": "cut_2026-08-28",
+    "T-0009": "cut_2026-08-28",
+    "T-0010": "cut_2026-08-28",
+    "T-0011": "not_started",
+    "T-0012": "not_started",
+    "T-0013": "not_started",
+    "T-0014": "not_started",
+    "T-0003b": "done",
+    "T-0004b": "done_gate_still_failing",
+    "T-0015": "not_started",
+    "T-0016": "conditional_gated_on_T-0015_diff",
+    "T-0017": "not_started",
+    "T-0006b": "not_started",
+    "T-0007a": "not_started",
+    "T-0007b": "not_started"
+  }
+}
