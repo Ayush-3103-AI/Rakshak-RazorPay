@@ -36,6 +36,30 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0016](T-0016.md) | Generator recalibration | **conditional** | **high — invalidates every existing number** | **gated on T-0015's diff; expected to be cut** | T-0015 |
 | [T-0014](T-0014.md) | Read-only results viewer | **Tue 2 – Wed 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
 
+### Published to GitHub Issues — 2026-08-28
+
+The ticket files in this directory remain the **source of truth**; the issues are a thin
+mirror carrying the blocking edges and acceptance criteria. If they diverge, the file wins.
+Repo: `Ayush-3103-AI/Rakshak-RazorPay`.
+
+| Ticket | Issue | Blocked by | Label |
+|---|---|---|---|
+| T-0017 | [#1](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/1) | — | `ready-for-agent` |
+| T-0006b | [#2](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/2) | — | `ready-for-agent` |
+| T-0015 | [#3](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/3) | — | `ready-for-agent` |
+| T-0007a | [#4](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/4) | #1 | `blocked` |
+| T-0007b | [#5](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/5) | #4 | `blocked` |
+| T-0012 | [#6](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/6) | #3, #5 | `blocked` |
+| T-0011 | [#7](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/7) | #2, #5 | `blocked` |
+| T-0013 | [#8](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/8) | #7, #6, #3 | `blocked` |
+| T-0016 | [#9](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/9) | #3 | `blocked` `conditional` |
+| T-0014 | [#10](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/10) | #8 | `blocked` |
+
+Three tickets are unblocked and can start immediately: **#1, #2, #3**. Move a ticket's label
+from `blocked` to `ready-for-agent` when its blockers close.
+
+T-0008, T-0009 and T-0010 have **no issues** — they were cut, not deferred.
+
 ### Cut 2026-08-28
 
 | ID | Title | Consequence recorded at |
