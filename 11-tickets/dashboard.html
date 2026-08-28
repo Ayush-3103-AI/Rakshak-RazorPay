@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rakshak — Ticket Board</title>
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#12161f;
+    --panel-2:#171c27;
+    --border:#242b38;
+    --text:#e6e9ef;
+    --muted:#8b93a7;
+    --accent:#7c9cff;
+
+    --sat:#f0a63a;
+    --sat-soft:rgba(240,166,58,.14);
+    --sun:#3ab0f0;
+    --sun-soft:rgba(58,176,240,.14);
+    --mon:#a86bf0;
+    --mon-soft:rgba(168,107,240,.14);
+
+    --risk-high:#f0483a;
+    --risk-med:#f0c93a;
+    --risk-low:#3af0a0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* Sidebar */
+  aside{
+    width:240px;
+    flex:none;
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    padding:20px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+  .brand .logo{
+    width:32px;height:32px;border-radius:9px;
+    background:linear-gradient(135deg,var(--sat),var(--mon));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:#0b0e14;font-size:15px;
+  }
+  .brand .name{font-weight:700;font-size:15px}
+  .brand .sub{font-size:11px;color:var(--muted)}
+
+  .navgroup{display:flex;flex-direction:column;gap:2px}
+  .navgroup .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 10px}
+  .navitem{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--text);
+    cursor:pointer;border:1px solid transparent;
+  }
+  .navitem:hover{background:var(--panel-2)}
+  .navitem.active{background:var(--panel-2);border-color:var(--border)}
+  .navitem .dot{width:8px;height:8px;border-radius:50%;margin-right:8px;flex:none}
+  .navitem .count{color:var(--muted);font-size:11.5px}
+  .navitem .left{display:flex;align-items:center}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;font-size:13px;color:var(--muted)}
+  .switch{width:34px;height:19px;border-radius:99px;background:#2a3140;position:relative;cursor:pointer;flex:none}
+  .switch.on{background:var(--accent)}
+  .switch .knob{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch.on .knob{left:17px}
+
+  .legend{margin-top:auto;font-size:11px;color:var(--muted);padding:8px 10px;border-top:1px solid var(--border)}
+  .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .legend .sw{width:10px;height:10px;border-radius:3px;flex:none}
+
+  /* Main */
+  main{flex:1;padding:26px 34px;overflow-y:auto}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:20px;flex-wrap:wrap}
+  h1{font-size:20px;margin:0 0 4px}
+  .top .desc{color:var(--muted);font-size:13px;max-width:640px;line-height:1.5}
+
+  .searchbar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:9px 12px;min-width:220px;color:var(--muted);font-size:13px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:14px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    cursor:pointer;
+    position:relative;
+    transition:transform .12s ease, border-color .12s ease;
+    display:flex;flex-direction:column;gap:10px;
+    border-top:3px solid var(--card-color, var(--accent));
+  }
+  .card:hover{transform:translateY(-2px);border-color:#39415a}
+
+  .card .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .card .id{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+  .card .title{font-size:14.5px;font-weight:600;line-height:1.3;margin-top:2px}
+
+  .badge{
+    font-size:10px;font-weight:700;letter-spacing:.03em;
+    padding:3px 7px;border-radius:6px;white-space:nowrap;flex:none;
+  }
+  .badge.day-sat{background:var(--sat-soft);color:var(--sat)}
+  .badge.day-sun{background:var(--sun-soft);color:var(--sun)}
+  .badge.day-mon{background:var(--mon-soft);color:var(--mon)}
+
+  .risk-pill{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:10.5px;font-weight:600;color:var(--muted);
+  }
+  .risk-pill .dot{width:7px;height:7px;border-radius:50%}
+  .risk-pill.high .dot{background:var(--risk-high)}
+  .risk-pill.high{color:var(--risk-high)}
+  .risk-pill.med .dot{background:var(--risk-med)}
+  .risk-pill.low .dot{background:var(--risk-low)}
+
+  .card .meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+  .cut-tag{font-size:10.5px;padding:2px 6px;border-radius:5px;background:#241416;color:#ff8f80;border:1px solid #3a1f22}
+  .spine-tag{font-size:10.5px;padding:2px 6px;border-radius:5px;background:#132419;color:#7de8a6;border:1px solid #1f3a29}
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(6,8,12,.65);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:6vh 20px;z-index:50;backdrop-filter:blur(2px);
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    max-width:640px;width:100%;max-height:86vh;overflow-y:auto;
+    padding:24px 26px;border-top:4px solid var(--card-color,var(--accent));
+  }
+  .modal .mtitle{font-size:19px;font-weight:700;margin:2px 0 2px}
+  .modal .mid{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .modal .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .modal h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:18px 0 8px}
+  .modal ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.65}
+  .modal p{font-size:13.5px;line-height:1.65;margin:6px 0}
+  .modal .close{
+    position:absolute;top:18px;right:22px;cursor:pointer;color:var(--muted);
+    font-size:20px;line-height:1;background:none;border:none;
+  }
+  .modal-wrap{position:relative}
+  .depchip{display:inline-block;background:var(--panel-2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:6px;font-size:11.5px;color:var(--text);margin:0 4px 4px 0}
+  .warnbox{
+    margin-top:16px;padding:10px 12px;border-radius:10px;
+    background:rgba(240,72,58,.08);border:1px solid rgba(240,72,58,.35);
+    font-size:13px;color:#ff9a8f;line-height:1.55;
+  }
+  .cutbox{
+    margin-top:16px;padding:10px 12px;border-radius:10px;
+    background:rgba(58,176,240,.08);border:1px solid rgba(58,176,240,.3);
+    font-size:13px;color:#9fd8f5;line-height:1.55;
+  }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">
+    <div class="logo">R</div>
+    <div>
+      <div class="name">Rakshak</div>
+      <div class="sub">Ticket board</div>
+    </div>
+  </div>
+
+  <div class="navgroup" id="dayNav">
+    <div class="label">Filter by day</div>
+    <div class="navitem active" data-day="all"><span class="left"><span class="dot" style="background:var(--accent)"></span>All tickets</span><span class="count" id="count-all"></span></div>
+    <div class="navitem" data-day="sat"><span class="left"><span class="dot" style="background:var(--sat)"></span>Saturday</span><span class="count" id="count-sat"></span></div>
+    <div class="navitem" data-day="sun"><span class="left"><span class="dot" style="background:var(--sun)"></span>Sunday</span><span class="count" id="count-sun"></span></div>
+    <div class="navitem" data-day="mon"><span class="left"><span class="dot" style="background:var(--mon)"></span>Monday</span><span class="count" id="count-mon"></span></div>
+  </div>
+
+  <div class="navgroup">
+    <div class="label">View</div>
+    <div class="toggle-row">
+      <span>Cuttable only</span>
+      <div class="switch" id="cutSwitch"><div class="knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <span>High risk only</span>
+      <div class="switch" id="riskSwitch"><div class="knob"></div></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div><span class="sw" style="background:var(--sat)"></span> Sat — spine, not cuttable</div>
+    <div><span class="sw" style="background:var(--sun)"></span> Sun — baselines / cost layer</div>
+    <div><span class="sw" style="background:var(--mon)"></span> Mon — frontier / ablation / README</div>
+    <div style="margin-top:6px"><span class="risk-pill high"><span class="dot"></span></span> Kill-criterion risk</div>
+  </div>
+</aside>
+
+<main>
+  <header class="top">
+    <div>
+      <h1>Rakshak — 11-tickets/BOARD.md</h1>
+      <div class="desc">Ordered by risk retirement, not comfort. One ticket per session — read, build, test, log, stop. Click a card for the full ticket.</div>
+    </div>
+    <div class="searchbar">🔍&nbsp; <span id="searchLabel">14 tickets · Sat→Mon</span></div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal-wrap">
+    <div class="modal" id="modal"></div>
+  </div>
+</div>
+
+<script>
+const TICKETS = [
+  {
+    id:"T-0001", day:"sat", risk:"low",
+    title:"Repo scaffold + determinism guard",
+    dependsOn:[],
+    cuttable:null,
+    context:["CLAUDE.md (repo layout section)"],
+    build:[
+      "pyproject.toml — Python ≥3.11, MIT/BSD/Apache-2.0 deps only",
+      "src/rakshak/config.py — global SEED = 42, all paths, provisional cost-matrix defaults",
+      "Makefile — setup / eval / figures / test targets (stubs OK, must run and exit 0)",
+      "tests/ scaffold + pytest config",
+      "Shared arg-parser helper enforcing --seed on every future script"
+    ],
+    doneWhen:[
+      "make setup runs clean on a fresh checkout",
+      "python -c \"from rakshak.config import SEED\" succeeds",
+      "pytest collects with 0 errors",
+      "Any dependency added is logged in LOGBOOK.md with its licence"
+    ],
+    note:{type:"info", text:"Check ../ver1/ first — STATE.md flags that prior 'Rakshak' work may have a salvageable eval/ skeleton, even though the transaction-level framing is superseded."}
+  },
+  {
+    id:"T-0002", day:"sat", risk:"high",
+    title:"Spike: hand-written HMM core + minimal recovery proof",
+    dependsOn:["T-0001"],
+    cuttable:null,
+    context:["07-math.md (HMM section)","08-pseudocode.md (forward/backward/Viterbi/Baum-Welch)","06-requirements.md FR-012, FR-013"],
+    build:[
+      "src/rakshak/models/hmm.py — forward, backward, Viterbi, Baum-Welch, all in log space",
+      "Throwaway toy generator fixture (3–4 states, small N, hand-built ground truth) — discard after this ticket",
+      "tests/test_hmm_recovery.py — Adjusted Rand Index > 0.5 after optimal label permutation",
+      "Brute-force enumeration check on a tiny 3-state / 5-observation case vs. Viterbi"
+    ],
+    doneWhen:[
+      "Baum-Welch log-likelihood increases monotonically across iterations",
+      "Viterbi output matches brute-force enumeration exactly on the tiny fixture",
+      "ARI > 0.5 on the toy fixture"
+    ],
+    note:{type:"warn", text:"A-002 — the highest unretired risk in the project. If this fails: STOP. Do not patch around it. This is kill criterion K1 — raise a DESCEND to Phase 2 (fallback: LightGBM + cost layer, no HMM, no explainability differentiator). Log the failure honestly in LOGBOOK.md's SURPRISE field."}
+  },
+  {
+    id:"T-0003", day:"sat", risk:"med",
+    title:"Full synthetic generator — 4 typologies + adversarial slow-ramp",
+    dependsOn:["T-0001"],
+    cuttable:null,
+    context:["06-requirements.md FR-001–FR-006"],
+    build:[
+      "src/rakshak/generator/ — seeded parquet of transactions + ground-truth state-path table with transition timestamps",
+      "Heterogeneity: AOV & monthly volume each span ≥2 orders of magnitude, ≥6 MCC segments",
+      "BUST_OUT, LAUNDERING_ENDPOINT, CATEGORY_DRIFT, REFUND_COLLUSION typologies",
+      "Adversarial 5th typology: SLOW_RAMP — do not tune detection to catch this, it exists to be reported as a failure",
+      "Module docstring + README note: evaluation artifact, not a fraud toolkit"
+    ],
+    doneWhen:[
+      "Schema test + row-count assertion + determinism test (same seed → identical hash)",
+      "Heterogeneity spread test passes",
+      "Per-typology fixture test: all 5 typologies separably detectable by ≥1 emission"
+    ],
+    note:null
+  },
+  {
+    id:"T-0004", day:"sat", risk:"high",
+    title:"Feature layer + full-scale HMM recovery confirmation",
+    dependsOn:["T-0002","T-0003"],
+    cuttable:null,
+    context:["06-requirements.md FR-007–FR-011","03-landscape.md ADR-0002"],
+    build:[
+      "src/rakshak/features/ — within-merchant standardisation (own burn-in window, shrinkage to segment for short histories)",
+      "Graph-derived features: payer entropy, repeat-payer ratio, Jaccard drift, Herfindahl concentration (ADR-0002 GNN proxy)",
+      "Behavioural/financial features: ticket size, velocity, refund/chargeback ratios, entropy features, new-payer ratio",
+      "Vulcan-proxy score consumption, present/absent both handled",
+      "Segment assignment: MCC × AOV-band, ≥20 merchants/segment"
+    ],
+    doneWhen:[
+      "FR-013's ARI > 0.5 holds on realistic full-featured data (not the T-0002 toy fixture)",
+      "Two merchants, identical relative behaviour, 100× different AOV → near-identical standardised emissions"
+    ],
+    note:{type:"warn", text:"The Saturday EOD gate. If this regresses vs. the T-0002 spike, treat as K1 — don't discover it Monday."}
+  },
+  {
+    id:"T-0005", day:"sun", risk:"low",
+    title:"Eval harness: splits, metrics, oracle",
+    dependsOn:["T-0003"],
+    cuttable:null,
+    context:["06-requirements.md §3 (frozen eval)","NFR-002","NFR-003"],
+    build:[
+      "eval/splits.py — the leakage guard: temporal split (train 1–6, val 7, test 8–9) AND merchant-group split, zero overlap",
+      "eval/metrics.py — PR-AUC, precision@K, Brier, median detection lag, Bahnsen savings, gap-to-oracle. ROC-AUC / raw accuracy prohibited as headline.",
+      "eval/oracle.py — perfect-foresight knapsack allocation of K review-hours"
+    ],
+    doneWhen:[
+      "test_splits.py fails the build on any merchant crossing splits",
+      "test_determinism.py — two runs, same seed, byte-identical results/*.md",
+      "Test set untouched until T-0011/T-0013"
+    ],
+    note:null
+  },
+  {
+    id:"T-0006", day:"sun", risk:"high",
+    title:"Baselines: rule engine, LightGBM, random",
+    dependsOn:["T-0004","T-0005"],
+    cuttable:null,
+    context:["06-requirements.md §3 (floor + additional baselines)"],
+    build:[
+      "models/rules.py — floor: 7-day velocity > 3× 90-day mean OR refund > 15% OR chargeback > 1%",
+      "models/gbdt.py — LightGBM on windowed aggregates, no HMM (isolates A-005)",
+      "Random-selection baseline at equal review budget"
+    ],
+    doneWhen:[
+      "All three baselines run through the eval harness and each produces a row in results/summary.md"
+    ],
+    note:{type:"info", text:"Sets up A-005 (does the HMM earn its place over LightGBM?). No verdict yet — this ticket is plumbing; the comparison renders at T-0011."}
+  },
+  {
+    id:"T-0007", day:"sun", risk:"med",
+    title:"Cost layer: Bayes Minimum Risk + policy + capacity constraint",
+    dependsOn:["T-0006"],
+    cuttable:{order:5,label:"cut 5th — last resort"},
+    context:["06-requirements.md FR-015–FR-017","07-math.md §5 (provisional cost matrix)"],
+    build:[
+      "decision/policy.py — 3-action policy: PASS / REVIEW / HOLD + expected cost of each",
+      "decision/cost.py — Bayes Minimum Risk argmin + Bahnsen savings score",
+      "Global review-capacity constraint (K analyst-hours/period), binding constraint reported"
+    ],
+    doneWhen:[
+      "Unit test against hand-computed values on a 2-merchant fixture",
+      "Policy returns exactly one action + expected cost of alternatives at a boundary case",
+      "Capacity constraint holds across the frontier; binding constraint reported, not dropped"
+    ],
+    note:{type:"cut", text:"Everything downstream (T-0008–T-0014) depends on this. Cut last among the cuttable tickets."}
+  },
+  {
+    id:"T-0008", day:"sun", risk:"low",
+    title:"Empirical-Bayes shrinkage",
+    dependsOn:["T-0004","T-0007"],
+    cuttable:{order:4,label:"cut 4th"},
+    context:["04-patterns.md ADR-0006","NFR-007","FR-011"],
+    build:[
+      "decision/shrinkage.py — closed-form empirical-Bayes per-merchant threshold, shrunk toward segment (MCC × AOV-band)",
+      "Cold-start: below-floor merchants get segment default, logged explicitly"
+    ],
+    doneWhen:[
+      "test_shrinkage.py: ≥20 txns → segment-shrunk threshold; <20 → logged segment default"
+    ],
+    note:{type:"cut", text:"If dropped, policy falls back to segment-level thresholds with no per-merchant calibration — degraded, not broken."}
+  },
+  {
+    id:"T-0009", day:"mon", risk:"high",
+    title:"NSGA-II multi-objective frontier",
+    dependsOn:["T-0007"],
+    cuttable:{order:3,label:"cut 3rd"},
+    context:["CLAUDE.md stack table — pymoo NSGA-II ≥0.6.2, NOT NSGA-III (ADR-0004)","06-requirements.md §3 (grid search baseline)"],
+    build:[
+      "optimize/nsga.py — NSGA-II frontier over the three objectives (savings, review-hour cost, detection lag)",
+      "Grid-search baseline over the same threshold space"
+    ],
+    doneWhen:[
+      "Frontier reproducible at fixed seed",
+      "Grid-search comparison recorded (evidence for A-006, rendered fully at T-0011)"
+    ],
+    note:{type:"cut", text:"A-006 — does NSGA-II earn its place over grid search? If dropped, report the cut plainly — don't ship grid search dressed up as 'the optimizer.'"}
+  },
+  {
+    id:"T-0010", day:"mon", risk:"low",
+    title:"BOCPD changepoint baseline",
+    dependsOn:["T-0005","T-0007"],
+    cuttable:{order:2,label:"cut 2nd"},
+    context:["CLAUDE.md stack table — Adams & MacKay 2007","06-requirements.md §3 (BOCPD baseline)"],
+    build:[
+      "models/bocpd.py — truncated run-length posterior (Adams & MacKay 2007)",
+      "Wire the same T-0007 cost layer on top, unmodified, for an apples-to-apples comparison"
+    ],
+    doneWhen:[
+      "BOCPD + cost layer produces a comparable row in results/summary.md next to HMM and LightGBM"
+    ],
+    note:{type:"cut", text:"If dropped, the ablation table just has one fewer baseline row — say so, don't backfill with a fake number."}
+  },
+  {
+    id:"T-0011", day:"mon", risk:"high",
+    title:"Ablation table + sensitivity analysis",
+    dependsOn:["T-0006","T-0007","T-0008","T-0009","T-0010"],
+    cuttable:null,
+    context:["06-requirements.md FR-018, FR-019, FR-020","00-charter.md §3 (kill criterion K2)"],
+    build:[
+      "eval/harness.py — wires everything together",
+      "results/ablations.md — HMM on/off, graph features on/off, standardisation on/off, shrinkage on/off, NSGA vs. grid",
+      "results/sensitivity.md — cost matrix ±50%, resulting threshold/savings change",
+      "Every headline number in two vocabularies: ML metric + operational quantity (₹, analyst-hours, merchants held/1000)"
+    ],
+    doneWhen:[
+      "Ablation rows complete for every listed component",
+      "Sensitivity table/figure exists"
+    ],
+    note:{type:"warn", text:"This is where A-005 and kill criterion K2 actually render. If Rakshak does not beat the rule engine on savings — do not tune to win. Report the negative result and pivot the narrative to explainability and the cost frontier."}
+  },
+  {
+    id:"T-0012", day:"mon", risk:"low",
+    title:"BAF validation",
+    dependsOn:["T-0007"],
+    cuttable:{order:null,label:"SHOULD priority (FR-021)"},
+    context:["06-requirements.md FR-021","04-patterns.md ADR-0007","STATE.md open branch: BAF download size"],
+    build:[
+      "Download BAF (Feedzai, NeurIPS 2022) Base variant",
+      "Run the T-0007 decision/cost layer on BAF's native temporal split",
+      "If load time is prohibitive: subsample with a fixed seed, document it in the results file"
+    ],
+    doneWhen:[
+      "results/baf_validation.md produced — evidence for the required 'validated on BAF' framing"
+    ],
+    note:null
+  },
+  {
+    id:"T-0013", day:"mon", risk:"med",
+    title:"Explainability + README",
+    dependsOn:["T-0004","T-0011"],
+    cuttable:null,
+    context:["06-requirements.md FR-014 (full example reason string)","10-done.md","CLAUDE.md — three non-negotiables"],
+    build:[
+      "explain/reasons.py — Viterbi path → merchant-readable reason string (state, date, top-3 contributing emissions)",
+      "README.md — every number carries provenance (script, seed, split, date)",
+      "Verbatim synthetic-data disclosure (see CLAUDE.md non-negotiable #3)",
+      "README §Scope and Safety — generator is an evaluation artifact, not a fraud toolkit",
+      "Report the slow-ramp degraded recall and the K2 verdict honestly, whichever way it went"
+    ],
+    doneWhen:[
+      "Golden-file test on fixed fixtures for reason-string generation",
+      "README's synthetic-data disclosure matches the required wording exactly",
+      "Every headline number regenerable by make eval"
+    ],
+    note:{type:"info", text:"The differentiator no other submission in the pool will have. Not cuttable in spirit even though it's numbered late — it just can't start before the decision layer (T-0011) is final."}
+  },
+  {
+    id:"T-0014", day:"mon", risk:"low",
+    title:"Static results dashboard",
+    dependsOn:["T-0011","T-0012","T-0013"],
+    cuttable:{order:1,label:"cut 1st — first to go"},
+    context:["STATE.md — deferred dashboard-format question","00-charter.md §7 non-goals — 'a clean matplotlib figure outranks a half-broken web app'"],
+    build:[
+      "Static matplotlib figures only — no Streamlit, no web server: pr_curve.png, reliability.png, training_curves.png, policy heatmap, attack-episode replay",
+      "make figures target, fixed seed"
+    ],
+    doneWhen:[
+      "Figures generated reproducibly and referenced from the README"
+    ],
+    note:{type:"cut", text:"First thing to cut if Monday arrives behind schedule. A missing dashboard costs nothing the panel will notice if results/summary.md is solid — a half-built one costs credibility."}
+  }
+];
+
+const DAY_LABEL = {sat:"Saturday",sun:"Sunday",mon:"Monday"};
+const RISK_LABEL = {high:"Kill-criterion risk",med:"Moderate risk",low:"Low risk"};
+
+let state = { day:"all", cutOnly:false, riskOnly:false };
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const filtered = TICKETS.filter(t=>{
+    if(state.day!=='all' && t.day!==state.day) return false;
+    if(state.cutOnly && !t.cuttable) return false;
+    if(state.riskOnly && t.risk!=='high') return false;
+    return true;
+  });
+  document.getElementById('searchLabel').textContent = filtered.length + ' ticket' + (filtered.length!==1?'s':'') + ' shown';
+
+  filtered.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.setProperty('--card-color', `var(--${t.day})`);
+    card.innerHTML = `
+      <div class="row1">
+        <div>
+          <div class="id">${t.id}</div>
+          <div class="title">${t.title}</div>
+        </div>
+        <span class="badge day-${t.day}">${DAY_LABEL[t.day]}</span>
+      </div>
+      <span class="risk-pill ${t.risk}"><span class="dot"></span>${RISK_LABEL[t.risk]}</span>
+      <div class="meta">
+        <span>${t.dependsOn.length ? 'depends: '+t.dependsOn.join(', ') : 'no dependencies'}</span>
+        ${t.cuttable ? `<span class="cut-tag">${t.cuttable.label}</span>` : `<span class="spine-tag">spine</span>`}
+      </div>
+    `;
+    card.addEventListener('click', ()=>openModal(t));
+    grid.appendChild(card);
+  });
+
+  document.getElementById('count-all').textContent = TICKETS.length;
+  document.getElementById('count-sat').textContent = TICKETS.filter(t=>t.day==='sat').length;
+  document.getElementById('count-sun').textContent = TICKETS.filter(t=>t.day==='sun').length;
+  document.getElementById('count-mon').textContent = TICKETS.filter(t=>t.day==='mon').length;
+}
+
+function openModal(t){
+  const modal = document.getElementById('modal');
+  modal.style.setProperty('--card-color', `var(--${t.day})`);
+  modal.innerHTML = `
+    <button class="close" id="closeBtn">&times;</button>
+    <div class="mid">${t.id} · ${DAY_LABEL[t.day]}</div>
+    <div class="mtitle">${t.title}</div>
+    <div class="tags">
+      <span class="badge day-${t.day}">${DAY_LABEL[t.day]}</span>
+      <span class="risk-pill ${t.risk}"><span class="dot"></span>${RISK_LABEL[t.risk]}</span>
+      ${t.cuttable ? `<span class="cut-tag">${t.cuttable.label}</span>` : `<span class="spine-tag">spine — not cuttable</span>`}
+    </div>
+
+    <h4>Depends on</h4>
+    <p>${t.dependsOn.length ? t.dependsOn.map(d=>`<span class="depchip">${d}</span>`).join('') : 'None — can start immediately.'}</p>
+
+    <h4>Context to read</h4>
+    <ul>${t.context.map(c=>`<li>${c}</li>`).join('')}</ul>
+
+    <h4>Build</h4>
+    <ul>${t.build.map(b=>`<li>${b}</li>`).join('')}</ul>
+
+    <h4>Done when</h4>
+    <ul>${t.doneWhen.map(d=>`<li>${d}</li>`).join('')}</ul>
+
+    ${t.note ? `<div class="${t.note.type==='warn'?'warnbox':'cutbox'}">${t.note.text}</div>` : ''}
+  `;
+  document.getElementById('closeBtn').addEventListener('click', closeModal);
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+document.querySelectorAll('#dayNav .navitem').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('#dayNav .navitem').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    state.day = el.dataset.day;
+    render();
+  });
+});
+document.getElementById('cutSwitch').addEventListener('click', function(){
+  state.cutOnly = !state.cutOnly;
+  this.classList.toggle('on', state.cutOnly);
+  render();
+});
+document.getElementById('riskSwitch').addEventListener('click', function(){
+  state.riskOnly = !state.riskOnly;
+  this.classList.toggle('on', state.riskOnly);
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
