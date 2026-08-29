@@ -4,6 +4,12 @@
 
 **No verdict is rendered here.** This table is the machinery FR-020 requires; T-0011 runs it on the `test` window and states the boundary. Everything below is the `validate` window.
 
+## The figure (FR-020)
+
+![Cost-asymmetry sensitivity](figures/sensitivity.png)
+
+Drawn by `rakshak.eval.figures` from `results/sensitivity.csv`, which is the same frame that produced every table below -- the figure computes nothing of its own and cannot disagree with the tables. Regenerate it alone with `make figures`, which refits no model. **FR-020's figure clause had no owner after T-0010 was cut; it was assigned to this renderer on 2026-08-29 rather than struck.**
+
 | Field | Value |
 |---|---|
 | Produced by | `python -m rakshak.decision.policy --seed 42` |

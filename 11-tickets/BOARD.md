@@ -33,7 +33,7 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0012](T-0012.md) | BAF validation | Sun 30 | low to build, **provenance-critical** | **no — promoted to MUST** | T-0015, T-0007b |
 | [T-0011](T-0011.md) | Verdict: ablations, sweep boundary, lag probe | Mon 31 | **A-005 verdict, K2** | **no** | T-0006b, T-0007b |
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
-| [T-0016](T-0016.md) | Generator recalibration | **conditional — GATE FIRED** | **high — invalidates every existing number** | **T-0015's diff recommends CUT; awaiting the user's decision** | T-0015 — closed |
+| [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
 | [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
 
 ### Published to GitHub Issues — 2026-08-28
@@ -290,3 +290,39 @@ savings relative to the `random` floor, never in absolute terms**, and no headli
 savings without PR-AUC beside it. The BMR policy also reversed the HMM/baseline ordering on
 savings — that is an explanation of the earlier top-K penalty, **not** a model improvement:
 PR-AUC and Brier did not move.
+
+
+---
+
+## T-0016 kept, and the scoping note that must travel with it — 2026-08-29
+
+The user declined T-0015's cut recommendation. **T-0016 stays.** The gate has still fired and
+its finding still binds, because it changes what T-0016 *can* achieve rather than whether it
+runs.
+
+**One divergence is structural, not parametric.** `daily_count_fano_factor` is **1.0 by
+construction** in the generator (`rng.poisson` ⇒ variance = mean) against a measured **12.25**.
+No generator constant closes it. Whoever executes T-0016 must pick a branch and say which:
+
+- **(a) parameter swap only** — closes the four genuinely parametric marginals (`refund_rate`
+  x7.81, `new_payer_frac` x0.18, `amount_log_sd` x1.94, `top_decile_payer_share` x1.89), leaves
+  the Fano factor documented as an unclosed structural gap, re-measures. Fits the schedule.
+- **(b) emission-process replacement** — negative binomial or latent intensity. Closes it
+  properly and **invalidates every number in the repo, K1 and the 0.404 oracle ceiling
+  included.** Not startable after Sun 30 Aug without losing the freeze.
+
+Both branches carry the **n = 1** caveat: the empirical side is one UK B2B gift-ware wholesaler
+in GBP, closed Saturdays. `results/calibration_gap.md` marks the non-comparable marginals
+(currency, category, weekday shape) and those must not be recalibrated against.
+
+## FR-020's figure — assigned, not struck — 2026-08-29
+
+T-0010 owned `results/figures/` and was cut, orphaning FR-020's "table AND a figure" clause.
+**Assigned to T-0007b.** `src/rakshak/eval/figures.py` → `results/figures/sensitivity.png`,
+three panels covering FR-020(a), (b), (d), drawn from `results/sensitivity.csv` so the figure
+computes nothing of its own. `make figures` redraws without refitting a model.
+
+## Still open before freeze
+
+**ADR-0001 … ADR-0007 are cited across the repo and none exist as files.** Only ADR-0008 does.
+Same class as the missing `09-interfaces.md`. Write them or stop citing them.

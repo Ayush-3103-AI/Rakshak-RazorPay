@@ -1756,3 +1756,29 @@ through; byte-identical determinism re-verified.
 
 **DEPENDENCY ADDED.** `openpyxl>=3.1`, **MIT**. Unavoidable — UCI ships Online Retail II as
 `.xlsx` only. Used by the one-off download path, never by `make eval`.
+
+---
+
+## 2026-08-29 (later) — user decisions on the four open items
+
+**DID.** T-0016 kept (cut declined). T-0007b amended with a dated block. FR-020's figure
+assigned to T-0007b and built: `src/rakshak/eval/figures.py` → `results/figures/sensitivity.png`,
+drawn from a newly persisted `results/sensitivity.csv` so `--figures-only` redraws without
+refitting a model. `tests/test_figures.py` added. Full `pytest` green, `ruff` clean.
+
+**SURPRISE.** The figure made the session's headline finding legible in a way the table did not.
+On panel 1 the `random` line does not merely run close to `rules` — **it runs ABOVE `rules` at
+several asymmetries**, and the crossing is visible at a glance. Reading the same numbers in a
+table, that inversion had not registered on me at all. The decision to plot every model rather
+than only the proposal was made for honesty and paid off as comprehension.
+
+**CONSEQUENCE OF KEEPING T-0016.** The cut was declined, which is the user's call, but the gate's
+finding does not go away: `daily_count_fano_factor` is 1.0 *by construction* in the generator and
+12.25 in reality, so a parameter swap cannot close it. T-0016 now has to declare a branch —
+parametric-only with the structural gap documented, or an emission-process replacement that
+re-measures every number in the repo including K1. Recorded in `BOARD.md` and `STATE.md` so the
+choice is made deliberately rather than discovered mid-ticket.
+
+**PROCESS.** `--seed` on `data/profile.py` was a dead flag stamping a literal into two committed
+artifacts; caught in review, not by a test. Worth noting that the determinism test suite passed
+throughout — it verified the artifact was reproducible, never that the provenance line was true.

@@ -4,30 +4,59 @@ PHASE:        5 — EXECUTE, in progress
 LAST SESSION: 2026-08-29 — **T-0007b** (BMR policy, capacity constraint, cost-asymmetry sweep) and **T-0015** (public data, calibration profile, gap diff), run in parallel as two agents on disjoint files, then a two-axis code review. Full `pytest` green (exit 0, 2 strict `xfail`s intact), `ruff` clean, `make eval` 16.3 s.
 NEXT ACTION:  **T-0012** (BAF validation) — **but see the Kaggle-credential blocker below; it is not a code problem.** Then **T-0011** (Mon 31, K2's verdict). **T-0016 has a recommendation to cut and needs a decision.**
 
-## Decisions waiting on the user — 2026-08-29
+## Decisions taken by the user — 2026-08-29
 
-Four, none of which an agent should take alone.
+Three of the four were answered. The fourth is still open.
 
-1. **Cut T-0016?** T-0015's gap diff recommends cutting. The load-bearing reason is not the
-   size of the divergence but its **kind**: `daily_count_fano_factor` is **1.0 by construction**
-   in the generator (`rng.poisson`, so variance = mean) against a real **12.25**. No value of
-   any generator constant closes that — it needs a different emission process, which would
-   invalidate the K1 analysis, the 0.404 oracle ceiling and every baseline row. That is not the
-   "cheap parameter swap" T-0015's *divergence small* branch assumes. Second reason: the
-   empirical side is **n = 1 merchant**.
-2. **T-0007b re-scoped T-0007a's oracle-dominance invariant in code.** `CLAUDE.md` says a
-   ticket that reveals a spec error must **stop and raise it, not patch around it**. This was
-   patched. The reading is defensible and was predicted in writing before the session (see
-   below), and it is disclosed in three artifacts — but the ticket text still says the invariant
-   "still holds", which is now false as T-0007a defined it. **Amend `T-0007b.md` with a dated
-   block, or revert the scoping.**
-3. **T-0015's `Done when` contradicts its own build section.** "Nothing under `data/` is
-   committed" vs "Manifest at `data/external/*.manifest.json` … the README cites it". The code
-   took the manifest-committed reading and the manifest is in this commit. Amend the clause to
-   "no dataset payload".
-4. **FR-020 requires `sensitivity.md` as a table AND a figure.** The four tables are complete;
-   **the figure does not exist and has no owner** — T-0010 owned figures and was cut. Either
-   assign it or strike the clause. Silently unmet is the one option that is not available.
+### 1. T-0016 is NOT cut. — RATIFIED
+
+The user declined the cut recommendation. **T-0016 stays on the board as conditional work.**
+
+**The caveat that must travel with it, because it changes what T-0016 can achieve rather than
+whether it runs:** one of the measured divergences is **structural, not parametric.** The
+generator's `daily_count_fano_factor` is **1.0 by construction** — `rng.poisson`, so variance
+equals mean — against a real **12.25**. **No value of any generator constant closes that gap.**
+Closing it means replacing the emission process (negative binomial, or a latent-intensity
+process), which invalidates the K1 analysis, the 0.404 oracle ceiling and every baseline row.
+
+So whoever picks T-0016 up must scope it explicitly as one of:
+
+- **(a) parameter swap only** — closes the 4 marginals that *are* parametric (`refund_rate`
+  x7.81, `new_payer_frac` x0.18, `amount_log_sd` x1.94, `top_decile_payer_share` x1.89), leaves
+  the Fano factor stated as an unclosed structural gap, and re-measures. Cheap, and the honest
+  ceiling of the *divergence small* branch.
+- **(b) emission-process replacement** — closes it properly and **forces a full re-measurement
+  of every number in the repo**, K1 included. Do not start this after Sun 30.
+
+**Neither branch may proceed without also carrying the n = 1 caveat**: the empirical side is a
+single UK B2B gift-ware wholesaler in GBP, closed Saturdays. `results/calibration_gap.md` marks
+which marginals are not comparable, and those must not be recalibrated against.
+
+### 2. T-0007b's invariant re-scoping — AMENDED, done
+
+`11-tickets/T-0007b.md` now carries a dated amendment block correcting the oracle-dominance
+clause and **recording that the fix was patched in code before it was raised**, which is the
+order `CLAUDE.md` forbids. The clause text above it is left as written; a `Done when` quietly
+edited to match what was built is not a `Done when`.
+
+### 3. FR-020's figure — ASSIGNED and BUILT, done
+
+Assigned to T-0007b rather than struck. `src/rakshak/eval/figures.py` renders
+`results/figures/sensitivity.png`: three panels covering FR-020(a), (b) and (d). Drawn from
+`results/sensitivity.csv` — the same frame that produces every table — so **the figure computes
+nothing of its own and cannot disagree with the tables.** `make figures` redraws it without
+refitting a model. `--figures-only` no longer prints "no figures yet".
+
+Panel 1 plots every model **including `random`**, deliberately: without the random floor on the
+same axes, panel 2's margin curve reads as a model result rather than a cost-matrix result.
+
+### 4. ADR-0001 … ADR-0007 are cited everywhere and none exist — STILL OPEN
+
+Only `docs/adr/ADR-0008` exists. FR-015, FR-017, `07-math.md` §7 and `T-0007b.md` all cite
+ADR-0005 for the three-action policy and capacity; the only ADR-0005 in the repo is an unrelated
+stub inside `project-context/12-lit-survey-k1.md`. Same class as the missing `09-interfaces.md`.
+**Decide before freeze: write them, or stop citing them.** A README that cites seven
+non-existent decision records is a panel-visible defect.
 
 ## Load for next session
 - `CLAUDE.md`

@@ -51,6 +51,7 @@ from rakshak.config import (
 from rakshak.decision import policy
 from rakshak.decision.cost import fp_cost_per_100_of_fraud_loss
 from rakshak.eval import metrics
+from rakshak.eval.figures import render_sensitivity_figure
 from rakshak.eval.oracle import (
     OracleResult,
     perfect_hindsight_oracle,
@@ -577,6 +578,12 @@ def run(seed: int, results_dir: Path = RESULTS_DIR) -> Path:
         encoding="utf-8",
         newline="\n",
     )
+    # The CSV is what the figure is drawn from, so --figures-only can redraw
+    # without refitting a model and the figure can never disagree with the table.
+    (results_dir / "sensitivity.csv").write_text(
+        frame.to_csv(index=False), encoding="utf-8", newline=""
+    )
+    render_sensitivity_figure(frame, results_dir / "figures" / "sensitivity.png")
     return path
 
 
@@ -592,7 +599,15 @@ def main(argv: list[str] | None = None) -> int:
     seed_everything(args.seed)
 
     if args.figures_only:
-        print("rakshak: no figures yet — T-0010 owns results/figures/.")
+        # FR-020 figure. Redrawn from the committed sweep CSV; no model is refit.
+        csv_path = RESULTS_DIR / "sensitivity.csv"
+        if not csv_path.exists():
+            print(f"rakshak: {csv_path} not found - run `make eval` first.")
+            return 1
+        out = render_sensitivity_figure(
+            pd.read_csv(csv_path), RESULTS_DIR / "figures" / "sensitivity.png"
+        )
+        print(f"rakshak: wrote {out}")
         return 0
 
     started = time.perf_counter()

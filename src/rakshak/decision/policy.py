@@ -730,6 +730,19 @@ def render_sensitivity(frame: pd.DataFrame, y_true: np.ndarray, params: CostPara
         "is the `validate` window."
     )
     add("")
+    add("## The figure (FR-020)")
+    add("")
+    add("![Cost-asymmetry sensitivity](figures/sensitivity.png)")
+    add("")
+    add(
+        "Drawn by `rakshak.eval.figures` from `results/sensitivity.csv`, which is the "
+        "same frame that produced every table below -- the figure computes nothing of "
+        "its own and cannot disagree with the tables. Regenerate it alone with "
+        "`make figures`, which refits no model. **FR-020's figure clause had no owner "
+        "after T-0010 was cut; it was assigned to this renderer on 2026-08-29 rather "
+        "than struck.**"
+    )
+    add("")
     add("| Field | Value |")
     add("|---|---|")
     add(f"| Produced by | `python -m rakshak.decision.policy --seed {seed}` |")
