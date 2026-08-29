@@ -322,7 +322,19 @@ T-0010 owned `results/figures/` and was cut, orphaning FR-020's "table AND a fig
 three panels covering FR-020(a), (b), (d), drawn from `results/sensitivity.csv` so the figure
 computes nothing of its own. `make figures` redraws without refitting a model.
 
+## ADRs written — 2026-08-29
+
+`docs/adr/` now holds all eight plus an index. **Written retrospectively and dated as such**, from
+the spec documents that did exist. **ADR-0005's double-booking is resolved:** the three-action
+policy keeps 0005, the K1 response is renumbered **ADR-0009**.
+
+Three record decisions that were never built and carry that in their status line — **ADR-0004**
+(NSGA-II, T-0009 cut), **ADR-0006** (shrinkage, T-0008 cut), **ADR-0007** (the BAF half,
+Kaggle-gated). No README or video line may cite these as shipped.
+
 ## Still open before freeze
 
-**ADR-0001 … ADR-0007 are cited across the repo and none exist as files.** Only ADR-0008 does.
-Same class as the missing `09-interfaces.md`. Write them or stop citing them.
+- **`09-interfaces.md` does not exist** but tickets name it as the source of the `Scorer`
+  contract. The contract actually lives in `eval/harness.py`'s module docstring. Write the file or
+  stop pointing at it.
+- **`pymoo` is declared in `pyproject.toml`** for T-0009, which was cut. Remove it or justify it.

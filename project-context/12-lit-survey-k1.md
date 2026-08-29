@@ -563,7 +563,10 @@ seconds it.
 ## 📄 ADR STUB
 
 ```
-# ADR-0005 — Response to K1: label-informed HMM estimation and re-specified recovery metrics
+# ADR-0009 — Response to K1: label-informed HMM estimation and re-specified recovery metrics
+# (drafted here as ADR-0005; renumbered 2026-08-29 because 0005 was already the
+#  three-action policy. PROMOTED to docs/adr/ADR-0009-k1-label-informed-hmm.md,
+#  which is now authoritative and records what T-0004b actually measured.)
 
 Status: PROPOSED
 Date: 2026-08-28

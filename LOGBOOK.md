@@ -1782,3 +1782,41 @@ choice is made deliberately rather than discovered mid-ticket.
 **PROCESS.** `--seed` on `data/profile.py` was a dead flag stamping a literal into two committed
 artifacts; caught in review, not by a test. Worth noting that the determinism test suite passed
 throughout — it verified the artifact was reproducible, never that the provenance line was true.
+
+---
+
+## 2026-08-29 (later still) — the eight missing ADRs
+
+**DID.** Wrote `docs/adr/ADR-0001` … `ADR-0007` and `ADR-0009`, plus `docs/adr/README.md` as the
+index. Format follows ADR-0008 (Context / Options considered / Decision / Consequences). Every
+ADR number cited anywhere in the repo now resolves to a file.
+
+**Written retrospectively and dated 2026-08-29, not backdated.** Each names the sources it was
+reconstructed from. Backdating them to look contemporaneous was the one unacceptable way to close
+this item, given what the rest of the repo is built on.
+
+**SURPRISE.** Writing them up turned an accounting chore into a defect list. Three of the eight
+record decisions that were **never implemented** — ADR-0004 (NSGA-II, T-0009 cut), ADR-0006
+(shrinkage, T-0008 cut), ADR-0007 (the BAF half, Kaggle-gated). While the numbers were only
+citations, "cited" and "shipped" were indistinguishable from inside the repo. Forced to write a
+Consequences section for each, the gap became unmissable — and it surfaced a live defect nobody
+had raised: **`pymoo` is still a declared dependency in `pyproject.toml` for work that was cut.**
+A panel member reading `pyproject.toml` would reasonably expect a multi-objective frontier that
+does not exist.
+
+**ADR-0006 also read differently once written down.** The re-plan cut T-0008 as the fourth item
+on a cut list — a scheduling call. Its Consequences section is where it becomes clear the cut
+went load-bearing later: ADR-0005's BMR policy consumes raw scores as posteriors, so
+miscalibration now moves the argmin rather than merely the ranking. That connection existed in
+`STATE.md` as two separate bullets and read as an ADR consequence only when the two were forced
+into the same document.
+
+**COLLISION.** `ADR-0005` was booked twice — the three-action policy (Phase 2, cited by FR-015,
+FR-017, `07-math.md` §7) and the K1 response (2026-08-28, drafted in the lit survey and cited by
+FR-013's amendment). The policy keeps 0005 on the earlier and broader claim; the K1 response is
+renumbered **ADR-0009**. Citations annotated in place rather than silently rewritten.
+`LOGBOOK.md`'s own earlier references to "ADR-0005" for the K1 work are **left as written** — this
+file is append-only, and editing a log to agree with a later renumbering is worse than the
+inconsistency it would remove.
+
+**Full `pytest` green, `ruff` clean.** Docs-only change; no number moved.

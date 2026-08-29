@@ -165,7 +165,7 @@ FR-013 | HMM recovers injected states on data with known ground-truth state path
   NOTE:        If this fails by Sat 29 Aug EOD, trigger kill criterion K1 and DESCEND.
 ```
 
-> ### AMENDMENT — FR-013 metric suite · dated 2026-08-28 · ticket T-0004b · ADR-0005
+> ### AMENDMENT — FR-013 metric suite · dated 2026-08-28 · ticket T-0004b · ADR-0005 (renumbered **ADR-0009** on 2026-08-29 — 0005 was already taken by the three-action policy; see `docs/adr/README.md`)
 >
 > **The original text above is left exactly as written and is NOT superseded in spirit.**
 > This amendment was made **AFTER the original gate failed**, and that sequence is stated here

@@ -50,13 +50,32 @@ refitting a model. `--figures-only` no longer prints "no figures yet".
 Panel 1 plots every model **including `random`**, deliberately: without the random floor on the
 same axes, panel 2's margin curve reads as a model result rather than a cost-matrix result.
 
-### 4. ADR-0001 … ADR-0007 are cited everywhere and none exist — STILL OPEN
+### 4. ADR-0001 ... ADR-0007 did not exist as files - WRITTEN, done
 
-Only `docs/adr/ADR-0008` exists. FR-015, FR-017, `07-math.md` §7 and `T-0007b.md` all cite
-ADR-0005 for the three-action policy and capacity; the only ADR-0005 in the repo is an unrelated
-stub inside `project-context/12-lit-survey-k1.md`. Same class as the missing `09-interfaces.md`.
-**Decide before freeze: write them, or stop citing them.** A README that cites seven
-non-existent decision records is a panel-visible defect.
+All eight now exist in `docs/adr/`, in ADR-0008's house format (Context / Options considered /
+Decision / Consequences), plus `docs/adr/README.md` as the index.
+
+**They are dated 2026-08-29 and say so.** Each names the sources it was reconstructed from
+(`CLAUDE.md`'s stack and rejection tables, `01-understanding.md`, `03-landscape.md`,
+`04-patterns.md`, `06-requirements.md`, `07-math.md`, the tickets, the K1 survey). Backdating
+them to look contemporaneous would have been the one unacceptable way to close this.
+
+**The ADR-0005 collision is resolved.** It was booked twice - the three-action policy (Phase 2;
+FR-015, FR-017, `07-math.md` s7) and the K1 response (2026-08-28; the survey stub and FR-013's
+amendment). **The policy keeps 0005** on the earlier and broader claim; **the K1 response is
+renumbered ADR-0009.** Citations annotated in place at `06-requirements.md` (FR-013's amendment
+header), the survey stub, and this file. `LOGBOOK.md`'s references are left alone - it is
+append-only, and rewriting a log to match a later renumbering is worse than the inconsistency.
+
+**Three ADRs record decisions that were never built, and say so in their status line** - this is
+the part that matters for the README:
+
+- **ADR-0004** (NSGA-II + the mandatory grid-search ablation) - T-0009 cut. No frontier exists,
+  and the ablation obligation is undischarged. **`pymoo` is still declared in `pyproject.toml`
+  for work that did not happen; remove it or justify it before freeze.**
+- **ADR-0006** (empirical-Bayes shrinkage) - T-0008 cut. No calibration happens anywhere in this
+  repo, which is load-bearing because ADR-0005's BMR policy consumes raw scores as posteriors.
+- **ADR-0007** (hybrid data) - the BAF half is unexecuted, Kaggle-gated.
 
 ## Load for next session
 - `CLAUDE.md`
@@ -396,7 +415,7 @@ the gap.
 - **`make` is not installed on this machine.** The Makefile ships unexercised; `make.ps1` is
   the local shim. Do not claim `make eval` is green on camera until it runs on a Linux
   checkout.
-- **ADR-0005's consequences** should record that T-0004b refuted the DORMANT-rule approach.
+- ~~**ADR-0005's consequences** should record that T-0004b refuted the DORMANT-rule approach.~~ **Done 2026-08-29.** The decision was renumbered to **ADR-0009** (0005 was already the three-action policy) and written to `docs/adr/ADR-0009-k1-label-informed-hmm.md`, which strikes the DORMANT-rule item as **REFUTED** and the EM-guard item as a **measured null**, and records that T-0010 was later cut so item 5's BOCPD prediction was never tested.
 - **`09-interfaces.md` does not exist**, but T-0006b and other tickets name it as the source of
   the `Scorer` contract. The contract is actually specified in `eval/harness.py`'s module
   docstring, which is what T-0006b used. Decide before freeze: write the file, or stop the
