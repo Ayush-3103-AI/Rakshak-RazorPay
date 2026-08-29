@@ -105,6 +105,8 @@ def build_window_matrix(
     split: Split,
     segment_map: SegmentMap | None = None,
     state_paths: pd.DataFrame | None = None,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
 ) -> WindowMatrix:
     """Flatten a split into the (merchant, window) design matrix LightGBM trains on.
 
@@ -115,11 +117,21 @@ def build_window_matrix(
             here, which is only correct for the training split itself.
         state_paths: Override for the generator's state-path frame (tests use this),
             mirroring `eval.splits.load_split`.
+        drop_features: FR-018 ablation only - emission columns to omit. Defaults to `()`,
+            the shipping vector. Must match between fit and score; `score_gbdt` raises on
+            a feature-name mismatch.
+        standardise: FR-018 ablation only - False passes the raw per-window features
+            through with no within-merchant standardisation. Defaults to True (FR-007).
 
     Returns:
         A populated `WindowMatrix`.
     """
-    emissions = build_emissions(split.transactions, segment_map=segment_map)
+    emissions = build_emissions(
+        split.transactions,
+        segment_map=segment_map,
+        drop_features=drop_features,
+        standardise=standardise,
+    )
     n_merchants, n_windows, n_features = emissions.X.shape
 
     if state_paths is None:
@@ -173,7 +185,11 @@ def train_mask(matrix: WindowMatrix) -> np.ndarray:
     return matrix.window_start_day >= BURN_IN_WINDOWS * WINDOW_DAYS
 
 
-def fit(seed: int = SEED) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
+def fit(
+    seed: int = SEED,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
+) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
     """Fit LightGBM on the train split, early-stopping on the validate split.
 
     The test split is never loaded. See the module docstring on the one place this
@@ -181,15 +197,22 @@ def fit(seed: int = SEED) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
 
     Args:
         seed: Determinism seed; feeds LightGBM's bagging RNG.
+        drop_features: FR-018 ablation only - emission columns to omit from both the
+            training and the early-stopping matrix. Defaults to `()`, the shipping vector.
+        standardise: FR-018 ablation only - False refits on raw per-window features.
+            Defaults to True (FR-007).
 
     Returns:
         `(booster, segment_map, feature_names)`. The segment map is fitted on the
         training merchants and must be passed to every held-out build.
     """
+    variant = {"drop_features": drop_features, "standardise": standardise}
     train_split = load_split("train")
-    train_matrix = build_window_matrix(train_split)
+    train_matrix = build_window_matrix(train_split, **variant)
     valid_split = load_split("validate")
-    valid_matrix = build_window_matrix(valid_split, segment_map=train_matrix.segment_map)
+    valid_matrix = build_window_matrix(
+        valid_split, segment_map=train_matrix.segment_map, **variant
+    )
 
     fit_rows = train_mask(train_matrix)
     stop_rows = decision_mask(valid_matrix, valid_split)
@@ -222,19 +245,35 @@ def fit(seed: int = SEED) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
     return booster, train_matrix.segment_map, train_matrix.feature_names
 
 
-@lru_cache(maxsize=4)
-def _fitted(seed: int) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
-    """Memoised `fit` — the harness may score the same seed more than once."""
-    return fit(seed)
+@lru_cache(maxsize=8)
+def _fitted(
+    seed: int, drop_features: tuple[str, ...] = (), standardise: bool = True
+) -> tuple[lgb.Booster, SegmentMap, tuple[str, ...]]:
+    """Memoised `fit` - the harness may score the same seed more than once.
+
+    The ablation variant is part of the cache key (FR-018): a fit on a reduced or
+    unstandardised emission vector must never be handed back to the shipping path,
+    which is what a seed-only key would do.
+    """
+    return fit(seed, drop_features=drop_features, standardise=standardise)
 
 
-def score_gbdt(split: Split, rng: np.random.Generator) -> pd.DataFrame:
+def score_gbdt(
+    split: Split,
+    rng: np.random.Generator,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
+) -> pd.DataFrame:
     """Score merchants with LightGBM over windowed aggregates (06-requirements.md §3).
 
     Args:
         split: The split to score. Must not be the training split.
         rng: Used only to derive the fit seed, so that the harness's per-model RNG
             still controls determinism.
+        drop_features: FR-018 ablation only - applied identically to the fit and to this
+            score, so the feature-name guard below stays meaningful. Defaults to `()`.
+        standardise: FR-018 ablation only - applied identically to fit and score.
+            Defaults to True.
 
     Returns:
         Frame indexed by merchant_id with `score`, the maximum per-window bad-state
@@ -242,9 +281,14 @@ def score_gbdt(split: Split, rng: np.random.Generator) -> pd.DataFrame:
         the start day of the first window scoring above `FLAG_THRESHOLD`.
     """
     seed = int(rng.integers(0, 2**31 - 1))
-    booster, segment_map, feature_names = _fitted(seed)
+    booster, segment_map, feature_names = _fitted(seed, drop_features, standardise)
 
-    matrix = build_window_matrix(split, segment_map=segment_map)
+    matrix = build_window_matrix(
+        split,
+        segment_map=segment_map,
+        drop_features=drop_features,
+        standardise=standardise,
+    )
     if matrix.feature_names != feature_names:
         raise ValueError(
             f"feature mismatch: trained on {feature_names}, scoring {matrix.feature_names}"

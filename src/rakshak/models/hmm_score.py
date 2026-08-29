@@ -196,11 +196,20 @@ def training_label_grid(matrix: WindowMatrix, state_paths: pd.DataFrame) -> np.n
     return np.where(labelled, codes, UNLABELLED).astype(np.int64)
 
 
-def fit(seed: int = SEED) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
+def fit(
+    seed: int = SEED,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
+) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
     """Fit the shipping T-0004b configuration on the training split and nothing else.
 
     Args:
         seed: Determinism seed; feeds k-means initialisation and state revival.
+        drop_features: FR-018 ablation only - emission columns to omit. Defaults to `()`,
+            the shipping vector. Label clamping and `STATE_ORDER` are untouched by this:
+            the ablation changes the emission dimension D, never the state space K.
+        standardise: FR-018 ablation only - False refits on raw per-window features.
+            Defaults to True (FR-007).
 
     Returns:
         `(model, segment_map, feature_names)`. The segment map is fitted on the
@@ -208,7 +217,9 @@ def fit(seed: int = SEED) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
         `gbdt.fit` requires.
     """
     train_split = load_split("train")
-    matrix = build_window_matrix(train_split)
+    matrix = build_window_matrix(
+        train_split, drop_features=drop_features, standardise=standardise
+    )
     sequences = _panel(matrix)
     n_merchants, n_windows, n_features = sequences.shape
 
@@ -230,10 +241,16 @@ def fit(seed: int = SEED) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
     return model, matrix.segment_map, matrix.feature_names
 
 
-@lru_cache(maxsize=4)
-def _fitted(seed: int) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
-    """Memoised `fit` — the harness may score the same seed more than once."""
-    return fit(seed)
+@lru_cache(maxsize=8)
+def _fitted(
+    seed: int, drop_features: tuple[str, ...] = (), standardise: bool = True
+) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
+    """Memoised `fit` — the harness may score the same seed more than once.
+
+    The ablation variant is part of the cache key (FR-018), so a variant fit can never
+    be served to the shipping path.
+    """
+    return fit(seed, drop_features=drop_features, standardise=standardise)
 
 
 # ---------------------------------------------------------------------------
@@ -241,13 +258,22 @@ def _fitted(seed: int) -> tuple[HMM, SegmentMap, tuple[str, ...]]:
 # ---------------------------------------------------------------------------
 
 
-def score_hmm(split: Split, rng: np.random.Generator) -> pd.DataFrame:
+def score_hmm(
+    split: Split,
+    rng: np.random.Generator,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
+) -> pd.DataFrame:
     """Score merchants with the per-merchant HMM belief over latent risk states.
 
     Args:
         split: The split to score. Must not be the training split.
         rng: Used only to derive the fit seed, so the harness's per-model RNG
             still controls determinism (NFR-003).
+        drop_features: FR-018 ablation only - applied identically to the fit and to this
+            score, so the feature-name guard below stays meaningful. Defaults to `()`.
+        standardise: FR-018 ablation only - applied identically to fit and score.
+            Defaults to True.
 
     Returns:
         Frame indexed by merchant_id with `score`, the maximum **filtered**
@@ -257,9 +283,14 @@ def score_hmm(split: Split, rng: np.random.Generator) -> pd.DataFrame:
         Neither column uses any information from after the window it reports on.
     """
     seed = int(rng.integers(0, 2**31 - 1))
-    model, segment_map, feature_names = _fitted(seed)
+    model, segment_map, feature_names = _fitted(seed, drop_features, standardise)
 
-    matrix = build_window_matrix(split, segment_map=segment_map)
+    matrix = build_window_matrix(
+        split,
+        segment_map=segment_map,
+        drop_features=drop_features,
+        standardise=standardise,
+    )
     if matrix.feature_names != feature_names:
         raise ValueError(
             f"feature mismatch: fitted on {feature_names}, scoring {matrix.feature_names}"

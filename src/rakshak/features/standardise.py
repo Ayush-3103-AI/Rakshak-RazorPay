@@ -178,6 +178,7 @@ def standardise_panel(
     burn_in_windows: int = BURN_IN_WINDOWS,
     n0: float = SHRINKAGE_N0,
     segment_map: SegmentMap | None = None,
+    standardise: bool = True,
 ) -> EmissionSet:
     """Standardise a window panel within merchant, shrinking to segment (FR-007).
 
@@ -193,6 +194,13 @@ def standardise_panel(
             makes standardisation exactly scale-invariant (see the module docstring).
         segment_map: A segmentation fitted elsewhere, e.g. on the training merchants. When
             None, one is fitted on this population.
+        standardise: When False the emissions are the raw panel values, in the units of
+            `windows.FEATURE_UNITS` - no within-merchant location, no scale, no segment
+            shrinkage and no Z_CLIP winsorising. That is FR-018's standardisation-off
+            ablation and nothing else; the default True is FR-007's shipping path and is
+            what every caller outside `eval/ablations.py` uses. The segment map is still
+            fitted and returned when False, so the held-out contract is unchanged, but
+            nothing consumes it.
 
     Returns:
         An `EmissionSet` whose ``X`` is dimensionless: 0 means "this merchant's own
@@ -266,7 +274,15 @@ def standardise_panel(
     # hundreds of sigma. A diagonal-covariance Gaussian HMM responds by inflating one
     # state's variance until that state absorbs everything. Winsorising at +/-10 sigma
     # costs nothing that matters: FR-013's separation gate lives at ~1 sigma.
-    X = np.clip((raw - mu[:, None, :]) / (sd[:, None, :] + STANDARDISE_EPS), -Z_CLIP, Z_CLIP)
+    # FR-018 ablation branch: `standardise=False` returns `raw` untouched, which also
+    # skips the Z_CLIP winsoriser - clipping raw INR-scale features at +/-10 would be a
+    # second, uncontrolled change stacked on top of the one being ablated.
+    if standardise:
+        X = np.clip(
+            (raw - mu[:, None, :]) / (sd[:, None, :] + STANDARDISE_EPS), -Z_CLIP, Z_CLIP
+        )
+    else:
+        X = raw
     return EmissionSet(
         merchant_ids=merchants,
         window_index=windows,

@@ -2,7 +2,7 @@
 
 PHASE:        5 — EXECUTE, in progress
 LAST SESSION: 2026-08-29 — **T-0007b**, **T-0015**, the **FR-020 figure**, the **eight missing ADRs**, and **T-0012** (BAF validation). **FR-021 is met: `CLAUDE.md`'s mandated BAF sentence is backed for the first time.** Full `pytest` green (2 strict `xfail`s intact), `ruff` clean, `make eval` 14.2 s, `make baf` 16 s.
-NEXT ACTION:  **T-0011** (K2's verdict, on `test`) — every one of its blockers is now closed. Then **T-0013** (README) on Tue 1 Sep, then freeze.
+NEXT ACTION:  **T-0020** and **T-0018** (both unblocked, neither touches a number), then **T-0011** (K2's verdict, on `test` — every blocker closed). **A board audit on 2026-08-29 found that two of the three graded artifacts had no ticket**; T-0018 (architecture doc), T-0019 (video), T-0020 (release hygiene) and T-0021 (verify `make eval` on a clean checkout) now exist. See `11-tickets/BOARD.md`, "Board audit — 2026-08-29".
 
 ## Decisions taken by the user — 2026-08-29
 

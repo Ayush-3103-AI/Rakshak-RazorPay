@@ -32,6 +32,10 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | ID | Title | Day | Risk | Cuttable | Blocked by |
 |---|---|---|---|---|---|
 | [T-0011](T-0011.md) | Verdict: ablations, sweep boundary, lag probe | Mon 31 | **A-005 verdict, K2** | **no** | T-0006b, T-0007b |
+| [T-0018](T-0018.md) | Architecture doc + diagram | Sat 29 - Sun 30 | **graded deliverable, was unowned** | **no** | — |
+| [T-0020](T-0020.md) | Release hygiene: LICENSE, `09-interfaces.md`, drop `pymoo` | Sat 29 | low effort, panel-visible | **no** | — |
+| [T-0021](T-0021.md) | Verify `make eval` on a clean checkout | Sun 30, re-run after freeze | **can fail and generate work** | **no** | T-0020 |
+| [T-0019](T-0019.md) | Video: script, shot list, edit checklist | draft Sun 30 - Mon 31; cut Wed 2 - Thu 3 | **graded deliverable, was unowned** | **no** | — to draft; T-0013 for numbers |
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
 | [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
 | [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
@@ -54,8 +58,14 @@ Repo: `Ayush-3103-AI/Rakshak-RazorPay`.
 | T-0013 | [#8](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/8) | #7, #6, #3 | `blocked` |
 | T-0016 | [#9](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/9) | #3 | `blocked` `conditional` |
 | T-0014 | [#10](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/10) | #8 | `blocked` |
+| T-0020 | [#11](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/11) | — | `ready-for-agent` |
+| T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | — | `ready-for-agent` |
+| T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | #11, re-run after #8 | `blocked` |
+| T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | — to draft; #8 for numbers | `ready-for-agent` |
 
-Three tickets are unblocked and can start immediately: **#1, #2, #3**. Move a ticket's label
+Added 2026-08-29 by the board audit: **#11, #12, #14** are unblocked and can start immediately; **#13** waits on #11.
+
+Originally three tickets were unblocked: **#1, #2, #3**. Move a ticket's label
 from `blocked` to `ready-for-agent` when its blockers close.
 
 T-0008, T-0009 and T-0010 have **no issues** — they were cut, not deferred.
@@ -93,10 +103,10 @@ video window, which is **Wed 2 – Thu 3 Sep**, review **Fri 4 Sep**, submit **S
 |---|---|---|
 | Fri 28 Aug | T-0001 → T-0006, T-0003b, T-0004b | done. K1 fired and was answered. |
 | Sat 29 Aug | T-0017 → T-0006b → T-0007a | **The proposal gets scored for the first time.** `savings` becomes readable. |
-| Sun 30 Aug | T-0007b → T-0015 → T-0012 | Sweep machinery, real data procured, decision layer validated on BAF. |
+| Sun 30 Aug | **done early on Sat 29.** Now: T-0011, **T-0018**, **T-0021**, T-0019 draft | Sweep machinery, real data and BAF validation all landed a day early. |
 | Mon 31 Aug | T-0011 | **K2's verdict**, with its cost-asymmetry boundary. |
 | **Tue 1 Sep** | T-0013, then **code freeze** | README numbers final, every one with provenance. |
-| Wed 2 – Thu 3 Sep | T-0014 | Read-only viewer + video. Outside the build window. |
+| Wed 2 – Thu 3 Sep | T-0014, **T-0019 (record + cut)** | Read-only viewer + video. Outside the build window. |
 
 **There is no float.** If anything slips, T-0011 compresses before T-0013 does — T-0013 is
 the differentiator and the artifact the panel actually reads.
@@ -393,3 +403,50 @@ any public dataset available to this project.**
 - **`src/rakshak/data/` had never been linted.** `pyproject.toml`'s `extend-exclude` read
   `["results", "data"]`, and unanchored `"data"` matched the source package as well as the
   git-ignored data directory. Now `["/results", "/data"]`. Nine real lint errors were hiding.
+
+
+---
+
+## Board audit — 2026-08-29. Two of the three graded artifacts had no ticket.
+
+T-0007b, T-0015 and T-0012 all closed on **Sat 29**, a day ahead of the Sun 30 plan. The slack
+prompted an audit of what remained, which found that the board was tracking the repo well and the
+**submission** badly.
+
+`00-charter.md:83` — *"**Output:** public repo + 5-minute video + architecture doc. **All three
+are graded.**"* T-0013 owned the README. T-0014 owned the results viewer. **Nothing owned the
+architecture doc, and nothing owned the video** — two days were allocated to a deliverable with no
+script, no shot list and no owner. Four tickets were opened.
+
+| Ticket | What it closes |
+|---|---|
+| **T-0018** | The architecture doc — graded, previously unowned. Describes design, not results, so it does not wait on T-0011. |
+| **T-0019** | The video — graded, previously unowned. Script and shot list draftable now; numbers land from committed artifacts after T-0013; recording and the edit checklist are in the video window. |
+| **T-0020** | Three defects visible to anyone who opens a public repo: **no `LICENSE` file** while `pyproject.toml` declares MIT; **`09-interfaces.md` cited by tickets but absent**; **`pymoo` declared for T-0009, which was cut.** |
+| **T-0021** | **`make eval` has never run on a clean checkout.** `make` is not installed on the build machine and the `Makefile` has shipped unexercised since T-0001. T-0019's script asserts the numbers regenerate; this is what makes that true. |
+
+**T-0021 is deliberately separate from T-0020.** Every item in T-0020 is a two-minute edit that
+cannot fail. T-0021 can fail, and if it does it changes what the submission is allowed to claim.
+Bundling a real risk inside a chore list is how it gets skipped.
+
+### Accepted as debt, not ticketed
+
+- **The cost matrix has two homes**, `eval/metrics.py` and `decision/cost.py`, pinned equal by a
+  test. T-0007a's logbook assigned the migration to T-0007b; T-0007b's spec never asked for it and
+  it was correctly not done half-way. Cosmetic, and risky to touch this close to freeze.
+- **ADR-0003's POMDP slide** — folded into T-0019 rather than given its own ticket.
+
+### Revised sequence
+
+| Day | Tickets |
+|---|---|
+| **Sat 29** (done) | T-0017, T-0006b, T-0007a, T-0007b, T-0015, T-0012 + the FR-020 figure and the nine ADRs |
+| **Sat 29 → Sun 30** | **T-0020**, **T-0018** — neither blocked, neither touches a number |
+| **Sun 30** | **T-0011** (K2's verdict), **T-0021**, T-0019 draft |
+| **Mon 31** | float — the day the original plan spent on T-0011 |
+| **Tue 1 Sep** | T-0013, then **freeze**. T-0021 re-runs on the frozen commit. |
+| **Wed 2 – Thu 3 Sep** | T-0014 + T-0019 record and cut |
+
+**There is now one day of float where there was none.** It exists because Saturday absorbed
+Sunday's tickets — not because the schedule loosened. Spend it on T-0011's verdict or on
+reinstating T-0008, not on T-0016.

@@ -35,6 +35,7 @@ from rakshak.config import (
     P_ANALYST_MISS,
     P_CHURN_GIVEN_HOLD,
     RESIDUAL_LEAKAGE_RHO,
+    WINDOW_DAYS,
 )
 
 PASS: Final[int] = 0
@@ -110,8 +111,31 @@ def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
 # ---------------------------------------------------------------------------
 
 
+FLAG_ATTRIBUTION_OFFSET_DAYS: Final[dict[str, int]] = {
+    "window_start": 0,
+    "window_end": WINDOW_DAYS - 1,
+}
+"""How a window-based scorer's `flag_day` is turned into a calendar day, in days.
+
+A window-based scorer (`models/gbdt.py`, `models/hmm_score.py`) reports the
+**start** day of the `WINDOW_DAYS`-long window whose evidence raised the flag.
+The evidence was not complete until that window's **last** day, so a lag measured
+against the window start credits the model with up to `WINDOW_DAYS - 1` days of
+earliness it did not have. `"window_start"` is the historical convention and is
+the default so that nothing already reported moves; `"window_end"` is the
+attribution T-0011 measured and recommended (`results/lag_probe.md`).
+
+Day-resolved scorers such as `models/rules.py` already report the last day of
+their trailing evidence, so `"window_end"` does not apply to them.
+"""
+
+
 def detection_lag_days(
-    flag_day: pd.Series, transition_day: pd.Series, labels: pd.Series
+    flag_day: pd.Series,
+    transition_day: pd.Series,
+    labels: pd.Series,
+    *,
+    attribution: str = "window_start",
 ) -> tuple[float, float, int]:
     """Median detection lag over truly-bad merchants that were eventually flagged.
 
@@ -130,12 +154,26 @@ def detection_lag_days(
         transition_day: True first-bad day per merchant, NaN if never bad.
             Indexed by merchant_id. Units: days.
         labels: Binary ground-truth labels indexed by merchant_id.
+        attribution: Key of `FLAG_ATTRIBUTION_OFFSET_DAYS`. `"window_start"`
+            (the default, and the historical convention) takes `flag_day` as
+            given; `"window_end"` adds `WINDOW_DAYS - 1` days, attributing a
+            window-based flag to the last day of the evidence that raised it.
+            Units: days.
+
+    Raises:
+        ValueError: if `attribution` is not a known mode.
 
     Returns:
         `(median_lag_days, flagged_fraction, n_bad)`. `median_lag_days` is NaN
         when no truly-bad merchant was flagged. `flagged_fraction` is the share
         of truly-bad merchants that were flagged at all.
     """
+    if attribution not in FLAG_ATTRIBUTION_OFFSET_DAYS:
+        raise ValueError(
+            f"unknown attribution {attribution!r}; "
+            f"expected one of {sorted(FLAG_ATTRIBUTION_OFFSET_DAYS)}"
+        )
+    offset = FLAG_ATTRIBUTION_OFFSET_DAYS[attribution]
     bad = labels.index[labels.astype(bool)]
     n_bad = len(bad)
     if n_bad == 0:
@@ -146,7 +184,7 @@ def detection_lag_days(
     flagged_fraction = float(detected.mean())
     if not detected.any():
         return float("nan"), flagged_fraction, n_bad
-    lag = (flags[detected] - truth[detected]).astype("float64")
+    lag = (flags[detected] + offset - truth[detected]).astype("float64")
     return float(lag.median()), flagged_fraction, n_bad
 
 

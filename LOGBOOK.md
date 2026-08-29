@@ -1866,3 +1866,33 @@ files ruff happened to look at. Anchored to `["/results", "/data"]`.
 **SECURITY.** The Kaggle token was pasted into the chat transcript and is therefore compromised.
 It is stored at `~/.kaggle/access_token` (outside the repo, mode 600) and appears in no committed
 file. **It must be rotated.**
+
+---
+
+## 2026-08-29 — board audit: two of the three graded artifacts had no ticket
+
+**DID.** Opened T-0018 (architecture doc + diagram), T-0019 (video script, shot list, edit
+checklist), T-0020 (LICENSE, `09-interfaces.md`, drop `pymoo`) and T-0021 (verify `make eval` on a
+clean checkout). Files in `11-tickets/`, DAG and countdown updated in `BOARD.md`, mirrored to
+GitHub issues #11–#14 in dependency order.
+
+**SURPRISE.** T-0007b, T-0015 and T-0012 all closed on Saturday against a Sunday plan, and the
+slack prompted an audit. It found the board was tracking the **repo** well and the **submission**
+badly. `00-charter.md:83` says the output is "public repo + 5-minute video + architecture doc,
+all three graded." Seventeen tickets covered the repo in forensic detail. **Neither of the other
+two had a ticket at all** — the video had two days allocated and no script, no shot list, no
+owner. Nobody had noticed because every ticket that existed was about code, and the board's own
+completeness was measured against the ticket list rather than against the charter.
+
+**ALSO FOUND.** No `LICENSE` file, while `pyproject.toml` declares MIT — in a repo whose entire
+point is being read by strangers. And `make eval` has never once run on a clean checkout: `make`
+isn't installed here, `make.ps1` is a shim, and the `Makefile` has shipped unexercised since
+T-0001 while the README's provenance claim and the video script both depend on it working.
+
+**DECISION.** T-0021 was kept separate from T-0020 rather than bundled. Every item in T-0020 is a
+two-minute edit that cannot fail; T-0021 can fail, and if it does it changes what the submission
+is allowed to claim. Putting a real risk inside a chore list is how it gets skipped on the last day.
+
+**FLOAT.** There is now one day of float where the re-plan said there was none. It exists because
+Saturday absorbed Sunday's tickets, not because the schedule loosened. Recorded in `BOARD.md` with
+the instruction to spend it on T-0011 or on reinstating T-0008 — not on T-0016.

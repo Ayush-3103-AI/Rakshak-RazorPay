@@ -55,6 +55,8 @@ def build_emissions(
     window_days: int = WINDOW_DAYS,
     burn_in_windows: int = BURN_IN_WINDOWS,
     segment_map: SegmentMap | None = None,
+    drop_features: tuple[str, ...] = (),
+    standardise: bool = True,
 ) -> EmissionSet:
     """Build standardised HMM emissions from a raw transaction stream.
 
@@ -65,14 +67,32 @@ def build_emissions(
         burn_in_windows: Leading windows used to fit each merchant's own location and
             scale. Must end strictly before any window being evaluated.
         segment_map: Segmentation fitted on the training population; None fits one here.
+        drop_features: Feature names omitted from the emission vector. The default `()`
+            keeps every feature `build_window_features` produced, so the shipping
+            pipeline is untouched. Used only by `eval/ablations.py` (FR-018), which must
+            apply the identical value at fit time and at score time - the scorers raise
+            on a feature-name mismatch.
+        standardise: When False, the raw per-window features pass straight through with
+            no within-merchant location/scale and no segment shrinkage - FR-018's
+            standardisation-off ablation. The default True is FR-007's shipping path.
 
     Returns:
-        An `EmissionSet` with ``X`` of shape (M, W, D) in dimensionless z-scores.
+        An `EmissionSet` with ``X`` of shape (M, W, D): dimensionless z-scores when
+        `standardise` is True, raw feature units (`FEATURE_UNITS`) when it is False.
+
+    Raises:
+        ValueError: If `drop_features` names a feature the panel does not carry.
     """
     panel, feature_names = build_window_features(transactions, window_days=window_days)
+    if drop_features:
+        unknown = tuple(name for name in drop_features if name not in feature_names)
+        if unknown:
+            raise ValueError(f"drop_features names features that do not exist: {unknown}")
+        feature_names = tuple(name for name in feature_names if name not in drop_features)
     return standardise_panel(
         panel,
         feature_names,
         burn_in_windows=burn_in_windows,
         segment_map=segment_map,
+        standardise=standardise,
     )
