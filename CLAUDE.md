@@ -1,6 +1,6 @@
 # CLAUDE.md — Rakshak
 
-> Read this file first, every session. Then read `project-context/STATE.md`. Then read **only** the files the current ticket names. Nothing else.
+> Read this file first, every session. Then read `STATE.md` (repo root). Then read **only** the files the current ticket names. Nothing else.
 
 ---
 
@@ -49,8 +49,8 @@ Correct framing, use it verbatim: *"Sequence-layer metrics are measured on synth
 |---|---|
 | **Compute** | CPU only. No GPU, not even Colab. If a method needs a GPU, it is out of scope. |
 | **Team** | Solo. No parallel lanes that assume a second person. |
-| **Build window** | Sat 29 Aug – Mon 1 Sep 2026, end of day. Hard stop. |
-| **Video** | Tue 2 Sep – Wed 3 Sep. Review Thu 4 Sep. Submit Fri 5 Sep. |
+| **Build window** | Sat 29 Aug – **Tue 1 Sep** 2026, end of day. Hard stop. Build days: Sat 29, Sun 30, Mon 31, Tue 1 Sep. |
+| **Video** | Wed 2 Sep – Thu 3 Sep. Review Fri 4 Sep. Submit Sat 5 Sep. |
 | **Real data** | None available. Public datasets + own generator only. |
 | **Runtime** | Full `make eval` must complete in under 15 minutes on a laptop. |
 | **Dependencies** | Permissive licences only (MIT / BSD / Apache-2.0). No GPL/AGPL. |
@@ -114,7 +114,8 @@ rakshak/
 ├── README.md                      ← the panel reads this. Results + provenance.
 ├── Makefile                       ← make setup / make eval / make figures / make test
 ├── pyproject.toml
-├── project-context/               ← the project's memory. Read STATE.md every session.
+├── STATE.md                       ← the project's memory. Read this every session.
+├── project-context/               ← surveys and long-form background (12-lit-survey-k1.md)
 ├── src/rakshak/
 │   ├── config.py                  ← seeds, paths, cost defaults, all constants
 │   ├── generator/                 ← synthetic merchant streams + 4 typologies
@@ -158,7 +159,7 @@ Question 3 is the one nobody else in the submission pool will answer. It is why 
 
 | File | Read when |
 |---|---|
-| `project-context/STATE.md` | **Every session. Always.** |
+| `STATE.md` (repo root) | **Every session. Always.** |
 | `00-charter.md` | Questioning scope or success criteria |
 | `01-understanding.md` | Questioning a settled decision |
 | `03-landscape.md` | Questioning a rejected alternative |

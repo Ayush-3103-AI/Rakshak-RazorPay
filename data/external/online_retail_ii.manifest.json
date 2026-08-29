@@ -1,0 +1,15 @@
+{
+  "filename": "online_retail_ii.zip",
+  "licence": "CC BY 4.0",
+  "licence_url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "name": "online_retail_ii",
+  "note": "Real transaction stream of ONE UK online gift-ware retailer, Dec 2009 - Dec 2011. Informs within-merchant amount dispersion, hour-of-day and weekday seasonality, daily volume and its over-dispersion, repeat-payer structure and the return/cancellation rate. Cannot inform chargeback rate, fraud prevalence, cross-category amount levels, or anything about latent risk states.",
+  "retrieved_utc": "2026-08-29T05:45:46Z",
+  "row_count": 48374,
+  "sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+  "size_bytes": 45622418,
+  "source_page": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "source_url": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip",
+  "subsample_seed": null,
+  "subsampled": false
+}

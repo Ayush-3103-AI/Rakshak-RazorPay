@@ -1,0 +1,366 @@
+{
+  "cannot_inform": [
+    "Latent risk states and their transition structure \u2014 no public dataset labels a merchant's risk state through time. The HMM's 4-state path is entirely synthetic.",
+    "Merchant-level fraud labels and prevalence \u2014 public fraud data is transaction-level or application-level. FRAUD_MERCHANT_RATE = 0.20 remains a hand-chosen evaluation convenience, far above any real prevalence.",
+    "Chargeback rate \u2014 no public transaction dataset carries a chargeback flag. Segment.chargeback_rate (0.0004-0.0040) is unchanged and uncalibrated.",
+    "Cross-merchant payer graph \u2014 the generator scopes payers to one merchant by design (ADR-0002), and no public dataset supplies a real merchant x payer bipartite graph.",
+    "MCC / category structure and absolute ticket size \u2014 the one real stream available is a single UK gift-ware retailer in GBP. Level comparisons across currency and category are meaningless; only unit-free shape statistics are compared.",
+    "Typology dynamics \u2014 bust-out, laundering, category drift, refund collusion and the adversarial slow ramp are all invented here and calibrated against nothing."
+  ],
+  "diff": [
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 1.2564280911254573,
+      "empirical_source": "online_retail_ii:amount (non-refund rows)",
+      "generator": 0.6464998126056163,
+      "generator_constant": "generator.SEGMENTS[*].amount_sigma, hand-chosen 0.35-0.90",
+      "marginal": "amount_log_sd",
+      "ratio": 1.9434314854038712,
+      "unit": "dimensionless (sd of ln amount)"
+    },
+    {
+      "abs_diff": null,
+      "comparable": false,
+      "empirical": 304.32500000000005,
+      "empirical_source": "online_retail_ii:amount (non-refund rows)",
+      "generator": 2779.7425000000003,
+      "generator_constant": "generator.SEGMENTS[*].aov_lo..aov_hi, log-uniform 60-30,000 INR",
+      "marginal": "amount_p50",
+      "ratio": null,
+      "unit": "source currency per transaction"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 3.120394315287932,
+      "empirical_source": "online_retail_ii:amount (non-refund rows)",
+      "generator": 2.3092690642489684,
+      "generator_constant": "implied by amount_sigma: exp(1.2816 * sigma) = 1.57-3.16",
+      "marginal": "amount_p90_over_p50",
+      "ratio": 1.3512476149256178,
+      "unit": "dimensionless ratio"
+    },
+    {
+      "abs_diff": -2.8487764182608775,
+      "comparable": true,
+      "empirical": 12.746268656716419,
+      "empirical_source": "online_retail_ii:timestamp.hour",
+      "generator": 15.595045074977296,
+      "generator_constant": "generator.SEGMENTS[*].peak_hour, hand-chosen 11.5-22.0",
+      "marginal": "hour_of_day_mean",
+      "ratio": null,
+      "unit": "hour of day (0-23, local clock)"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 2.4805178023290666,
+      "empirical_source": "online_retail_ii:timestamp.hour",
+      "generator": 2.7191321334550036,
+      "generator_constant": "rng.normal(0.0, 2.6) in generate._emit_merchant",
+      "marginal": "hour_of_day_sd_hours",
+      "ratio": 0.9122461434697743,
+      "unit": "hours"
+    },
+    {
+      "abs_diff": 1.1948310962807709,
+      "comparable": true,
+      "empirical": [
+        1.1132219787489148,
+        1.3146524992764708,
+        1.2475089924339522,
+        1.492061851407781,
+        1.0669161119609707,
+        0.004341175011369744,
+        0.7612973911605408
+      ],
+      "empirical_source": "online_retail_ii:timestamp.weekday",
+      "generator": [
+        0.8975377976039116,
+        0.8863885182122317,
+        0.8953523052684773,
+        0.9435447023363858,
+        1.05,
+        1.1991722712921407,
+        1.1263289284245166
+      ],
+      "generator_constant": "generator._WEEKDAY_FACTOR, hand-chosen Mon..Sun",
+      "marginal": "weekday_volume_factor",
+      "ratio": null,
+      "unit": "dimensionless multiplier, Mon..Sun, mean 1 by construction"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 0.17141439616322818,
+      "empirical_source": "online_retail_ii:is_refund",
+      "generator": 0.02196079782286679,
+      "generator_constant": "generator.SEGMENTS[*].refund_rate, hand-chosen 0.008-0.070",
+      "marginal": "refund_rate",
+      "ratio": 7.805472166623295,
+      "unit": "fraction of transactions"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 0.13236015154891909,
+      "empirical_source": "online_retail_ii:payer_id",
+      "generator": 0.7550222413545702,
+      "generator_constant": "generator.SEGMENTS[*].unique_payer_frac, hand-chosen 0.12-0.92",
+      "marginal": "new_payer_frac",
+      "ratio": 0.17530629470127185,
+      "unit": "fraction of transactions"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 0.48005348785379987,
+      "empirical_source": "online_retail_ii:payer_id",
+      "generator": 0.25402195391952986,
+      "generator_constant": "emergent from generator._REPEAT_CONCENTRATION = 2.5",
+      "marginal": "top_decile_payer_share",
+      "ratio": 1.889811020058027,
+      "unit": "fraction of transactions"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 80.08940397350993,
+      "empirical_source": "online_retail_ii:timestamp.date",
+      "generator": 2.4677667929106617,
+      "generator_constant": "generator.SEGMENTS[*].volume_lo..volume_hi / 30, log-uniform 5-800 txn/month",
+      "marginal": "txns_per_active_day_mean",
+      "ratio": 32.45420280538208,
+      "unit": "transactions per active day"
+    },
+    {
+      "abs_diff": null,
+      "comparable": true,
+      "empirical": 12.250530702142278,
+      "empirical_source": "online_retail_ii:timestamp.date",
+      "generator": 0.7649211657591892,
+      "generator_constant": "rng.poisson(lam) in generate._emit_merchant: 1.0 by construction",
+      "marginal": "daily_count_fano_factor",
+      "ratio": 16.01541603308041,
+      "unit": "dimensionless (variance / mean of daily counts)"
+    }
+  ],
+  "empirical": {
+    "dataset": "online_retail_ii",
+    "marginals": {
+      "amount_log_sd": {
+        "column": "amount (non-refund rows)",
+        "dataset": "online_retail_ii",
+        "n": 40082,
+        "note": "Currency-free. Directly comparable with the generator's lognormal sigma.",
+        "unit": "dimensionless (sd of ln amount)",
+        "value": 1.2564280911254573
+      },
+      "amount_p50": {
+        "column": "amount (non-refund rows)",
+        "dataset": "online_retail_ii",
+        "n": 40082,
+        "note": "LEVEL ONLY \u2014 not comparable across currency or merchant category.",
+        "unit": "source currency per transaction",
+        "value": 304.32500000000005
+      },
+      "amount_p90_over_p50": {
+        "column": "amount (non-refund rows)",
+        "dataset": "online_retail_ii",
+        "n": 40082,
+        "note": "Currency-free tail-shape statistic.",
+        "unit": "dimensionless ratio",
+        "value": 3.120394315287932
+      },
+      "daily_count_fano_factor": {
+        "column": "timestamp.date",
+        "dataset": "online_retail_ii",
+        "n": 604,
+        "note": "1.0 for a Poisson process. Above 1.0 means over-dispersed.",
+        "unit": "dimensionless (variance / mean of daily counts)",
+        "value": 12.250530702142278
+      },
+      "hour_of_day_mean": {
+        "column": "timestamp.hour",
+        "dataset": "online_retail_ii",
+        "n": 48374,
+        "note": "Linear mean, not circular. Valid while the mass does not straddle midnight.",
+        "unit": "hour of day (0-23, local clock)",
+        "value": 12.746268656716419
+      },
+      "hour_of_day_sd_hours": {
+        "column": "timestamp.hour",
+        "dataset": "online_retail_ii",
+        "n": 48374,
+        "note": "Population sd (ddof=0).",
+        "unit": "hours",
+        "value": 2.4805178023290666
+      },
+      "new_payer_frac": {
+        "column": "payer_id",
+        "dataset": "online_retail_ii",
+        "n": 44870,
+        "note": "Distinct payers divided by transactions carrying a payer id.",
+        "unit": "fraction of transactions",
+        "value": 0.13236015154891909
+      },
+      "refund_rate": {
+        "column": "is_refund",
+        "dataset": "online_retail_ii",
+        "n": 48374,
+        "note": "",
+        "unit": "fraction of transactions",
+        "value": 0.17141439616322818
+      },
+      "top_decile_payer_share": {
+        "column": "payer_id",
+        "dataset": "online_retail_ii",
+        "n": 44870,
+        "note": "Share held by the busiest ceil(0.1 * 5939) payers.",
+        "unit": "fraction of transactions",
+        "value": 0.48005348785379987
+      },
+      "txns_per_active_day_mean": {
+        "column": "timestamp.date",
+        "dataset": "online_retail_ii",
+        "n": 604,
+        "note": "Days with zero transactions are excluded; this is the velocity marginal.",
+        "unit": "transactions per active day",
+        "value": 80.08940397350993
+      },
+      "weekday_volume_factor": {
+        "column": "timestamp.weekday",
+        "dataset": "online_retail_ii",
+        "n": 48374,
+        "note": "Transaction counts per weekday over the whole stream, normalised to mean 1.",
+        "unit": "dimensionless multiplier, Mon..Sun, mean 1 by construction",
+        "value": [
+          1.1132219787489148,
+          1.3146524992764708,
+          1.2475089924339522,
+          1.492061851407781,
+          1.0669161119609707,
+          0.004341175011369744,
+          0.7612973911605408
+        ]
+      }
+    },
+    "n_transactions": 48374
+  },
+  "generator": {
+    "dataset": "rakshak_synthetic_healthy",
+    "marginals": {
+      "amount_log_sd": {
+        "column": "amount (non-refund rows)",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Currency-free. Directly comparable with the generator's lognormal sigma.",
+        "unit": "dimensionless (sd of ln amount)",
+        "value": 0.6464998126056163
+      },
+      "amount_p50": {
+        "column": "amount (non-refund rows)",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. LEVEL ONLY \u2014 not comparable across currency or merchant category.",
+        "unit": "source currency per transaction",
+        "value": 2779.7425000000003
+      },
+      "amount_p90_over_p50": {
+        "column": "amount (non-refund rows)",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Currency-free tail-shape statistic.",
+        "unit": "dimensionless ratio",
+        "value": 2.3092690642489684
+      },
+      "daily_count_fano_factor": {
+        "column": "timestamp.date",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. 1.0 for a Poisson process. Above 1.0 means over-dispersed.",
+        "unit": "dimensionless (variance / mean of daily counts)",
+        "value": 0.7649211657591892
+      },
+      "hour_of_day_mean": {
+        "column": "timestamp.hour",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Linear mean, not circular. Valid while the mass does not straddle midnight.",
+        "unit": "hour of day (0-23, local clock)",
+        "value": 15.595045074977296
+      },
+      "hour_of_day_sd_hours": {
+        "column": "timestamp.hour",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Population sd (ddof=0).",
+        "unit": "hours",
+        "value": 2.7191321334550036
+      },
+      "new_payer_frac": {
+        "column": "payer_id",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Distinct payers divided by transactions carrying a payer id.",
+        "unit": "fraction of transactions",
+        "value": 0.7550222413545702
+      },
+      "refund_rate": {
+        "column": "is_refund",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants.",
+        "unit": "fraction of transactions",
+        "value": 0.02196079782286679
+      },
+      "top_decile_payer_share": {
+        "column": "payer_id",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Share held by the busiest ceil(0.1 * 660) payers.",
+        "unit": "fraction of transactions",
+        "value": 0.25402195391952986
+      },
+      "txns_per_active_day_mean": {
+        "column": "timestamp.date",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Days with zero transactions are excluded; this is the velocity marginal.",
+        "unit": "transactions per active day",
+        "value": 2.4677667929106617
+      },
+      "weekday_volume_factor": {
+        "column": "timestamp.weekday",
+        "dataset": "rakshak_synthetic_healthy",
+        "n": 400,
+        "note": "Median across merchants. Transaction counts per weekday over the whole stream, normalised to mean 1.",
+        "unit": "dimensionless multiplier, Mon..Sun, mean 1 by construction",
+        "value": [
+          0.8975377976039116,
+          0.8863885182122317,
+          0.8953523052684773,
+          0.9435447023363858,
+          1.05,
+          1.1991722712921407,
+          1.1263289284245166
+        ]
+      }
+    },
+    "n_merchants": 400,
+    "n_transactions": 614297
+  },
+  "produced_by": "python -m rakshak.data.profile --seed 42",
+  "schema_version": 1,
+  "sources": {
+    "online_retail_ii": {
+      "licence": "CC BY 4.0",
+      "licence_url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+      "sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+      "source_page": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+      "source_url": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip"
+    }
+  },
+  "ticket": "T-0015"
+}

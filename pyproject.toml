@@ -1,0 +1,41 @@
+[project]
+name = "rakshak"
+version = "0.1.0"
+description = "Rakshak — post-onboarding merchant risk sentinel (Razorpay AI Buildathon 2026, Track 02)"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=15",
+    "scipy>=1.11",
+    "lightgbm>=4.3",
+    "scikit-learn>=1.4",
+    "pymoo>=0.6.2",
+    "matplotlib>=3.8",
+    # T-0015: UCI ships Online Retail II as .xlsx only. openpyxl is MIT —
+    # compatible with the permissive-licence-only constraint in CLAUDE.md.
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["results", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rakshak"]

@@ -8,8 +8,11 @@ SUMMARY:  Seven sections: HMM (forward/backward/Viterbi/Baum-Welch, all log-spac
           the cost matrix with sourced provisional values in INR, Bayes Minimum Risk plus the
           Bahnsen savings score, and the NSGA-II objective vector with the capacity constraint.
           Every symbol carries a unit. Validity ranges and numerical-stability notes included.
-          §5 cost values are PROVISIONAL — FR-020 sensitivity analysis is what defends them.
-OPEN:     Cost values provisional. K (state count) set empirically by BIC sweep in T-0004.
+          §5 was rewritten by T-0017 (2026-08-28): V_m is lifetime gross margin, L_m is
+          realised loss, every primitive carries a citation and a range, and the 400–600
+          asymmetry is a reported cross-check rather than a gate.
+OPEN:     Six §5 primitives remain marked ASSUMPTION with ranges; FR-020 sweeps them.
+          K (state count) set empirically by BIC sweep in T-0004.
 -->
 
 # 07 — Math
@@ -37,8 +40,8 @@ An equation without units is a bug that hasn't happened yet.
 | $C_a$ | cost of taking action a | INR | see §5 |
 | $B$ | review budget per period | analyst-hours | 400 – 800 |
 | $\tau$ | review duration per merchant | hours | 0.067 (≈4 min) |
-| $L_m$ | expected loss if merchant m is fraudulent and passed | INR | AOV-dependent |
-| $V_m$ | merchant lifetime value | INR | AOV × volume × margin |
+| $L_m$ | **realised** loss if merchant m is fraudulent and passed | INR | $r_{cb}(1+\varphi)G^{bad}_m$, §5 |
+| $V_m$ | merchant expected **lifetime gross margin** | INR | $g \cdot v_m \cdot \ell_m$, §5 |
 
 ---
 
@@ -137,32 +140,157 @@ Properties that make this the right answer to the cold-start objection:
 
 ---
 
-## 5. Cost matrix — PROVISIONAL
+## 5. Cost matrix — sourced, with ranges
 
-⚠️ **These are assumptions. FR-020's sensitivity analysis is what makes them defensible. State them as assumptions in the README and on camera.**
+> **AMENDMENT — two definitional fixes + cross-check demotion · dated 2026-08-28 · ticket T-0017.**
+> This section previously (a) defined $V_m$ as one decision window's MDR revenue, (b) defined
+> $L_m$ as gross volume transacted while in a bad state, and (c) closed with the instruction
+> *"Our cost matrix should reproduce roughly this ratio at typical merchant parameters. **If it
+> does not, the parameters are wrong — check this in T-0007.**"* All three are replaced below.
+> **The two definitional fixes are justified by the definitions measuring the wrong quantity,
+> and by nothing else.** They were written before the resulting ratio was computed, and the
+> ratio is not permitted to justify them retroactively. The (c) instruction is retired because,
+> followed literally, it means tuning parameters until a check passes — the identical practice
+> `T-0016` forbids for the generator, and worse here because `savings` is the headline metric.
+
+⚠️ **Several primitives below are still assumptions. They are marked `ASSUMPTION` with an
+explicit range. FR-020's sensitivity analysis is what makes the headline claim defensible, not
+the central values. State them as assumptions in the README and on camera.**
 
 Per merchant $m$ per decision period:
 
 | | True: healthy | True: fraudulent |
 |---|---|---|
-| **PASS** | 0 | $L_m$ — full fraud loss |
+| **PASS** | 0 | $L_m$ — realised fraud loss |
 | **REVIEW** | $c_{\text{rev}}$ | $c_{\text{rev}} + p_{\text{miss}} L_m$ |
 | **HOLD** | $c_{\text{fp}}(m)$ — churn cost | $\rho L_m$ — residual leakage |
 
-$$c_{\text{rev}} = \tau \cdot w_{\text{analyst}} \qquad c_{\text{fp}}(m) = P(\text{churn}\mid\text{hold}) \cdot V_m + c_{\text{support}}$$
+$$c_{\text{rev}} = \tau \cdot w_{\text{analyst}}$$
+$$c_{\text{fp}}(m) = P(\text{churn}\mid\text{hold}) \cdot V_m + c_{\text{support}}$$
 
-| Parameter | Provisional value | Source / basis |
+### Definitional fix 1 — $V_m$ is expected **lifetime** gross margin, not one window's revenue
+
+$$\boxed{\;V_m \;=\; g \cdot v_m \cdot \ell_m\;}$$
+
+| Symbol | Meaning | Unit |
 |---|---|---|
-| $\tau$ | 0.067 h (≈4 min) | Razorpay Engineering, Dec 2025 — stated per-review time |
-| $w_{\text{analyst}}$ | ₹600/h | Assumption. Indian risk-ops fully-loaded cost. **Flag as assumption.** |
-| $c_{\text{rev}}$ | ≈ ₹40 | Derived |
-| $P(\text{churn}\mid\text{hold})$ | 0.35 | Assumption informed by the public-review pattern. **Flag as assumption.** |
-| $c_{\text{support}}$ | ₹500 | Assumption — escalation handling |
-| $p_{\text{miss}}$ | 0.15 | Analyst miss rate. Assumption. |
-| $\rho$ | 0.10 | Residual leakage before a hold takes effect |
-| $L_m$ | AOV × ramp multiplier × exposure window | Typology-dependent, from the generator |
+| $g$ | platform gross margin per rupee of processed volume | dimensionless |
+| $v_m$ | merchant's expected **monthly** gross processed volume | INR / month |
+| $\ell_m$ | expected **remaining** merchant lifetime | months |
 
-**The asymmetry that motivates the whole project:** Indian payments commentary estimates ₹400–600 lost to falsely declined legitimate orders for every ₹100 saved by preventing fraud. Our cost matrix should reproduce roughly this ratio at typical merchant parameters. **If it does not, the parameters are wrong — check this in T-0007.**
+**Why the old definition was wrong, independent of any ratio.** A merchant who is held and
+churns does not cost the platform one 30-day window's margin. They cost every rupee of margin
+the platform would have earned from them for the rest of their life on the platform. The
+previous form, $V_m = \texttt{MDR_RATE} \times$ window volume (`config.py:174`), is the margin
+on a single window — it is a *revenue rate*, and $c_{\text{fp}}$ needs a *stock*. Multiplying a
+rate by a lifetime is what converts one into the other.
+
+**A second error sits inside the first: `MDR_RATE = 0.02` is a price, not a margin.** 2% is what
+the merchant *pays*. Almost all of it leaves again as issuer interchange, scheme fees and GST.
+The platform's own gross margin on a rupee of TPV is roughly **10 basis points**, not 200 — see
+$g$ below. Using the merchant-facing MDR as the platform's gross margin overstates $V_m$ by
+about 20×. Both errors were present at once and they pull in opposite directions, which is part
+of why neither was visible in the aggregate.
+
+### Definitional fix 2 — $L_m$ is realised loss, not turnover
+
+$$\boxed{\;L_m \;=\; r_{\text{cb}} \cdot (1 + \varphi) \cdot G^{\text{bad}}_m\;}$$
+
+| Symbol | Meaning | Unit |
+|---|---|---|
+| $G^{\text{bad}}_m$ | gross volume transacted by $m$ while in a bad state | INR |
+| $r_{\text{cb}}$ | **realisation rate** — fraction of that volume returning as chargeback, confirmed-fraud write-off or unrecovered negative balance | dimensionless |
+| $\varphi$ | ancillary loading — scheme dispute fees, representment handling, monitoring-programme penalties | dimensionless |
+
+**Why the old definition was wrong, independent of any ratio.** The previous form counted the
+merchant's **gross turnover while bad** as the loss. Turnover is not loss. A bust-out merchant
+who processes ₹10,00,000 and has ₹50,000 charged back has cost the acquirer ₹50,000 plus fees,
+not ₹10,00,000 — the remainder settled against genuine purchases or was recovered from the
+merchant's own reserve. Charging full turnover inflates $L_m$ by more than an order of magnitude
+and makes *every* policy score negative savings, both perfect-foresight oracles included, which
+is exactly what T-0006 observed (knapsack oracle −0.678 against hold-everything's +0.573). A
+ceiling beaten by a trivial policy is a symptom of a mis-specified loss, not of a bad oracle.
+
+### Primitives — one citation and one range each
+
+Source classes: **[S]** sourced, cited below · **[D]** derived from other rows · **[A]**
+`ASSUMPTION` — no public source found, range stated.
+
+| Parameter | Central | Plausible range | Class | Source / basis |
+|---|---|---|---|---|
+| $\tau$ | 0.067 h (≈4 min) | 0.05 – 0.12 h | [S] | Razorpay Engineering, Dec 2025 — stated per-review time. Cross-checks against the 700–800 analyst-hours/month figure in `00-charter.md §1`. |
+| $w_{\text{analyst}}$ | ₹600 / h | ₹300 – ₹700 / h | [S+A] | PayScale India *Fraud Analyst* ₹4.19 L/yr, Glassdoor India ₹4.48 L/yr (2026) → ₹210–225/h at 2,000 h/yr. The fully-loaded multiplier of 1.5–1.8× (benefits, seat, QA, supervision) is **[A]**. The shipping default is deliberately held at the **upper** end of the band: an expensive analyst makes REVIEW look costly, which is conservative *against* Rakshak's own capacity story. |
+| $c_{\text{rev}}$ | ≈ ₹40 | ₹15 – ₹84 | [D] | $\tau \cdot w_{\text{analyst}}$. |
+| $g$ | 0.0010 (10 bps of TPV) | 0.0008 – 0.0015 | [S] | Razorpay FY24: revenue ≈ ₹2,501 Cr against annualised TPV ≈ US$180 bn → take rate ≈ **0.27% of TPV**; gross profit ₹906 Cr FY24 (₹1,277 Cr FY25) → gross margin ≈ **36% of revenue**. $g \approx 0.0027 \times 0.36$. Secondary sources reporting company disclosures, not an audited filing — flagged as such. |
+| $v_m$ | per merchant | — | [D] | From the generator's merchant volume profile. Not a constant. |
+| $\ell_m$ | 30 months | 18 – 48 months | [A] | **No public disclosure of Indian payment-aggregator merchant retention exists.** The range brackets a 2.1–5.6% monthly churn rate. This is the least-defensible number in the file and FR-020 must sweep it. |
+| $P(\text{churn}\mid\text{hold})$ | 0.35 | 0.15 – 0.60 | [A] | Informed by the public-review pattern — frozen settlements are the most common Razorpay complaint (`00-charter.md §1`). A pattern, not a measurement. |
+| $c_{\text{support}}$ | ₹500 | ₹200 – ₹1,500 | [A] | Escalation handling on a held merchant. Loosely bounded above by published dispute-handling fees — Visa VAMP's excessive tier charges US$8 ≈ ₹700 per dispute from 1 Apr 2026. |
+| $r_{\text{cb}}$ | 0.05 | 0.02 – 0.20 | [A], bracketed by [S] | **Floor anchors, both cited.** Nilson puts *all-merchant* card fraud at **6.43¢ per US$100** (0.064% of volume, 2024) — a population floor far below any individual bad merchant. Card-scheme monitoring programmes define where a merchant becomes formally abnormal: Mastercard ECM **1.5%** of transactions, HECM **3.0%**; Visa VAMP "excessive" **1.5%** from 1 Apr 2026. A merchant Rakshak exists to catch is by construction above those, so the range starts at 2%. **Ceiling anchor:** a terminal bust-out window can approach total dispute, hence 20%. The central 0.05 sits just above the scheme-excessive boundary. **It was chosen from these anchors before the resulting FP-to-loss ratio was computed.** |
+| $\varphi$ | 0.35 | 0.20 – 0.50 | [A], bracketed by [S] | LexisNexis Risk Solutions *True Cost of Fraud* puts total cost at **3.84× face value in India (2021)** and **3.95× in APAC (2023)** — but that multiplier includes internal labour and recovery effort, which this cost matrix already charges separately via $c_{\text{rev}}$ and $c_{\text{support}}$. Double-counting it would be an error, so $\varphi$ covers only scheme dispute fees, representment handling and monitoring penalties. The LexisNexis figure is therefore a **hard upper bound**, not the value. |
+| $p_{\text{miss}}$ | 0.15 | 0.05 – 0.30 | [A] | Analyst miss rate on a reviewed-and-cleared merchant. No public source. |
+| $\rho$ | 0.10 | 0.05 – 0.25 | [A] | Residual leakage between the hold decision and settlement actually stopping. |
+| $L_m$ | per merchant | — | [D] | $r_{\text{cb}}(1+\varphi)\,G^{\text{bad}}_m$; typology-dependent through $G^{\text{bad}}_m$. |
+| $V_m$ | per merchant | — | [D] | $g \, v_m \, \ell_m$. |
+
+**Citations — all retrieved 2026-08-28. Re-verify before the video.**
+
+1. Nilson Report, *Card Fraud Losses Worldwide — 2024*: 6.43¢ per US$100 (down from 6.58¢),
+   US$33.41 bn total. <https://nilsonreport.com/articles/card-fraud-losses-worldwide-2024/>
+2. Card-scheme monitoring thresholds — Mastercard ECM 1.5% / 100 cases, HECM 3.0% / 300 cases;
+   Visa VAMP replaced VDMP and VFMP on 1 Apr 2025, and its "excessive" tier drops to 1.5% with
+   a US$8-per-dispute fee on 1 Apr 2026.
+   <https://www.chargeflow.io/blog/chargeback-threshold-limits> ·
+   <https://solidgate.com/blog/monitoring-programs/>
+3. LexisNexis Risk Solutions, *True Cost of Fraud — Asia Pacific*: S$3.95 per S$1 (2023 study,
+   released Apr 2024); India US$3.84 per US$1 (2021 study).
+   <https://risk.lexisnexis.com/global/en/about-us/press-room/press-release/20240429-tcof-apac>
+4. Razorpay published pricing — 2% + GST domestic standard, 3% premium/international.
+   <https://razorpay.com/blog/razorpay-payment-gateway-pricing-explained/>
+5. Razorpay FY24 financials — revenue ₹2,501 Cr, gross profit ₹906 Cr (FY25 ₹1,277 Cr),
+   annualised TPV ≈ US$180 bn.
+   <https://entrackr.com/fintrackr/razorpay-payment-gateway-biz-crosses-rs-2000-cr-revenue-in-fy24-pat-soars-5x-7370662>
+   · <https://inc42.com/company/razorpay/financials/>
+6. Analyst compensation — PayScale India *Fraud Analyst* ₹4.19 L/yr; Glassdoor India ₹4.48 L/yr
+   (2026). <https://www.payscale.com/research/IN/Job=Fraud_Analyst/Salary> ·
+   <https://www.glassdoor.co.in/Salaries/fraud-analyst-salary-SRCH_KO0,13.htm>
+7. RBI *Annual Report* — card/internet and digital-payment fraud counts and amounts, FY24–FY26.
+   Used as a directional check that digital-payment fraud in India is material and volatile
+   year on year, **not** as a per-merchant rate.
+8. Bahnsen, Aouada & Ottersten (2015) *Example-Dependent Cost-Sensitive Decision Trees*;
+   (2016) *Feature Engineering Strategies for Credit Card Fraud Detection* — the savings score
+   and the example-dependent cost-matrix formulation used in §6.
+9. Elkan (2001) *The Foundations of Cost-Sensitive Learning* — the optimal threshold is a
+   function of the cost matrix, not a hyperparameter.
+
+### The 400–600 asymmetry — a reported cross-check, **not a gate**
+
+Indian payments commentary estimates **₹400–600 lost to falsely declined legitimate orders for
+every ₹100 saved by preventing fraud** (`00-charter.md §1`). It is the asymmetry that motivates
+the project.
+
+**It is commentary. It is not a measurement and it carries no per-primitive provenance.** The
+band is therefore demoted from a gate to a **cross-check that is computed and reported, never
+closed.**
+
+The obligation, binding on T-0007a and T-0011:
+
+1. **Compute** the FP-cost-per-₹100-of-fraud-loss ratio that the cited primitives above produce,
+   at central values and across the stated ranges.
+2. **Report it** in `results/` and in the README, with its inputs.
+3. **State any divergence from 400–600 rather than closing it.** If the sourced primitives
+   produce 280, the repo says "our sourced primitives produce 280 against a commentary figure of
+   400–600, and here is why the two differ." It does **not** move a primitive to reach 400.
+4. Any primitive that changes after today changes because its **source** changed, and the change
+   is recorded in `LOGBOOK.md` with the new source. Never because of the ratio.
+
+For orientation only: under the *old* definitions the ratio was **13.4 per ₹100** (T-0006). Both
+fixes move it upward by construction — $L_m$ falls by roughly
+$1/[r_{\text{cb}}(1+\varphi)] \approx 15\times$ and $V_m$ rises by roughly
+$g\,\ell_m / \texttt{MDR_RATE} \approx 1.5\times$ — so a central figure in the low hundreds is
+expected, with the stated ranges spanning roughly 70 to 700. **That expectation is written down
+here so that a measured value far from it is visible as a surprise rather than absorbed
+silently. It is not a target and nothing may be tuned toward it.**
 
 ---
 

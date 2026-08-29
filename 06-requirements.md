@@ -9,7 +9,9 @@ SUMMARY:  21 FRs and 9 NFRs, each with GIVEN/WHEN/THEN acceptance. Headline gate
           foresight knapsack oracle; frozen eval defined in section 4 BEFORE any model exists.
           FR-005 mandates reporting degraded recall on the slow-ramp typology. Non-goals listed
           at the end. Every requirement traces to a clause in the Track 02 published bar.
-OPEN:     Cost matrix values in 07-math.md §5 are provisional pending FR-020 sensitivity analysis.
+OPEN:     07-math.md §5 was rewritten by T-0017 (2026-08-28); six primitives remain marked
+          ASSUMPTION with ranges and FR-020 sweeps them. FR-020 re-aimed and FR-021 promoted
+          SHOULD -> MUST in the same ticket.
 -->
 
 # 06 — Requirements
@@ -163,6 +165,66 @@ FR-013 | HMM recovers injected states on data with known ground-truth state path
   NOTE:        If this fails by Sat 29 Aug EOD, trigger kill criterion K1 and DESCEND.
 ```
 
+> ### AMENDMENT — FR-013 metric suite · dated 2026-08-28 · ticket T-0004b · ADR-0005
+>
+> **The original text above is left exactly as written and is NOT superseded in spirit.**
+> This amendment was made **AFTER the original gate failed**, and that sequence is stated here
+> deliberately so that a panel reading this repo can see precisely what was changed and when.
+> The original ARI > 0.5 criterion is retired as **unreachable on these emissions**, on the
+> evidence of a ceiling that was measured *before* the metric was touched (see below).
+>
+> **What failed.** T-0004 measured four-way state-recovery ARI at 0.091; after the T-0003b
+> onset-window fix, 0.147 (seed 42). Kill criterion K1 fired.
+>
+> **Why the index, not only the model, was wrong.** Romano, Vinh, Bailey & Verspoor,
+> *Adjusting for Chance Clustering Comparison Measures*, JMLR 17 (2016),
+> https://arxiv.org/abs/1512.01286, state the usage guideline verbatim:
+>
+> > "ARI should be used when the reference clustering has large equal sized clusters; AMI
+> > should be used when the reference clustering is unbalanced and there exist small clusters."
+>
+> Rakshak's reference partition of window states is HEALTHY 91.3% / FRAUD 4.9% / RAMP 2.3% /
+> DORMANT 1.5% (measured, seed 42, 500 merchants x 39 windows). That is the textbook
+> unbalanced-with-small-clusters case, so **FR-013 as originally written specifies the index
+> its own authors' successor paper says not to use for data of this shape.** ARI is
+> pair-counting based, so the ~83% of pairs that are HEALTHY-HEALTHY dominate the score and
+> the three states the product exists to find barely move it.
+>
+> **Amended acceptance criterion.** The gate is the *suite* below, every row reported together,
+> every row reported with its oracle-parameterised ceiling:
+>
+> | Metric | Role | Citation |
+> |---|---|---|
+> | **AMI** (four-way) | Primary partition index | Romano et al., JMLR 17 (2016) |
+> | **ARI** (four-way) | **RETAINED PERMANENTLY.** Reported as known-pessimistic under this skew | Hubert & Arabie (1985) |
+> | Per-state recall, reported per state | Stops the 90%-mass class setting the headline | balanced-accuracy convention |
+> | Macro-average recall | Balanced accuracy | as above |
+> | Binary PR-AUC on "window is not healthy", with its base rate | Matches the decision the product ships and the cost layer consumes | Saito & Rehmsmeier, PLOS ONE 10(3):e0118432 (2015) |
+> | Median detection lag, in windows | The product claim is earliness; a metric ignoring time cannot measure it | 07-math.md §8 |
+> | **Oracle-parameterised ceiling for every row above** | Non-negotiable #1 | T-0004 precedent |
+>
+> **The two conditions that make this an amendment rather than a goalpost move, both binding:**
+>
+> 1. **ARI and the oracle ceiling are retained and reported permanently**, beside every new
+>    number, in the README, in the results tables and in the video. The oracle-parameterised
+>    HMM *is* the fully-supervised MLE estimator (Rabiner 1989 §III.C), so its ARI of **0.404**
+>    is the ceiling of this entire model class — measured in T-0004, before this amendment
+>    existed. Any change that removes, buries or de-emphasises either number is forbidden.
+> 2. **RAMP's weakness is published, not smoothed.** RAMP sits 1.19 sigma from HEALTHY and
+>    oracle RAMP recall is 0.343. Rakshak's early-warning state is Rakshak's weakest state and
+>    the results table says so in those words. Same discipline as the SLOW_RAMP typology:
+>    do not tune it away, do not hide it.
+>
+> **What this amendment does NOT do.** It does not lower a threshold to a number already
+> achieved. It adds detection lag, which is *more* demanding than the original gate. It does
+> not drop SLOW_RAMP from any headline number. And it does not claim four-way ARI of 0.5 is
+> reachable — the oracle proved it is not, before the survey that recommended this change was
+> written.
+>
+> **Verified by:** `tests/test_hmm_recovery_fullscale.py`, `tests/test_hmm_recovery.py`.
+> Metrics implemented in `src/rakshak/eval/metrics.py::state_recovery_report`.
+> Measurements and per-item deltas: `logbook-entries/T-0004b.md`.
+
 ```
 FR-014 | Every flagged merchant receives a human-readable reason derived from the Viterbi path
   Priority:    MUST
@@ -227,21 +289,48 @@ FR-019 | Every headline number reported in two vocabularies
 ```
 
 ```
-FR-020 | Sensitivity analysis over the cost matrix
+FR-020 | Sensitivity of the HEADLINE CLAIM to the cost asymmetry
   Priority:    SHOULD
-  Rationale:   The cost values are assumptions and the panel will say so first if we do not
-  Acceptance:  GIVEN the false-positive cost varied over ±50% THEN the resulting change in
-               optimal thresholds and in savings is reported as a table or figure
+  Rationale:   The cost primitives are sourced estimates with real uncertainty (07-math.md §5),
+               so the >=20% margin in NFR-001 is a function of the false-positive-to-fraud-loss
+               asymmetry, not a constant. The panel will say so first if we do not.
+  Acceptance:  GIVEN the FP-cost-per-100-of-fraud-loss asymmetry swept across the full plausible
+               range implied by the per-primitive ranges in 07-math.md §5
+               THEN results/sensitivity.md reports, as a table AND a figure:
+                 (a) the relative savings improvement over the static rule engine at every
+                     swept point, not only at the central values;
+                 (b) THE BOUNDARY ASYMMETRY AT WHICH THE >=20% CLAIM STOPS HOLDING, stated as a
+                     number, or an explicit statement that it holds across the whole range;
+                 (c) the FP-cost-per-100 ratio the cited primitives actually produce, beside the
+                     400-600 commentary band, with any divergence stated and NOT closed;
+                 (d) the change in optimal thresholds over the same sweep.
   Verified by: results/sensitivity.md
+  NOTE:        00-charter.md §2 was amended on 2026-08-28 (T-0017) to make the headline claim
+               explicitly conditional on the cited central asymmetry, BEFORE this sweep ran.
+               A conditional result is therefore pre-registered, not a post-hoc caveat.
+               No primitive may be moved to change where the boundary falls.
 ```
 
 ```
 FR-021 | Decision layer additionally validated on BAF
-  Priority:    SHOULD
-  Rationale:   ADR-0007 — provenance credibility
+  Priority:    MUST  (promoted SHOULD -> MUST on 2026-08-28, ticket T-0017)
+  Rationale:   ADR-0007 — provenance credibility. Promotion rationale: CLAUDE.md non-negotiable
+               #3 mandates the VERBATIM sentence "The decision layer is additionally validated
+               on BAF (Feedzai, NeurIPS 2022), a public benchmark derived from real bank data."
+               The repo cannot currently back that sentence; results/summary.md already prints
+               it with an embarrassed parenthetical. There are exactly two honest options:
+               the validation is a MUST, or the sentence is struck from CLAUDE.md, the README
+               and the video script. Leaving a SHOULD-priority requirement underwriting a
+               verbatim honesty claim is the third option and it is not available.
+               It is a MUST. Owned by T-0012 (promoted to MUST in the same re-plan).
   Acceptance:  GIVEN the BAF Base variant THEN the cost/threshold layer is run against it and
                savings are reported on its native temporal split
   Verified by: results/baf_validation.md
+  NOTE:        If T-0012 cannot land before the Tue 1 Sep freeze, the fallback is NOT to
+               downgrade this requirement — it is to strike the verbatim sentence everywhere it
+               appears and say plainly that the decision layer was validated on synthetic data
+               only. Editing the project's own honesty statement downward to fit a schedule is
+               forbidden; deleting a claim the repo cannot back is not.
 ```
 
 ---

@@ -5,9 +5,13 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Data (generator output, downloads) — manifests only, per CLAUDE.md
+# Data (generator output, downloads) — manifests only, per CLAUDE.md.
+# git does not descend into an excluded directory, so each level must be
+# re-included explicitly before a negation inside it can match (T-0015).
 data/*
-!data/**/*.manifest.json
+!data/external/
+data/external/*
+!data/external/*.manifest.json
 
 # Caches
 .pytest_cache/

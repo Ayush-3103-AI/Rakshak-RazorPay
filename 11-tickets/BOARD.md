@@ -20,21 +20,21 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | T-0004b | K1 remediation: FR-013 amendment + label-weighted HMM | done, gate still failing |
 | [T-0005](T-0005.md) | Eval harness: splits, metrics, oracle | done |
 | [T-0006](T-0006.md) | Baselines: rule engine, LightGBM, random | done |
+| [T-0017](T-0017.md) | Spec reconciliation + pre-registration | done — 2026-08-28. §2/§7 amended pre-registration, `07-math.md` §5 redefined, FR-020 re-aimed, FR-021 → MUST |
+| [T-0006b](T-0006b.md) | HMM scorer: filtered posterior → risk + `flag_day` | done — 2026-08-28. `hmm` in `MODEL_REGISTRY`; forward-only `flag_day` proven by a truncation test with a negative control. **No verdict rendered — see K2 note below.** |
+| [T-0007a](T-0007a.md) | Cost redefinition + oracle-dominance invariant | done — 2026-08-28. `L_m`/`V_m` redefined, `MDR_RATE` deleted, invariant wired as a harness precondition. **`savings` is readable for the first time.** |
+| [T-0007b](T-0007b.md) | BMR policy + capacity + cost-asymmetry sweep | done — 2026-08-29. `budget_policy` deleted; BMR is the scored policy; sweep range 2.5–530.3 derived from `COST_PRIMITIVE_RANGES`. **HMM margin over `rules` crosses zero between 18.5 and 36.2 — the losing half ships.** No verdict rendered. |
+| [T-0015](T-0015.md) | Public data + calibration profile + **gap diff** | done — 2026-08-29. Online Retail II (CC BY 4.0) procured, hashed, manifested. `calibration_profile.json` + `calibration_gap.md` committed. **Gate fired: recommends CUT on T-0016.** |
 
 ### Remaining
 
 | ID | Title | Day | Risk | Cuttable | Blocked by |
 |---|---|---|---|---|---|
-| [T-0017](T-0017.md) | Spec reconciliation + pre-registration | Sat 29 | low to build, **high if skipped** | **no — it is the pre-registration** | — |
-| [T-0006b](T-0006b.md) | **HMM scorer:** filtered posterior → risk + `flag_day` | Sat 29 | **highest remaining in the project** | **no — spine. This is the proposal.** | — |
-| [T-0007a](T-0007a.md) | Cost redefinition + oracle-dominance invariant | Sat 29 | **high — primary metric unreadable until this lands** | **no** | T-0017 |
-| [T-0007b](T-0007b.md) | BMR policy + capacity + cost-asymmetry sweep | Sun 30 | medium | **no** | T-0007a |
-| [T-0015](T-0015.md) | Public data + calibration profile + **gap diff** | Sun 30 | low tech, high scope | **no — it is the T-0016 decision gate** | — |
 | [T-0012](T-0012.md) | BAF validation | Sun 30 | low to build, **provenance-critical** | **no — promoted to MUST** | T-0015, T-0007b |
 | [T-0011](T-0011.md) | Verdict: ablations, sweep boundary, lag probe | Mon 31 | **A-005 verdict, K2** | **no** | T-0006b, T-0007b |
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
-| [T-0016](T-0016.md) | Generator recalibration | **conditional** | **high — invalidates every existing number** | **gated on T-0015's diff; expected to be cut** | T-0015 |
-| [T-0014](T-0014.md) | Read-only results viewer | **Tue 2 – Wed 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
+| [T-0016](T-0016.md) | Generator recalibration | **conditional — GATE FIRED** | **high — invalidates every existing number** | **T-0015's diff recommends CUT; awaiting the user's decision** | T-0015 — closed |
+| [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
 
 ### Published to GitHub Issues — 2026-08-28
 
@@ -84,8 +84,10 @@ zero and never silently missing.
 
 ## Countdown — revised 2026-08-28
 
-`CLAUDE.md` and the previous version of this table both called the freeze **"Mon 1 Sep."**
-**1 Sep 2026 is a Tuesday.** Corrected here; T-0017 fixes `CLAUDE.md`.
+Both `CLAUDE.md` and the previous version of this table dated the freeze to a **Monday,**
+1 Sep 2026. **1 Sep 2026 is a Tuesday.** Corrected here on 2026-08-28; T-0017 corrected
+`CLAUDE.md` and `00-charter.md` the same day. The same off-by-one had propagated into the
+video window, which is **Wed 2 – Thu 3 Sep**, review **Fri 4 Sep**, submit **Sat 5 Sep**.
 
 | Date | Tickets | Milestone |
 |---|---|---|
@@ -94,16 +96,14 @@ zero and never silently missing.
 | Sun 30 Aug | T-0007b → T-0015 → T-0012 | Sweep machinery, real data procured, decision layer validated on BAF. |
 | Mon 31 Aug | T-0011 | **K2's verdict**, with its cost-asymmetry boundary. |
 | **Tue 1 Sep** | T-0013, then **code freeze** | README numbers final, every one with provenance. |
-| Tue 2 – Wed 3 Sep | T-0014 | Read-only viewer + video. Outside the build window. |
+| Wed 2 – Thu 3 Sep | T-0014 | Read-only viewer + video. Outside the build window. |
 
 **There is no float.** If anything slips, T-0011 compresses before T-0013 does — T-0013 is
 the differentiator and the artifact the panel actually reads.
 
----|---|---|
-| Sat 29 Aug | T-0001 → T-0004 | HMM must recover known states by EOD. |
-| Sun 30 Aug | T-0005 → T-0008 | Baselines + eval harness + cost layer. |
-| Mon 31 Aug – 1 Sep | T-0009 → T-0014 | Frontier, ablations, BAF validation, README. |
-| Mon 1 Sep EOD | — | **Code freeze.** `make eval` green. README numbers final. |
+*(A stale duplicate of the pre-revision countdown sat here and was removed by T-0017 on
+2026-08-28: it still routed through the cut tickets T-0008–T-0010 and still dated the freeze to
+a Monday. The revised countdown above is the only one.)*
 
 
 ---
@@ -150,7 +150,7 @@ T-0004b's 0.021-vs-0.091 per-segment result.
 
 They are unscheduled rather than slotted because **T-0016 invalidates every existing number** and
 forces a full re-measurement, and because T-0007 (cost matrix) currently blocks the primary
-metric and must come first. If they cannot land before the Mon 1 Sep freeze, ship with the
+metric and must come first. If they cannot land before the Tue 1 Sep freeze, ship with the
 calibration gap documented as a limitation — a partially recalibrated generator is worse than an
 honestly uncalibrated one.
 
@@ -238,10 +238,55 @@ T-0015 and T-0016 were unscheduled. The revision splits them at the evidence bou
   window straddling onset holds up to 6 post-onset days and window-start-vs-onset gives
   exactly −1. T-0011's probe now confirms **window aliasing** first and only escalates to a
   leakage investigation if that fails to explain it.
-- **The freeze date.** 1 Sep 2026 is a Tuesday, not a Monday.
+- **The freeze date.** 1 Sep 2026 is a Tuesday, not a Monday. T-0017 corrected it in
+  `CLAUDE.md` and `00-charter.md` on 2026-08-28, and found the same off-by-one in the video
+  window (Wed 2 – Thu 3 Sep, review Fri 4 Sep, submit Sat 5 Sep).
 
 ### Unchanged, deliberately
 
 RAMP separability, SLOW_RAMP and ramp amplitude stay untouched. The ARI figure and the
 0.404 oracle ceiling stay reported permanently. Both strict `xfail`s stay. Nothing is tuned
 to make a gate pass — including the 400–600 cross-check.
+
+
+---
+
+## Session close — 2026-08-29 (T-0007b + T-0015, run in parallel)
+
+Both tickets met every `Done when` clause. Full `pytest` exit 0 with the two strict `xfail`s
+intact, `ruff` clean, `make eval` 16.3 s against NFR-004's 15-minute budget (K3 comfortable).
+
+**T-0016's gate has fired and the recommendation is CUT.** Not because the divergence is large
+but because one divergence is **structural**: the generator's `daily_count_fano_factor` is 1.0
+*by construction* (`rng.poisson` ⇒ variance = mean) against a real 12.25. No parameter value
+closes it; only a different emission process does, which would invalidate K1, the 0.404 oracle
+ceiling and every baseline row. That is not the cheap parameter swap the *divergence small*
+branch assumed. The decision is the user's and is recorded at the top of `STATE.md`.
+
+**T-0012 is now the critical path and it is blocked on a Kaggle credential, not on code.** BAF
+is Kaggle-only; the downloader is built and raises rather than fabricating. FR-021 is a promoted
+MUST with no data behind it until a token exists.
+
+### Four spec defects raised, not patched around
+
+1. **T-0007b re-scoped T-0007a's oracle-dominance invariant in code.** Defensible — T-0007a
+   predicted it in writing in `tests/test_cost.py`'s header before the session — and disclosed in
+   three artifacts, with no constant moved and no sweep point dropped. But `CLAUDE.md` says raise,
+   don't patch. Needs a dated amendment to `T-0007b.md` or a revert.
+2. **T-0015's `Done when` ("nothing under `data/` is committed") contradicts its own build
+   section** (a committed manifest at `data/external/*.manifest.json`). Code took the
+   manifest-committed reading; amend the clause to "no dataset payload".
+3. **FR-020 requires `sensitivity.md` as a table AND a figure.** Tables complete, **figure has no
+   owner** — T-0010 owned figures and was cut. Assign or strike; silently unmet is not an option.
+4. **ADR-0001 … ADR-0007 are cited across the repo and none exist as files.** Only ADR-0008 does.
+   Same class as the missing `09-interfaces.md`.
+
+### The finding that outranks the rest
+
+**Under the BMR policy `random` scores +0.6929 savings against `rules`' +0.6980, while ranking at
+PR-AUC 0.1651 — this split's prevalence.** The cost matrix earns almost all of the savings level,
+not detection. `07-math.md` §6's AP-06 guard has arrived as a measurement. **T-0011 must report
+savings relative to the `random` floor, never in absolute terms**, and no headline may quote
+savings without PR-AUC beside it. The BMR policy also reversed the HMM/baseline ordering on
+savings — that is an explanation of the earlier top-K penalty, **not** a model improvement:
+PR-AUC and Brier did not move.
