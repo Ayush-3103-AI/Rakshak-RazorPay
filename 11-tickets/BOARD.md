@@ -25,12 +25,12 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0007a](T-0007a.md) | Cost redefinition + oracle-dominance invariant | done — 2026-08-28. `L_m`/`V_m` redefined, `MDR_RATE` deleted, invariant wired as a harness precondition. **`savings` is readable for the first time.** |
 | [T-0007b](T-0007b.md) | BMR policy + capacity + cost-asymmetry sweep | done — 2026-08-29. `budget_policy` deleted; BMR is the scored policy; sweep range 2.5–530.3 derived from `COST_PRIMITIVE_RANGES`. **HMM margin over `rules` crosses zero between 18.5 and 36.2 — the losing half ships.** No verdict rendered. |
 | [T-0015](T-0015.md) | Public data + calibration profile + **gap diff** | done — 2026-08-29. Online Retail II (CC BY 4.0) procured, hashed, manifested. `calibration_profile.json` + `calibration_gap.md` committed. **Gate fired: recommends CUT on T-0016.** |
+| [T-0012](T-0012.md) | BAF validation | done — 2026-08-29. BAF Base fetched (558 MB, SHA-256 manifested), decision layer run on BAF's **native** month split, month 7 reported. **FR-021 met — `CLAUDE.md`'s mandated sentence is backed and the apologetic parenthetical is gone.** |
 
 ### Remaining
 
 | ID | Title | Day | Risk | Cuttable | Blocked by |
 |---|---|---|---|---|---|
-| [T-0012](T-0012.md) | BAF validation | Sun 30 | low to build, **provenance-critical** | **no — promoted to MUST** | T-0015, T-0007b |
 | [T-0011](T-0011.md) | Verdict: ablations, sweep boundary, lag probe | Mon 31 | **A-005 verdict, K2** | **no** | T-0006b, T-0007b |
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
 | [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
@@ -338,3 +338,58 @@ Kaggle-gated). No README or video line may cite these as shipped.
   contract. The contract actually lives in `eval/harness.py`'s module docstring. Write the file or
   stop pointing at it.
 - **`pymoo` is declared in `pyproject.toml`** for T-0009, which was cut. Remove it or justify it.
+
+
+---
+
+## T-0012 closed — 2026-08-29. FR-021 is met.
+
+BAF Base (1,000,000 rows) fetched from Kaggle, hashed, manifested. The decision layer ran against
+it on **BAF's own temporal split** — train months 0-5, early-stop on 6, **month 7 reported**
+(96,843 applications, 1.47% prevalence). Full run: **16 seconds**. `results/baf_validation.md`.
+
+| model | savings | PR-AUC | precision@K | Brier |
+|---|---|---|---|---|
+| random | -28.2169 | 0.0143 | 0.0137 | 0.3340 |
+| credit_risk_score | -5.2810 | 0.0403 | 0.0560 | 0.3200 |
+| gbdt | **+0.0294** | **0.2179** | **0.1436** | **0.0129** |
+
+`gbdt` is the only positive model, **at every one of the ten swept asymmetries** — the ordering
+is not an artefact of one cost matrix.
+
+**But no swept point reaches the operating regime this project reports on.** BAF's native
+asymmetry is **61,368** and its swept range is **5,497-519,634**, against the synthetic split's
+**47.5**. That is the unit assumption (credit limits of 190-2000 against absolute INR support and
+review costs), not a property of BAF. In that corner the correct policy is to hold almost nobody
+and BMR does exactly that. **The review-versus-hold trade-off at this project's own asymmetry is
+validated by no public dataset available to it.**
+
+### The finding that cuts back at the synthetic split
+
+On the synthetic split `random` scored **+0.6929** against `rules`' **+0.6980** — within 0.0051
+— which is why `results/summary.md` says the cost matrix, not detection, earns the savings level
+(AP-06). **On BAF at 1.47% prevalence `random` scores −28.2169.**
+
+That points at the generator's **20% merchant fraud rate**, not at the savings metric. At 20%
+prevalence a random policy hits enough true positives to look competent; at 1.5% it cannot. The
+AP-06 warning stands — savings must never be quoted without PR-AUC beside it — but its severity
+on the synthetic split is substantially an artefact of a prevalence the generator inflated on
+purpose for per-typology sample size. **T-0011 must state both halves.**
+
+### What T-0012 does NOT validate, stated in the results file
+
+BAF is account-opening applications with **no sequences**, so the HMM cannot run there and does
+not. And the native asymmetry reads **61,368** against the synthetic split's 47.5 — that is the
+unit assumption (BAF credit limits of 190-2000 against absolute INR support and review costs),
+not a property of BAF. In that corner the correct policy is to hold almost nobody and BMR does
+exactly that. **The balanced regime where REVIEW and HOLD genuinely trade off is not validated by
+any public dataset available to this project.**
+
+### Two defects fixed en route
+
+- **Kaggle changed its token format.** The T-0015 downloader spoke only the legacy
+  `kaggle.json` username/key Basic auth; Kaggle now mints opaque `KGAT_` bearer tokens.
+  `data.download.kaggle_auth` now handles both, preferring bearer.
+- **`src/rakshak/data/` had never been linted.** `pyproject.toml`'s `extend-exclude` read
+  `["results", "data"]`, and unanchored `"data"` matched the source package as well as the
+  git-ignored data directory. Now `["/results", "/data"]`. Nine real lint errors were hiding.

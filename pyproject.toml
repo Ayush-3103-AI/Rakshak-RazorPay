@@ -24,10 +24,20 @@ dev = ["pytest>=8", "ruff>=0.6"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["results", "data"]
+# Anchored to the repo root with a leading slash. Unanchored, "data" also matched
+# src/rakshak/data/, silently excluding that whole package from linting (found 2026-08-29).
+extend-exclude = ["/results", "/data"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# profile.py embeds the dataset survey as a markdown table. Markdown table rows are one
+# row per line by definition and cannot be wrapped without breaking the table. E501 is
+# waived for this file only, for that constant only in practice.
+# Upgrade path: move SURVEY_MARKDOWN into its own .md and read it, which also halves the
+# module (the 2026-08-29 standards review flagged it as ~60% embedded markdown).
+"src/rakshak/data/profile.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

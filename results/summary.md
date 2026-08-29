@@ -1,6 +1,10 @@
 # Rakshak — evaluation summary
 
-> **Sequence-layer metrics are measured on synthetic merchant streams with injected typologies; the generator is in this repo.** The decision layer is additionally validated on BAF (Feedzai, NeurIPS 2022), a public benchmark derived from real bank data. (BAF validation lands in T-0012 and is absent below.)
+> **Sequence-layer metrics are measured on synthetic merchant streams with injected typologies; the generator is in this repo.** The decision layer is additionally validated on BAF (Feedzai, NeurIPS 2022), a public benchmark derived from real bank data.
+
+The BAF half of that sentence is backed by `results/baf_validation.md` (T-0012), on BAF's own native temporal split. **It validates the decision layer only** — BAF is account-opening applications with no sequences, so the HMM cannot run there and does not. Nothing below is measured on BAF; everything below is the synthetic split.
+
+**And it validates it in a different cost regime from this one.** BAF's only monetary column is a proposed credit limit of 190-2000 in its own units, against absolute INR support and review costs, so its asymmetry runs 5,497-519,634 and **never reaches the 47.5 reported below**. On BAF the correct policy is to hold almost nobody, and the decision layer correctly does. What is validated there is that BMR takes the right action when false positives dominate — not the review-versus-hold trade-off at this split's asymmetry.
 
 ## Provenance
 

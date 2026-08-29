@@ -1,0 +1,15 @@
+{
+  "filename": "baf.zip",
+  "licence": "CC BY-NC-SA 4.0",
+  "licence_url": "https://www.kaggle.com/datasets/sgpjesus/bank-account-fraud-dataset-neurips-2022",
+  "name": "baf",
+  "note": "Bank ACCOUNT-OPENING applications, not transactions: no amount, no timestamp, no payer, no merchant, no sequences. Informs NONE of the generator's marginals (ADR-0007); its use is decision-layer validation on a real label distribution with real temporal drift (T-0012). Non-commercial + share-alike: usable inside the git-ignored data/ directory, NOT vendorable into this repo.",
+  "retrieved_utc": "2026-08-29T12:18:25Z",
+  "row_count": 1000000,
+  "sha256": "fb8d6d8b96f9a3c670a9ad0014da25ee8bee3fcb2be67bdcd115784bdb37cf8a",
+  "size_bytes": 558054164,
+  "source_page": "https://github.com/feedzai/bank-account-fraud",
+  "source_url": "sgpjesus/bank-account-fraud-dataset-neurips-2022",
+  "subsample_seed": null,
+  "subsampled": false
+}

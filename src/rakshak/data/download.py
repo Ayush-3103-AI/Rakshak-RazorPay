@@ -15,8 +15,9 @@ import hashlib
 import json
 import os
 import zipfile
+from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -84,9 +85,11 @@ SOURCES: dict[str, Source] = {
         source_page="https://github.com/feedzai/bank-account-fraud",
         kaggle=True,
         note=(
-            "Bank ACCOUNT-OPENING applications, not transactions. Informs a fraud base rate "
-            "and application-velocity marginals only. Non-commercial + share-alike: usable "
-            "inside the git-ignored data/ directory, NOT vendorable into this repo."
+            "Bank ACCOUNT-OPENING applications, not transactions: no amount, no timestamp, "
+            "no payer, no merchant, no sequences. Informs NONE of the generator's marginals "
+            "(ADR-0007); its use is decision-layer validation on a real label distribution "
+            "with real temporal drift (T-0012). Non-commercial + share-alike: usable inside "
+            "the git-ignored data/ directory, NOT vendorable into this repo."
         ),
     ),
 }
@@ -139,7 +142,7 @@ def file_manifest(
         "source_url": source_url,
         "licence": licence,
         "licence_url": licence_url,
-        "retrieved_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "retrieved_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "filename": path.name,
         "size_bytes": path.stat().st_size,
         "sha256": sha256_of(path),
@@ -168,15 +171,46 @@ def write_manifest(manifest: dict[str, object], directory: Path = EXTERNAL_DIR) 
     return out
 
 
-def _kaggle_auth() -> str | None:
-    """Return a Basic auth header value from `~/.kaggle/kaggle.json`, or None if absent."""
-    config_dir = Path(os.environ.get("KAGGLE_CONFIG_DIR") or (Path.home() / ".kaggle"))
-    creds = config_dir / "kaggle.json"
+def kaggle_auth(config_dir: Path | None = None, env: Mapping[str, str] | None = None) -> str | None:
+    """Return an `Authorization` header value for Kaggle, or None if no credential is found.
+
+    Kaggle issues two credential formats and both are still in circulation:
+
+    * the **current** one, an opaque API token prefixed `KGAT_`, supplied either as
+      `KAGGLE_API_TOKEN` or in `~/.kaggle/access_token`, sent as a **Bearer** token;
+    * the **legacy** one, `~/.kaggle/kaggle.json` holding `{"username", "key"}`, sent as
+      HTTP **Basic**.
+
+    Bearer wins when both are present, because that is the format Kaggle currently mints.
+
+    Args:
+        config_dir: Credential directory. Defaults to `$KAGGLE_CONFIG_DIR` or `~/.kaggle`.
+        env: Environment mapping to read. Defaults to `os.environ`. Injectable so the
+            resolution order can be tested without touching the real home directory or
+            the real environment.
+
+    Returns:
+        The header value, or None when no credential is configured.
+    """
+    env = os.environ if env is None else env
+    directory = Path(config_dir) if config_dir is not None else Path(
+        env.get("KAGGLE_CONFIG_DIR") or (Path.home() / ".kaggle")
+    )
+
+    token = (env.get("KAGGLE_API_TOKEN") or "").strip()
+    if not token:
+        access_token = directory / "access_token"
+        if access_token.exists():
+            token = access_token.read_text(encoding="utf-8").strip()
+    if token:
+        return f"Bearer {token}"
+
+    creds = directory / "kaggle.json"
     if not creds.exists():
         return None
     payload = json.loads(creds.read_text(encoding="utf-8"))
-    token = f"{payload['username']}:{payload['key']}".encode()
-    return "Basic " + base64.b64encode(token).decode()
+    basic = f"{payload['username']}:{payload['key']}".encode()
+    return "Basic " + base64.b64encode(basic).decode()
 
 
 def fetch(source: Source, directory: Path = EXTERNAL_DIR) -> Path:
@@ -203,11 +237,12 @@ def fetch(source: Source, directory: Path = EXTERNAL_DIR) -> Path:
     headers: dict[str, str] = {"User-Agent": "rakshak-t0015/1.0"}
     url = source.url
     if source.kaggle:
-        auth = _kaggle_auth()
+        auth = kaggle_auth()
         if auth is None:
             raise RuntimeError(
                 f"{source.name} is hosted on Kaggle and needs an API token at "
-                "~/.kaggle/kaggle.json. No credentials found; refusing to fabricate data."
+                "$KAGGLE_API_TOKEN, ~/.kaggle/access_token, or legacy ~/.kaggle/kaggle.json. "
+                "No credentials found; refusing to fabricate data."
             )
         headers["Authorization"] = auth
         url = f"https://www.kaggle.com/api/v1/datasets/download/{source.url}"
@@ -281,6 +316,11 @@ def main() -> None:
     source = SOURCES[args.dataset]
     path = fetch(source)
     row_count: int | None = None
+    if source.name == "baf":
+        # ADR-0007 requires row count in the manifest. Counted from the Base variant
+        # without extracting it; the other five bias variants are not used.
+        with zipfile.ZipFile(path) as archive, archive.open("Base.csv") as handle:
+            row_count = sum(1 for _ in handle) - 1  # minus the header
     if source.name == "online_retail_ii":
         frame = normalise_online_retail_ii(path)
         frame.to_parquet(EXTERNAL_DIR / "online_retail_ii.parquet", index=False)

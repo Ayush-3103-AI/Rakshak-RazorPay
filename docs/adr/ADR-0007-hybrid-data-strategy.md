@@ -1,6 +1,6 @@
 # ADR-0007 — Hybrid data: own generator for sequences, public data for the decision layer
 
-**Status:** Accepted — decision taken in Phase 2 (pre-execution); **partially executed.**
+**Status:** Accepted — decision taken in Phase 2 (pre-execution); **executed 2026-08-29 (T-0012).**
 Written retrospectively on 2026-08-29 from `01-understanding.md` D-13, `03-landscape.md`
 (dataset table), FR-001, FR-021, and `11-tickets/T-0015.md` / `T-0012.md`.
 **Supersedes:** none.
@@ -51,18 +51,27 @@ bank dataset. The generator owns the sequence layer.
 
 ## Consequences
 
-* **The second half of that sentence is not yet backed.** T-0012 has not run: BAF is Kaggle-only
-  and no API token exists on the build machine. The downloader is built and **raises rather than
-  fabricating**. FR-021 was promoted SHOULD → MUST in the 2026-08-28 re-plan precisely because
-  the repo was already printing this claim with a parenthetical apology. Until BAF lands, the
-  sentence must not appear unqualified.
+* **The second half of that sentence is now backed — 2026-08-29.** BAF was fetched
+  (558 MB, SHA-256 in `data/external/baf.manifest.json`) and T-0012 ran the decision layer
+  against the Base variant on BAF's native temporal split. `results/baf_validation.md` is the
+  evidence; the apologetic parenthetical is gone from `results/summary.md` and the mandated
+  sentence now stands unqualified. FR-021 is met.
+* **What it validates is narrower than the sentence sounds, and the results file says so.**
+  BMR takes the economically correct action under an extreme cost asymmetry, the capacity
+  constraint binds on real data and is reported, and the savings score orders the three models
+  identically at every swept asymmetry. It does **not** validate the balanced regime where
+  REVIEW and HOLD genuinely trade off — no available public dataset puts real money on both
+  sides of that trade.
 * **BAF's granularity is narrower than the plan assumed.** It is bank **account-opening
   applications** — no amount, no timestamp, no payer, no merchant. Adequate for decision-layer
   validation; it can inform **none** of the generator's marginals. Any framing implying that BAF
   grounds the generator is wrong.
-* **T-0015 executed the marginals half against a different dataset.** BAF being unreachable, the
-  calibration profile was built from Online Retail II (UCI 502, CC BY 4.0) — real invoices, and
-  **n = 1 merchant**, a UK B2B gift-ware wholesaler trading in GBP. `results/calibration_gap.md`
+* **T-0015 executed the marginals half against a different dataset, and still should have.**
+  BAF was unreachable when T-0015 ran (no Kaggle token yet), so the calibration profile was
+  built from Online Retail II (UCI 502, CC BY 4.0) — real invoices, and **n = 1 merchant**, a
+  UK B2B gift-ware wholesaler trading in GBP. Now that BAF is downloaded this looks like it
+  could be revisited; it cannot. BAF carries no amount, no timestamp and no payer, so it can
+  inform none of the profile's marginals regardless of availability. `results/calibration_gap.md`
   publishes the per-marginal divergence and states which marginals the profile cannot inform.
 * **Licence terms bind what may be committed.** BAF is CC BY-NC-SA 4.0 — usable inside a
   git-ignored `data/`, **not vendorable** into this MIT-licensed repo. Note the trap T-0015

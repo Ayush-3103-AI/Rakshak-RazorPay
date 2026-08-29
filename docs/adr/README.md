@@ -30,11 +30,11 @@ that do not exist.
 | [0004](ADR-0004-nsga-ii-not-nsga-iii.md) | NSGA-II not NSGA-III, plus a mandatory grid-search ablation | Accepted, **NOT implemented — T-0009 cut** |
 | [0005](ADR-0005-three-action-policy-under-capacity.md) | Three actions under a hard review-capacity constraint | Accepted, **implemented** (T-0007b) |
 | [0006](ADR-0006-empirical-bayes-shrinkage.md) | Closed-form empirical-Bayes shrinkage of per-merchant cost parameters | Accepted, **NOT implemented — T-0008 cut** |
-| [0007](ADR-0007-hybrid-data-strategy.md) | Hybrid data: own generator for sequences, public benchmark for the decision layer | Accepted, **partially executed** |
+| [0007](ADR-0007-hybrid-data-strategy.md) | Hybrid data: own generator for sequences, public benchmark for the decision layer | Accepted, **implemented** (T-0012) |
 | [0008](ADR-0008-review-capacity-scaling.md) | Review capacity expressed per 1000 merchants, not absolute | Accepted, **implemented** (T-0003b) |
 | [0009](ADR-0009-k1-label-informed-hmm.md) | K1 response: label-informed HMM estimation, FR-013 metric suite re-specified | Accepted, **implemented** (T-0004b) |
 
-## Three that are cited but not built
+## Two that are cited but not built
 
 Do not let a README or the video cite these as though they shipped:
 
@@ -42,8 +42,6 @@ Do not let a README or the video cite these as though they shipped:
   work that was cut. Remove it or justify it before freeze.
 * **ADR-0006** — no calibration happens anywhere in this repo, which is load-bearing because
   ADR-0005's BMR policy consumes raw scores as posteriors.
-* **ADR-0007** — the BAF half is unexecuted; BAF is Kaggle-gated and no token exists on the build
-  machine.
 
 ## The ADR-0005 collision
 

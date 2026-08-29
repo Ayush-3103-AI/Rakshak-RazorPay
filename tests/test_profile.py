@@ -22,6 +22,7 @@ evidence is the committed manifest under `data/external/`.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import math
@@ -30,7 +31,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from rakshak.data.download import file_manifest
+from rakshak.data.download import file_manifest, kaggle_auth
 from rakshak.data.profile import CANNOT_INFORM, build_profile, diff_profile
 
 FIXTURE = Path(__file__).parent / "fixtures" / "online_retail_ii_sample.csv"
@@ -167,3 +168,37 @@ def test_cannot_inform_names_labels_and_sequence_structure() -> None:
     assert "latent risk state" in joined
     assert "merchant-level fraud label" in joined
     assert "chargeback" in joined
+
+
+# ---------------------------------------------------------------------------
+# Kaggle credential resolution (T-0012). Kaggle changed token format under us:
+# the legacy kaggle.json username/key Basic auth still exists, but new tokens
+# are opaque `KGAT_` bearers. Getting the order wrong is silent - `fetch` just
+# raises "no credentials" - so the order is pinned here.
+# ---------------------------------------------------------------------------
+
+
+def test_bearer_token_from_the_environment_wins(tmp_path):
+    """$KAGGLE_API_TOKEN beats anything on disk."""
+    (tmp_path / "kaggle.json").write_text('{"username": "u", "key": "k"}', encoding="utf-8")
+    header = kaggle_auth(config_dir=tmp_path, env={"KAGGLE_API_TOKEN": "KGAT_env"})
+    assert header == "Bearer KGAT_env"
+
+
+def test_bearer_token_from_access_token_file_beats_legacy_json(tmp_path):
+    """~/.kaggle/access_token is the current format, so it wins over kaggle.json."""
+    (tmp_path / "access_token").write_text("KGAT_file\n", encoding="utf-8")
+    (tmp_path / "kaggle.json").write_text('{"username": "u", "key": "k"}', encoding="utf-8")
+    assert kaggle_auth(config_dir=tmp_path, env={}) == "Bearer KGAT_file"
+
+
+def test_legacy_kaggle_json_still_works(tmp_path):
+    """Basic auth, base64 of username:key - the pre-2026 format."""
+    (tmp_path / "kaggle.json").write_text('{"username": "u", "key": "k"}', encoding="utf-8")
+    header = kaggle_auth(config_dir=tmp_path, env={})
+    assert header == "Basic " + base64.b64encode(b"u:k").decode()
+
+
+def test_no_credential_returns_none_rather_than_guessing(tmp_path):
+    """`fetch` turns this into a RuntimeError; it must never fabricate data."""
+    assert kaggle_auth(config_dir=tmp_path, env={}) is None

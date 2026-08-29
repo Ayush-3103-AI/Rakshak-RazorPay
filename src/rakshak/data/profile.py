@@ -438,6 +438,7 @@ def render_gap_markdown(
     very_wide = [r for r in ratios if r >= 5.0 or r <= 0.2]
     worst = max((max(r, 1.0 / r) for r in ratios), default=float("nan"))
 
+    fano = next(r["empirical"] for r in rows if r["marginal"] == "daily_count_fano_factor")
     lines += [
         "",
         "`divergence` is empirical / generator. `x1.00` is agreement; `x0.50` means the "
@@ -478,7 +479,7 @@ def render_gap_markdown(
         "**One divergence is structural, not parametric.** `daily_count_fano_factor` is "
         "1.0 for the generator *by construction* — it draws daily counts from "
         "`rng.poisson`, and a Poisson process has variance equal to its mean. The real "
-        f"stream reads {next(r['empirical'] for r in rows if r['marginal'] == 'daily_count_fano_factor'):.1f}. "
+        f"stream reads {fano:.1f}. "
         "**No choice of Poisson rate can produce over-dispersion.** Closing that marginal "
         "means replacing the emission process (negative binomial, or a latent intensity), "
         "which invalidates the K1 analysis, the 0.404 oracle ceiling and every baseline "
@@ -575,7 +576,9 @@ def main() -> None:
         json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     gap_path = RESULTS_DIR / "calibration_gap.md"
-    gap_path.write_text(render_gap_markdown(rows, empirical, generator, args.seed), encoding="utf-8")
+    gap_path.write_text(
+        render_gap_markdown(rows, empirical, generator, args.seed), encoding="utf-8"
+    )
     print(f"wrote {profile_path}")
     print(f"wrote {gap_path}")
 

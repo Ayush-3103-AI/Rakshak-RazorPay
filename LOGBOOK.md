@@ -1820,3 +1820,49 @@ file is append-only, and editing a log to agree with a later renumbering is wors
 inconsistency it would remove.
 
 **Full `pytest` green, `ruff` clean.** Docs-only change; no number moved.
+
+---
+
+## 2026-08-29 (T-0012) — BAF validation. FR-021 met.
+
+**DID.** Kaggle token supplied by the user. Fixed the downloader (Kaggle now mints opaque `KGAT_`
+bearer tokens; T-0015's code spoke only the legacy `kaggle.json` Basic auth). Fetched BAF Base,
+1,000,000 rows, 558 MB, SHA-256 manifested. Built `src/rakshak/eval/baf.py` and ran the decision
+layer on BAF's **native** month split — train 0-5, early-stop 6, **month 7 reported**. 16 seconds.
+`results/baf_validation.md`. `make eval` now chains it. Full `pytest` green, `ruff` clean.
+
+**SURPRISE — and it cuts backwards.** On the synthetic split `random` scores +0.6929 against
+`rules`' +0.6980, which this session treated as the headline AP-06 finding: the cost matrix, not
+detection, earns the savings. **On BAF at 1.47% prevalence `random` scores −28.2169.** The AP-06
+warning survives, but its *severity* on the synthetic split turns out to be substantially an
+artefact of the generator's deliberately inflated 20% merchant fraud rate. At 20% a random policy
+hits enough true positives to look competent; at 1.5% it cannot. Two hours ago I recorded the
+random-floor finding as the most important number of the session. It is still important and it is
+now half a story. This is the first time real data has talked back to a synthetic result in this
+project, which is the entire argument for ADR-0007's hybrid split.
+
+**UNFLATTERING.** The BAF cost mapping puts the matrix in an extreme corner: native asymmetry
+**61,368**, swept range **5,497–519,634**, against the synthetic split's **47.5**. **No swept
+point reaches the regime the rest of the project reports on.** That is my unit assumption — BAF
+credit limits of 190–2000 against absolute INR support and review costs — not a property of BAF.
+So what T-0012 validates is "BMR does the right thing when false positives overwhelmingly
+dominate", which is real but narrower than the mandated sentence sounds. The caveat now sits
+**above** both tables rather than after them, because the spec review pointed out a reader
+stopping early would infer more validation than happened.
+
+**CAUGHT BY REVIEW, NOT BY TESTS.** `baf.py` first fitted LightGBM with its own hyperparameters
+and without `deterministic`, `force_row_wise`, `num_threads=1` — the three flags `models/gbdt.py`
+explicitly documents as what makes NFR-003 hold. Numbers were already in a results file. It now
+reuses `gbdt.PARAMS`; fixing it *improved* them (savings 0.0206 → 0.0294) and made them
+reproducible. **The suite was green the whole time.** Determinism is asserted for the harness, not
+for every artefact-producing path, and that gap is now demonstrated rather than theoretical.
+
+**THE ONE THAT SHOULD HAVE BEEN CAUGHT WEEKS AGO.** `pyproject.toml` had
+`extend-exclude = ["results", "data"]`. Unanchored, `"data"` matched `src/rakshak/data/` as well
+as the git-ignored `data/`, so **871 lines of T-0015's source were never linted.** Nine real
+errors were hiding. Every "ruff clean" claim made in this repo before today covered only the
+files ruff happened to look at. Anchored to `["/results", "/data"]`.
+
+**SECURITY.** The Kaggle token was pasted into the chat transcript and is therefore compromised.
+It is stored at `~/.kaggle/access_token` (outside the repo, mode 600) and appears in no committed
+file. **It must be rotated.**

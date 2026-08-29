@@ -1,8 +1,8 @@
 # STATE — Rakshak
 
 PHASE:        5 — EXECUTE, in progress
-LAST SESSION: 2026-08-29 — **T-0007b** (BMR policy, capacity constraint, cost-asymmetry sweep) and **T-0015** (public data, calibration profile, gap diff), run in parallel as two agents on disjoint files, then a two-axis code review. Full `pytest` green (exit 0, 2 strict `xfail`s intact), `ruff` clean, `make eval` 16.3 s.
-NEXT ACTION:  **T-0012** (BAF validation) — **but see the Kaggle-credential blocker below; it is not a code problem.** Then **T-0011** (Mon 31, K2's verdict). **T-0016 has a recommendation to cut and needs a decision.**
+LAST SESSION: 2026-08-29 — **T-0007b**, **T-0015**, the **FR-020 figure**, the **eight missing ADRs**, and **T-0012** (BAF validation). **FR-021 is met: `CLAUDE.md`'s mandated BAF sentence is backed for the first time.** Full `pytest` green (2 strict `xfail`s intact), `ruff` clean, `make eval` 14.2 s, `make baf` 16 s.
+NEXT ACTION:  **T-0011** (K2's verdict, on `test`) — every one of its blockers is now closed. Then **T-0013** (README) on Tue 1 Sep, then freeze.
 
 ## Decisions taken by the user — 2026-08-29
 
@@ -339,16 +339,76 @@ an *uncharacterisable* one, which `T-0016.md` itself forbids. The gap document m
 non-comparable rows (currency, category) as non-comparable rather than adjusting them to shrink
 the gap.
 
+## T-0012 — FR-021 is met, and BAF cuts back at the synthetic split
+
+BAF Base (1,000,000 rows, SHA-256 manifested) run through the decision layer on **BAF's own**
+temporal split: train months 0-5, early-stop 6, **month 7 reported** (96,843 applications,
+1.47% prevalence). 16 seconds. `results/baf_validation.md`.
+
+| model | savings | PR-AUC | precision@K | Brier | held |
+|---|---|---|---|---|---|
+| random | -28.2169 | 0.0143 | 0.0137 | 0.3340 | 4033 |
+| credit_risk_score | -5.2810 | 0.0403 | 0.0560 | 0.3200 | 469 |
+| gbdt | **+0.0294** | **0.2179** | **0.1436** | **0.0129** | 1 |
+
+`gbdt` is the only positive model at **every one of the ten swept asymmetries**, so the ordering
+is not an artefact of one cost matrix.
+
+**`CLAUDE.md`'s mandated sentence is backed for the first time** and the apologetic parenthetical
+is gone from `results/summary.md`.
+
+### The finding T-0011 must carry
+
+On the synthetic split `random` scored **+0.6929** against `rules`' **+0.6980** — within 0.0051 —
+which is why `summary.md` says the cost matrix, not detection, earns the savings level (AP-06).
+**On BAF at 1.47% prevalence `random` scores −28.2169.**
+
+That points at the generator's **20% merchant fraud rate**, not at the savings metric. At 20%
+prevalence a random policy hits enough true positives to look competent; at 1.5% it cannot. The
+AP-06 warning stands — savings must never be quoted without PR-AUC beside it — but its severity
+on the synthetic split is substantially an artefact of a prevalence the generator inflated on
+purpose for per-typology sample size. **T-0011 must state both halves, and this is now the
+strongest single piece of evidence in the repo about what the 20% rate costs.**
+
+### What T-0012 does NOT validate — stated above the tables in the results file
+
+- BAF is account-opening applications with **no sequences**, so the HMM cannot run there.
+- **The native asymmetry is 61,368 and the swept range 5,497-519,634 never reaches the synthetic
+  split's 47.5.** That is the unit assumption — BAF credit limits of 190-2000 against absolute
+  INR support and review costs — not a property of BAF. In that corner the correct policy is to
+  hold almost nobody and BMR does exactly that. **The review-versus-hold trade-off at this
+  project's own asymmetry is validated by no public dataset available to it.**
+- Example-dependence on BAF is weaker than on the synthetic split: `L` and `V` are both linear in
+  the same column, so the flat `c_support` term is the only source of per-application threshold
+  variation. `tests/test_baf.py` pins both halves of that claim so the caveat cannot go stale.
+
+### Two defects found and fixed en route
+
+- **Kaggle changed its token format.** T-0015's downloader spoke only the legacy `kaggle.json`
+  username/key Basic auth; Kaggle now mints opaque `KGAT_` bearer tokens. `data.download.kaggle_auth`
+  handles both, preferring bearer, with the resolution order pinned by tests.
+- **`src/rakshak/data/` had never been linted.** `pyproject.toml`'s `extend-exclude` read
+  `["results", "data"]` and unanchored `"data"` matched the *source package* as well as the
+  git-ignored data directory. Nine real lint errors were hiding, including a dead `--seed`
+  neighbour. Now `["/results", "/data"]`. **Every "ruff clean" claim made before this fix covered
+  only the files ruff actually looked at.**
+
+### Caught by review, not by tests
+
+`baf.py` first fitted LightGBM with its own hyperparameters and **without** `deterministic`,
+`force_row_wise` and `num_threads=1` — the three flags `models/gbdt.py` documents as what makes
+NFR-003 hold. It now reuses `gbdt.PARAMS`. Fixing it *improved* the numbers (savings +0.0206 →
++0.0294, PR-AUC 0.2014 → 0.2179) and, more importantly, made them reproducible. **The full test
+suite passed throughout; determinism of that file was never under test.**
+
 ## Open questions and risks
 
 ### Raised 2026-08-29 by T-0007b / T-0015 and the two-axis review
 
-- **T-0012 is blocked on a Kaggle credential, not on code.** BAF is Kaggle-only (Feedzai lists
-  no other source) and there is no `~/.kaggle/kaggle.json` on this machine. The downloader is
-  built and registered; `python -m rakshak.data.download --dataset baf` will fetch, hash and
-  manifest it the moment a token exists, and `fetch()` **raises rather than fabricating**. Until
-  then `CLAUDE.md`'s mandated verbatim BAF-validation sentence remains unbacked and **FR-021 (a
-  promoted MUST) has no data behind it.** This is the single most schedule-threatening item open.
+- ~~**T-0012 is blocked on a Kaggle credential.**~~ **Closed 2026-08-29.** Token supplied, BAF
+  fetched, T-0012 done, FR-021 met. **The token was pasted into a chat transcript and must be
+  rotated** at kaggle.com/settings; it lives at `~/.kaggle/access_token`, outside the repo, and
+  is in no committed file.
 - **BAF's granularity is worse than the board assumed.** It is bank **account-opening
   applications** — no amount, no timestamp, no payer, no merchant. Still fine for T-0012's
   decision-layer validation; it can inform **none** of T-0015's marginals. Any framing that
