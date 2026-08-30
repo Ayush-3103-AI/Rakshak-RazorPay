@@ -41,6 +41,19 @@ Typologies:
                         merchants also exhibit. It is here to be REPORTED AS A FAILURE MODE.
                         Do not tune detection to catch it. Do not soften it to flatter a metric.
 
+POPULATION-WIDE SHOCKS (T-0022a, additive)
+------------------------------------------
+`--shock-day` / `--shock-magnitude` multiply every merchant's daily volume and mean ticket size
+on chosen days, identically across typologies and segments. This is the one thing the model
+above cannot otherwise express: merchants are independent processes here, so no shared event
+exists to test the project's own central cost claim — that blunt global thresholds freeze honest
+merchants when the whole book moves at once.
+
+The shock is an **emission-only** perturbation. It adds no latent state and never edits the
+state path, so a HEALTHY merchant stays HEALTHY through a shock day and any flag raised on one
+is provably a false positive. Shocked runs write to `config.SYNTHETIC_SHOCK_DIR`, never to
+`SYNTHETIC_DIR`, so no committed result can be invalidated by running one.
+
 KNOWN SIMPLIFICATIONS (state them in the README, do not discover them later)
 ---------------------------------------------------------------------------
 * Payer identifiers are merchant-scoped: no payer is shared across merchants, so no
@@ -70,6 +83,7 @@ from rakshak.config import (
     SPLIT_DAY_BOUNDS,
     STATE_PATHS_PARQUET,
     SYNTHETIC_DIR,
+    SYNTHETIC_SHOCK_DIR,
     TRANSACTIONS_PARQUET,
     WINDOW_DAYS,
 )
@@ -183,12 +197,17 @@ class GeneratorConfig:
         horizon_days: Length of the observation window, in days.
         fraud_rate: Fraction of merchants assigned a typology, spread evenly over `TYPOLOGIES`.
         start_date: ISO date of day 0.
+        shock_days: Days of the horizon carrying a population-wide shock (T-0022a). Empty
+            by default, which reproduces the pre-T-0022a generator exactly.
+        shock_magnitude: Dimensionless multiplier applied on those days. 1.0 is a no-op.
     """
 
     n_merchants: int = N_MERCHANTS
     horizon_days: int = HORIZON_DAYS
     fraud_rate: float = FRAUD_MERCHANT_RATE
     start_date: str = GENERATOR_START_DATE
+    shock_days: tuple[int, ...] = ()
+    shock_magnitude: float = 1.0
 
 
 @dataclass
@@ -405,6 +424,47 @@ _INJECTORS = {
 
 
 # --------------------------------------------------------------------------------------------
+# Population-wide shock (T-0022a) — NOT a typology, and NOT a latent state
+# --------------------------------------------------------------------------------------------
+
+
+def _apply_shock(
+    p: _DayProfile, days: int, shock_days: tuple[int, ...], magnitude: float
+) -> None:
+    """Scale daily volume and mean ticket size on shared shock days, in place.
+
+    A shock is a population-wide multiplicative perturbation of the EMISSION process — a
+    demand surge, an MDR or regulatory change, a payment-rail outage — applied identically to
+    every merchant regardless of typology or segment. It is the one thing the rest of this
+    generator cannot express, because every merchant is otherwise an independent process.
+
+    **It introduces no new latent state and never touches `p.state`.** A HEALTHY merchant is
+    still HEALTHY on a shock day, so ground truth says nothing changed and any model that
+    flags a shocked-but-healthy merchant is by construction producing a false positive. That
+    is the entire point of the stress test (`14-spec-blackswan-and-drift-survey.md`); making
+    the shock visible in ground truth would destroy it.
+
+    Applied AFTER the typology injectors, so a shock compounds with whatever the merchant was
+    already doing rather than overwriting it. A vanished BUST_OUT (`volume_mult == 0`) stays
+    vanished, which is correct: a dead merchant does not benefit from a demand surge.
+
+    Args:
+        p: Profile to modify in place.
+        days: Horizon length in days.
+        shock_days: 0-based days of the horizon on which the shock lands.
+        magnitude: Dimensionless multiplier. 1.0 is exactly a no-op in floating point.
+
+    Raises:
+        ValueError: If any shock day falls outside `[0, days)`.
+    """
+    for day in shock_days:
+        if not 0 <= day < days:
+            raise ValueError(f"shock day {day} outside the horizon 0-{days - 1}")
+        p.volume_mult[day] *= magnitude
+        p.amount_mult[day] *= magnitude
+
+
+# --------------------------------------------------------------------------------------------
 # Per-merchant stream
 # --------------------------------------------------------------------------------------------
 
@@ -416,6 +476,8 @@ def _generate_merchant(
     position: int,
     days: int,
     rng: np.random.Generator,
+    shock_days: tuple[int, ...] = (),
+    shock_magnitude: float = 1.0,
 ) -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]:
     """Generate one merchant's transaction stream and its per-day latent state path.
 
@@ -427,6 +489,8 @@ def _generate_merchant(
             window its onset is drawn from (`onset_window`). Ignored when healthy.
         days: Horizon length in days.
         rng: Source of randomness.
+        shock_days: Days carrying a population-wide shock (T-0022a); empty by default.
+        shock_magnitude: Multiplier applied on those days; 1.0 is a no-op.
 
     Returns:
         A tuple of (column arrays for this merchant's transactions, per-day state labels of
@@ -438,6 +502,7 @@ def _generate_merchant(
         lo, hi = onset_window(position, days)
         onset = int(rng.integers(lo, hi))
         _INJECTORS[typology](profile, seg, days, onset, rng)
+    _apply_shock(profile, days, shock_days, shock_magnitude)
 
     aov = _loguniform(rng, seg.aov_lo, seg.aov_hi)
     monthly_volume = _loguniform(rng, seg.volume_lo, seg.volume_hi)
@@ -570,7 +635,7 @@ def generate(
     """Generate the transaction stream and the ground-truth latent state paths.
 
     Args:
-        config: Population size, horizon and fraud prevalence.
+        config: Population size, horizon, fraud prevalence and optional shock schedule.
         rng: Seeded generator; the same seed yields byte-identical frames.
 
     Returns:
@@ -594,6 +659,8 @@ def generate(
             int(positions[m]),
             days,
             rng,
+            config.shock_days,
+            config.shock_magnitude,
         )
         if len(columns["timestamp"]):
             chunks.append(columns)
@@ -654,22 +721,65 @@ def main(argv: list[str] | None = None) -> int:
         help="Fraction of merchants assigned a typology.",
     )
     parser.add_argument(
-        "--out-dir", type=Path, default=SYNTHETIC_DIR, help="Output directory for the parquets."
+        "--shock-day",
+        type=int,
+        action="append",
+        dest="shock_days",
+        metavar="DAY",
+        help="Day of the horizon carrying a population-wide shock (T-0022a). Repeatable. "
+        "Passing any --shock-day sends output to data/synthetic_shock/ instead of "
+        "data/synthetic/.",
+    )
+    parser.add_argument(
+        "--shock-magnitude",
+        type=float,
+        default=1.0,
+        help="Multiplier applied to daily volume and mean amount on shock days (default: 1.0, "
+        "a no-op).",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="Output directory for the parquets. Defaults to data/synthetic/, or "
+        "data/synthetic_shock/ when --shock-day is given.",
     )
     args = parser.parse_args(argv)
 
+    shock_days = tuple(args.shock_days or ())
+    out_dir = args.out_dir
+    if out_dir is None:
+        out_dir = SYNTHETIC_SHOCK_DIR if shock_days else SYNTHETIC_DIR
+    # The frozen results are measured on data/synthetic/. A shocked write there would
+    # silently invalidate K1's ARI ceiling, K2's verdict, the ablations and the lag probe,
+    # and nothing downstream would notice. Refuse rather than warn.
+    if shock_days and out_dir.resolve() == SYNTHETIC_DIR.resolve():
+        parser.error(
+            "refusing to write shocked data into data/synthetic/: that is the frozen "
+            "dataset every committed result is measured on (T-0022a)"
+        )
+
     rng = seed_everything(args.seed)
     config = GeneratorConfig(
-        n_merchants=args.merchants, horizon_days=args.days, fraud_rate=args.fraud_rate
+        n_merchants=args.merchants,
+        horizon_days=args.days,
+        fraud_rate=args.fraud_rate,
+        shock_days=shock_days,
+        shock_magnitude=args.shock_magnitude,
     )
     transactions, state_paths = generate(config, rng)
-    txn_path, path_path = write_outputs(transactions, state_paths, args.out_dir)
+    txn_path, path_path = write_outputs(transactions, state_paths, out_dir)
 
     counts = state_paths.groupby("merchant_id")["typology"].first().value_counts()
     print(
         f"rakshak.generator: seed={args.seed} merchants={config.n_merchants} "
         f"days={config.horizon_days}"
     )
+    if shock_days:
+        print(
+            f"  shock: days={list(shock_days)} magnitude={config.shock_magnitude}x "
+            "(emission-only; ground truth unchanged)"
+        )
     print(f"  transactions: {len(transactions):,} rows -> {txn_path}")
     print(f"  state paths:  {len(state_paths):,} segments -> {path_path}")
     for typology, count in counts.items():

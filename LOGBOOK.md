@@ -1984,3 +1984,53 @@ session (`5692d96`), sweeping up the other two agents' in-flight files including
 briefs forbade touching `BOARD.md` and said nothing about committing, because it did not occur to
 me that they would. Left in place rather than rewritten — the content is sound and the history is
 on a feature branch — but the next multi-agent run gets an explicit "do not commit" in the brief.
+
+---
+
+## 2026-08-30 (T-0022a) — shock-capable generator. Additive, and the shocked population is not a paired counterfactual.
+
+**DID.** `--shock-day` (repeatable) and `--shock-magnitude` on `generator.generate`, applied as a
+population-wide multiplier on `volume_mult` and `amount_mult` *after* the typology injectors, so a
+shock compounds with whatever the merchant was already doing. `SYNTHETIC_SHOCK_DIR`
+(`data/synthetic_shock/`) added to `config.py`; any `--shock-day` redirects output there, and the
+CLI **refuses** an explicit `--out-dir data/synthetic`. Five tests. Full `pytest` green (both
+strict `xfail`s intact), `ruff` clean. `data/synthetic/` verified byte-identical by size and
+mtime across a full shocked run. Generated the dataset at the default 500 merchants / 270 days,
+seed 42, shock day 240 (inside the test window), magnitude 6.0x.
+
+**SURPRISE, and T-0022c needs it before it writes a line of `blackswan.md`.** The obvious
+invariant test — generate with and without the shock at the same seed, assert `state_paths` is
+identical — **is not available, and I started writing it.** The shock changes the Poisson rate on
+one day, which changes how many transactions a merchant emits, which changes how many variates it
+draws from the *shared* generator, which shifts every later merchant's onset draw. Typology
+assignment and segment IDs are drawn before the loop and do survive; onsets do not.
+
+So **the shocked population is not a paired counterfactual of the frozen one.** Its bad merchants
+go bad on different days. Any comparison in `results/blackswan.md` must be shock-day windows
+against control windows **inside the shocked dataset**, never shocked-dataset against
+`data/synthetic/` — that diff would be dominated by re-rolled onsets, not by the shock. The
+ticket's primary metric already says "vs. a matched set of non-shock control windows from the same
+merchants", which is the right shape; this records *why* the other shape is unavailable rather
+than merely worse.
+
+Fixing it properly means per-merchant RNG streams (`SeedSequence.spawn`), which would change every
+number in the repo. Not on 30 Aug. Not at any price for a ticket ranked below the whole backlog.
+
+**The invariant was asserted structurally instead**, which is what the spec asked for anyway:
+`_apply_shock` provably never touches `p.state` (unit test over a BUST_OUT profile, checking the
+state array, the two scaled days, every unscaled day, and that a vanished merchant stays at zero),
+plus a population-level check that healthy merchants still hold exactly one HEALTHY segment and
+that no merchant gained a state boundary on the shock day.
+
+**The non-regression proof is cheaper than a pinned hash.** `--shock-magnitude 1.0` is exactly the
+identity in floating point, so a shocked-config run at magnitude 1.0 must hash-match the unshocked
+run bit for bit. It does. That pins the seam as inert without hard-coding an environment-specific
+hash, and it fails loudly if anyone ever makes the shock path do anything besides multiply two
+arrays.
+
+**Also.** The `parser.error` message originally carried an em-dash and rendered as a mojibake byte
+on the Windows console (cp1252). Replaced with a colon. Small, but it is a message a panel member
+could see.
+
+**NOT DONE, DELIBERATELY.** No harness seam (T-0022b), no report (T-0022c). Nothing under
+`results/` was written or read. `SPLIT_DAY_BOUNDS` and `MERCHANT_GROUP_CYCLE` untouched.

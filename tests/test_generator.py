@@ -23,6 +23,7 @@ from rakshak.generator import (
     MIN_ONSET_DAY,
     MIN_POST_ONSET_DAYS,
     NO_TYPOLOGY,
+    SEGMENTS,
     STATE_PATH_COLUMNS,
     STATES,
     TRANSACTION_COLUMNS,
@@ -31,6 +32,7 @@ from rakshak.generator import (
     generate,
     write_outputs,
 )
+from rakshak.generator.generate import _apply_shock, _baseline_profile, _inject_bust_out
 
 CONFIG = GeneratorConfig(n_merchants=150, horizon_days=270, fraud_rate=0.5)
 """Test population. `fraud_rate` is deliberately far above the production default so each of
@@ -319,3 +321,122 @@ def test_onset_falls_inside_every_split_window(data: tuple[pd.DataFrame, pd.Data
         # And no bad merchant transitions outside its own window, which would put it in the
         # already-bad regime the frozen split is not trying to measure.
         assert (((onset >= start) & (onset < end)) | ~(split == name))[split == name].all()
+
+
+# ------------------------------------------------------------------------------------------
+# T-0022a — the population-wide shock is emission-only and additive
+# ------------------------------------------------------------------------------------------
+
+SHOCK_DAY = 240
+"""Shock lands inside the test window (days 210-269), where the black-swan report scores."""
+
+SHOCK_MAGNITUDE = 6.0
+
+SHOCK_CONFIG = GeneratorConfig(
+    n_merchants=CONFIG.n_merchants,
+    horizon_days=CONFIG.horizon_days,
+    fraud_rate=CONFIG.fraud_rate,
+    shock_days=(SHOCK_DAY,),
+    shock_magnitude=SHOCK_MAGNITUDE,
+)
+
+
+@pytest.fixture(scope="module")
+def shocked() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The same population as `data`, plus one population-wide shock day."""
+    return generate(SHOCK_CONFIG, seed_everything(42))
+
+
+def test_shock_never_touches_the_state_path() -> None:
+    """The invariant the whole stress test rests on, asserted directly on the profile.
+
+    Ground truth must say nothing happened on a shock day. If it ever did, a model flagging a
+    shocked merchant would be scored as a correct catch and `results/blackswan.md` would
+    measure the opposite of what it claims to measure.
+    """
+    rng = seed_everything(7)
+    profile = _baseline_profile(SEGMENTS[0], CONFIG.horizon_days, rng)
+    _inject_bust_out(profile, SEGMENTS[0], CONFIG.horizon_days, 100, rng)
+
+    states_before = profile.state.copy()
+    volume_before = profile.volume_mult.copy()
+    amount_before = profile.amount_mult.copy()
+
+    _apply_shock(profile, CONFIG.horizon_days, (SHOCK_DAY,), SHOCK_MAGNITUDE)
+
+    assert (profile.state == states_before).all(), "the shock leaked into ground truth"
+    assert profile.volume_mult[SHOCK_DAY] == volume_before[SHOCK_DAY] * SHOCK_MAGNITUDE
+    assert profile.amount_mult[SHOCK_DAY] == amount_before[SHOCK_DAY] * SHOCK_MAGNITUDE
+
+    off = np.ones(CONFIG.horizon_days, dtype=bool)
+    off[SHOCK_DAY] = False
+    assert (profile.volume_mult[off] == volume_before[off]).all()
+    assert (profile.amount_mult[off] == amount_before[off]).all()
+    # A bust-out that has already vanished stays vanished — a dead merchant does not
+    # benefit from a demand surge.
+    assert profile.volume_mult[-1] == 0.0
+
+
+def test_shock_day_outside_the_horizon_is_rejected() -> None:
+    rng = seed_everything(7)
+    profile = _baseline_profile(SEGMENTS[0], CONFIG.horizon_days, rng)
+    with pytest.raises(ValueError, match="outside the horizon"):
+        _apply_shock(profile, CONFIG.horizon_days, (CONFIG.horizon_days,), SHOCK_MAGNITUDE)
+
+
+def test_unshocked_path_is_untouched(data: tuple[pd.DataFrame, pd.DataFrame]) -> None:
+    """The seam is inert on the default path — this is what protects `data/synthetic/`.
+
+    A magnitude of 1.0 is exactly the identity in floating point, so if the shock code path
+    were doing anything at all beyond multiplying two arrays, these hashes would diverge.
+    Every committed number in this repo is measured on the frame this test pins.
+    """
+    transactions, state_paths = data
+    inert = GeneratorConfig(
+        n_merchants=CONFIG.n_merchants,
+        horizon_days=CONFIG.horizon_days,
+        fraud_rate=CONFIG.fraud_rate,
+        shock_days=(SHOCK_DAY,),
+        shock_magnitude=1.0,
+    )
+    same_txn, same_paths = generate(inert, seed_everything(42))
+    assert _frame_hash(same_txn) == _frame_hash(transactions)
+    assert _frame_hash(same_paths) == _frame_hash(state_paths)
+
+
+def test_shock_determinism(shocked: tuple[pd.DataFrame, pd.DataFrame]) -> None:
+    transactions, state_paths = shocked
+    same_txn, same_paths = generate(SHOCK_CONFIG, seed_everything(42))
+    assert _frame_hash(same_txn) == _frame_hash(transactions)
+    assert _frame_hash(same_paths) == _frame_hash(state_paths)
+
+
+def test_shock_is_visible_in_transactions_only(
+    data: tuple[pd.DataFrame, pd.DataFrame], shocked: tuple[pd.DataFrame, pd.DataFrame]
+) -> None:
+    """The shock moves the observable stream hard, and moves the labels not at all.
+
+    Note that the shocked and unshocked runs are NOT comparable row by row: changing the
+    Poisson rate on one day changes how many variates each merchant consumes, so every later
+    merchant's draws shift. That is why ground truth is checked structurally (healthy
+    merchants stay healthy, with no segment boundary at the shock day) rather than by
+    diffing the two `state_paths` frames.
+    """
+    _, unshocked_paths = data
+    transactions, state_paths = shocked
+
+    day = (transactions["timestamp"] - pd.Timestamp(GENERATOR_START_DATE)).dt.days
+    per_day = transactions.groupby(day).size()
+    neighbours = per_day.loc[[SHOCK_DAY - 2, SHOCK_DAY - 1, SHOCK_DAY + 1, SHOCK_DAY + 2]].mean()
+    assert per_day.loc[SHOCK_DAY] / neighbours >= 3.0, "the shock is not visible in the stream"
+
+    healthy = state_paths[state_paths["typology"] == NO_TYPOLOGY]
+    assert (healthy["state"] == "HEALTHY").all()
+    assert healthy.groupby("merchant_id").size().max() == 1, "a shock created a state boundary"
+    # No merchant of any typology gained a transition on the shock day itself.
+    assert SHOCK_DAY not in set(state_paths.loc[state_paths["segment_index"] > 0, "start_day"])
+    # And the shocked population carries the same typology mix as the unshocked one.
+    assert (
+        state_paths.groupby("merchant_id")["typology"].first().value_counts().to_dict()
+        == unshocked_paths.groupby("merchant_id")["typology"].first().value_counts().to_dict()
+    )

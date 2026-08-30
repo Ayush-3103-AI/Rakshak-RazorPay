@@ -168,6 +168,16 @@ SYNTHETIC_DIR: Path = DATA_DIR / "synthetic"
 TRANSACTIONS_PARQUET: Path = SYNTHETIC_DIR / "transactions.parquet"
 STATE_PATHS_PARQUET: Path = SYNTHETIC_DIR / "state_paths.parquet"
 
+SYNTHETIC_SHOCK_DIR: Path = DATA_DIR / "synthetic_shock"
+"""Black-swan stress-test dataset (T-0022a). A SEPARATE population carrying a
+population-wide shock on chosen days, written by
+`python -m rakshak.generator.generate --shock-day D --shock-magnitude M`.
+
+It is scored with the same `SPLIT_DAY_BOUNDS` / `MERCHANT_GROUP_CYCLE` geometry as
+`SYNTHETIC_DIR` — a new dataset, not a new split design. Nothing in the frozen
+results (`verdict.md`, `ablations.md`, `lag_probe.md`, `baf_validation.md`) reads it,
+and the generator refuses to write shocked data into `SYNTHETIC_DIR`."""
+
 GENERATOR_START_DATE: str = "2026-01-01"
 """ISO date of horizon day 0. A Thursday — the weekday seasonality table assumes it."""
 
