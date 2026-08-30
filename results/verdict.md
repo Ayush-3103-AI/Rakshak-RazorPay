@@ -44,8 +44,8 @@ All rows share the same analyst-hour budget. Actions come from the three-action 
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | random | 0.5365 | 0.0000 | 0.0554 | 0.2449 | 0.2000 | 0.3069 | n/a | 0.00 | 5 | 14 | 0.34 | capacity (wanted 10) |
 | rules | 0.4889 | -0.0475 | 0.1390 | 0.5547 | 1.0000 | 0.1358 | 5.0 | 0.65 | 5 | 12 | 0.34 | capacity (wanted 15) |
-| gbdt | 0.5069 | -0.0296 | 0.1075 | 0.6523 | 1.0000 | 0.1453 | 4.0 | 0.65 | 5 | 13 | 0.34 | capacity (wanted 6) |
-| hmm | 0.5176 | -0.0188 | 0.0886 | 0.3347 | 0.4000 | 0.4321 | 5.0 | 0.75 | 4 | 15 | 0.27 | none (wanted 4) |
+| gbdt | 0.5069 | -0.0296 | 0.1075 | 0.6523 | 1.0000 | 0.1453 | 10.0 | 0.65 | 5 | 13 | 0.34 | capacity (wanted 6) |
+| hmm | 0.5176 | -0.0188 | 0.0886 | 0.3347 | 0.4000 | 0.4321 | 11.0 | 0.75 | 4 | 15 | 0.27 | none (wanted 4) |
 
 **The analyst-hour budget does not bind for `hmm` on this window** — unconstrained BMR asked for fewer reviews than K there, so those cells are not a capacity result and must not be read as one (FR-017). The binding constraint is reported per model rather than inferred precisely so that a run where the budget did nothing and a run where it forced a downgrade do not look alike.
 
@@ -53,7 +53,7 @@ All rows share the same analyst-hour budget. Actions come from the three-action 
 
 **`gap to knapsack oracle` is deliberately not a column here.** `results/summary.md` carries the reason and it carries forward unchanged: the review-knapsack ceiling is the best *review-only, <= K* allocation, this policy may HOLD, and nothing bounds a holding policy by a review-only ceiling. Quoting a gap against it would be a category error. The ceiling itself is still printed above and at every swept point below, including where it goes negative.
 
-**The median-lag column is subject to the window-aliasing convention recorded at T-0006b**: a flag is attributed to the *start* day of the 7-day window that produced it, so a merchant going bad on day 192 detected from the window opening day 189 records lag -3. On `validate` that convention plus a four-window span produced a -1.0 median for both time-resolved models. Here the medians read `rules` +5.0 d, `gbdt` +4.0 d, `hmm` +5.0 d over a 60-day window, so the negative median does not reproduce and the aliasing reading is consistent with it. The HMM's `flag_day` is provably forward-only (truncation test with a negative control), so this was never a leakage question. If the convention is ever moved to window-end attribution it must be moved for every model at once.
+**The median-lag column was corrected at T-0011 and every model now uses one convention.** A flag is attributed to the day its evidence was complete — for `gbdt` and `hmm` the *last* day of the 7-day window that raised it, which is what `rules` had always reported. Before the correction those two attributed the flag to the window's *start* day, crediting them with up to 6 days of earliness they never had; on `validate` that produced the -1.0 median that read as detection before onset. Here the medians read `rules` +5.0 d, `gbdt` +10.0 d, `hmm` +11.0 d over a 60-day window. **The correction reverses the reading of this column** — the window-based models are *later* than `rules`, not earlier. `results/lag_probe.md` reports both conventions side by side and clears the leakage question separately, with a merchant-clustered permutation test over pre-onset windows (largest effect 0.159, p = 0.310 on this split). The HMM's `flag_day` is independently provably forward-only — truncation test with a negative control — so this was never a leakage question. **No claim of the form "Rakshak detects N days before the fraud starts" is available to this repo.**
 
 ## K2's verdict
 

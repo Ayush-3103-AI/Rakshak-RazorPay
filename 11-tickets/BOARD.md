@@ -31,7 +31,7 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 
 | ID | Title | Day | Risk | Cuttable | Blocked by |
 |---|---|---|---|---|---|
-| [T-0011](T-0011.md) | Verdict: ablations, sweep boundary, lag probe | Mon 31 | **A-005 verdict, K2** | **no** | T-0006b, T-0007b |
+| ~~[T-0011](T-0011.md)~~ | **DONE 2026-08-29 — K2 rendered: FAIL.** Verdict, ablations, sweep boundary, lag probe | ~~Mon 31~~ | **A-005 verdict, K2 — fired** | **no** | closed |
 | [T-0018](T-0018.md) | Architecture doc + diagram | Sat 29 - Sun 30 | **graded deliverable, was unowned** | **no** | — |
 | [T-0020](T-0020.md) | Release hygiene: LICENSE, `09-interfaces.md`, drop `pymoo` | Sat 29 | low effort, panel-visible | **no** | — |
 | [T-0021](T-0021.md) | Verify `make eval` on a clean checkout | Sun 30, re-run after freeze | **can fail and generate work** | **no** | T-0020 |
@@ -40,30 +40,44 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
 | [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
 
-### Published to GitHub Issues — 2026-08-28
+### Published to GitHub Issues
 
 The ticket files in this directory remain the **source of truth**; the issues are a thin
-mirror carrying the blocking edges and acceptance criteria. If they diverge, the file wins.
-Repo: `Ayush-3103-AI/Rakshak-RazorPay`.
+mirror carrying status, blocking edges and outcomes. If they diverge, the file wins.
+Repo: `Ayush-3103-AI/Rakshak-RazorPay`. **All 26 tickets mirrored as of 2026-08-29** — every
+ticket in this directory, including the fix-ups (T-0003b, T-0004b) and the cut/superseded
+ones (T-0007, T-0008, T-0009, T-0010), now has an issue reflecting its current status.
 
-| Ticket | Issue | Blocked by | Label |
+| Ticket | Issue | State | Blocked by |
 |---|---|---|---|
-| T-0017 | [#1](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/1) | — | `ready-for-agent` |
-| T-0006b | [#2](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/2) | — | `ready-for-agent` |
-| T-0015 | [#3](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/3) | — | `ready-for-agent` |
-| T-0007a | [#4](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/4) | #1 | `blocked` |
-| T-0007b | [#5](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/5) | #4 | `blocked` |
-| T-0012 | [#6](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/6) | #3, #5 | `blocked` |
-| T-0011 | [#7](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/7) | #2, #5 | `blocked` |
-| T-0013 | [#8](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/8) | #7, #6, #3 | `blocked` |
-| T-0016 | [#9](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/9) | #3 | `blocked` `conditional` |
-| T-0014 | [#10](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/10) | #8 | `blocked` |
-| T-0020 | [#11](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/11) | — | `ready-for-agent` |
-| T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | — | `ready-for-agent` |
-| T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | #11, re-run after #8 | `blocked` |
-| T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | — to draft; #8 for numbers | `ready-for-agent` |
+| T-0001 | [#15](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/15) | closed — done | — |
+| T-0002 | [#16](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/16) | closed — done | #15 |
+| T-0003 | [#17](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/17) | closed — done | #16 |
+| T-0003b | [#18](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/18) | closed — done | #17 |
+| T-0004 | [#19](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/19) | closed — done, **K1 fired** | #18 |
+| T-0004b | [#20](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/20) | closed — done, gate still fails | #19 |
+| T-0005 | [#21](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/21) | closed — done | #20 |
+| T-0006 | [#22](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/22) | closed — done | #21 |
+| T-0007 | [#23](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/23) | closed — superseded | #22 |
+| T-0008 | [#24](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/24) | closed — **cut** | — |
+| T-0009 | [#25](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/25) | closed — **cut** | — |
+| T-0010 | [#26](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/26) | closed — **cut** | — |
+| T-0017 | [#1](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/1) | closed — done | — |
+| T-0006b | [#2](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/2) | closed — done | — |
+| T-0015 | [#3](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/3) | closed — done | — |
+| T-0007a | [#4](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/4) | closed — done | #1 |
+| T-0007b | [#5](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/5) | closed — done | #4 |
+| T-0012 | [#6](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/6) | closed — done, **FR-021 met** | #3, #5 |
+| T-0011 | [#7](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/7) | closed — done, **K2 FAIL** | #2, #5 |
+| T-0013 | [#8](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/8) | open — `ready-for-agent`, every blocker closed | #7, #6, #3 |
+| T-0016 | [#9](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/9) | open — `conditional`, **kept, not cut** | #3 (closed) |
+| T-0014 | [#10](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/10) | open — `blocked` | #8 |
+| T-0020 | [#11](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/11) | open — `ready-for-agent` | — |
+| T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | open — `ready-for-agent` | — |
+| T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | open — `blocked` | #11, re-run after #8 |
+| T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | open — `ready-for-agent` to draft | — to draft; #8 for numbers |
 
-Added 2026-08-29 by the board audit: **#11, #12, #14** are unblocked and can start immediately; **#13** waits on #11.
+**Open and actionable now: #8, #9 (conditional), #11, #12, #14.** #10, #13 wait on #8/#11.
 
 Originally three tickets were unblocked: **#1, #2, #3**. Move a ticket's label
 from `blocked` to `ready-for-agent` when its blockers close.
@@ -88,8 +102,8 @@ zero and never silently missing.
   `T-0014 → T-0010 → T-0009 → T-0008`. **T-0007 was removed from the cut list at T-0006** — see note below.
 - **Kill criteria checked here:**
   - **K1** (HMM can't recover states) — checked at T-0002 (spike) and re-confirmed at T-0004 (full scale). Sat EOD deadline.
-  - **K2** (Rakshak doesn't beat the rule engine) — verdict renders at T-0011. Do not tune to win; report it.
-  - **K3** (`make eval` > 15 min) — watched from T-0005 onward, cut typologies 4→2 if violated.
+  - **K2** (Rakshak doesn't beat the rule engine) — **FIRED 2026-08-29 at T-0011. FAIL: +5.9% relative against a >=20% bar, and the claim holds at no swept asymmetry.** Nothing was tuned. The response is now live: report the negative result, pivot the narrative to explainability and the cost frontier, say so on camera. `results/verdict.md`.
+  - **K3** (`make eval` > 15 min) — **checked 2026-08-29: 261 s end to end** with all four eval modules chained. Not violated; no typologies cut.
   - **K4** (deadline moves earlier) — freeze at whatever ticket is complete.
 
 ## Countdown — revised 2026-08-28
@@ -103,13 +117,21 @@ video window, which is **Wed 2 – Thu 3 Sep**, review **Fri 4 Sep**, submit **S
 |---|---|---|
 | Fri 28 Aug | T-0001 → T-0006, T-0003b, T-0004b | done. K1 fired and was answered. |
 | Sat 29 Aug | T-0017 → T-0006b → T-0007a | **The proposal gets scored for the first time.** `savings` becomes readable. |
-| Sun 30 Aug | **done early on Sat 29.** Now: T-0011, **T-0018**, **T-0021**, T-0019 draft | Sweep machinery, real data and BAF validation all landed a day early. |
-| Mon 31 Aug | T-0011 | **K2's verdict**, with its cost-asymmetry boundary. |
-| **Tue 1 Sep** | T-0013, then **code freeze** | README numbers final, every one with provenance. |
+| Sun 30 Aug | **all done early on Sat 29, T-0011 included.** Remaining: **T-0018**, **T-0020**, **T-0021**, T-0019 draft | Sweep machinery, real data, BAF validation and the verdict all landed ahead of plan. |
+| ~~Mon 31 Aug~~ | ~~T-0011~~ — **done 2026-08-29** | **K2 fired: FAIL.** There is no boundary asymmetry; the claim holds nowhere in the range. |
+| **Tue 1 Sep** | T-0013, then **code freeze** | README numbers final, every one with provenance. **It must carry the FAIL.** |
 | Wed 2 – Thu 3 Sep | T-0014, **T-0019 (record + cut)** | Read-only viewer + video. Outside the build window. |
 
-**There is no float.** If anything slips, T-0011 compresses before T-0013 does — T-0013 is
-the differentiator and the artifact the panel actually reads.
+**There is now roughly two days of float**, because Saturday absorbed both Sunday's and Monday's
+tickets. It exists because the schedule was beaten, not because it loosened. T-0013 is the
+differentiator and the artifact the panel actually reads — spend the float there, or on T-0018
+and T-0020, **not on T-0016**.
+
+**What the float must not be spent on: making K2 pass.** The verdict is rendered and
+`00-charter.md` §3 forbids tuning to win. Reopening T-0008 (calibration) is defensible *only* as
+an honest attempt at a known gap — BMR consumes raw scores as posteriors and `hmm`'s Brier is
+0.4321 — and only if its result is reported whichever way it falls, including if it closes the
+gap and the verdict changes. Anything framed as "get to 20%" is out.
 
 *(A stale duplicate of the pre-revision countdown sat here and was removed by T-0017 on
 2026-08-28: it still routed through the cut tickets T-0008–T-0010 and still dated the freeze to

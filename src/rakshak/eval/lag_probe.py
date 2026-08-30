@@ -60,19 +60,21 @@ PROBE_SPLITS: tuple[str, ...] = ("validate", "test")
 FLAG_DAY_GRANULARITY: dict[str, str] = {
     "random": "none — returns no flag_day",
     "rules": "decision day (last day of its own trailing evidence)",
-    "gbdt": f"start day of a {WINDOW_DAYS}-day window",
-    "hmm": f"start day of a {WINDOW_DAYS}-day window",
+    "gbdt": f"last day of a {WINDOW_DAYS}-day window",
+    "hmm": f"last day of a {WINDOW_DAYS}-day window",
 }
-"""What each scorer's `flag_day` actually means. **This is not uniform across the
-registry and the existing summary table compares the two conventions side by
-side without saying so.** `models/rules.py` evaluates a trailing window ending on
-the decision day *inclusive*, so its `flag_day` is already a window-END
-attribution; `gbdt` and `hmm` report a window START. Applying the window-end
-offset to `rules` would double-count, so its shifted cell is reported as a
-counterfactual and marked not applicable."""
+"""What each scorer's `flag_day` means. **Uniform across the registry as of
+T-0011, and it was not before.** `models/rules.py` evaluates a trailing window
+ending on the decision day *inclusive*, so its `flag_day` has always been a
+window-END attribution; `gbdt` and `hmm` reported a window START, and the lag
+column of `results/summary.md` compared the two conventions without saying so.
+Both now add `WINDOW_ATTRIBUTION_OFFSET_DAYS` at source. `rules` was already
+correct and was not shifted — doing so would double-count."""
 
 WINDOW_BASED_MODELS: frozenset[str] = frozenset({"gbdt", "hmm"})
-"""Models whose `flag_day` is a window start and to which `attribution=` applies."""
+"""Models whose `flag_day` used to be a window start, and for which the superseded
+number is therefore reconstructable. `rules` is excluded: it was never wrong, so
+subtracting the offset from it would manufacture a convention it never used."""
 
 N_PERMUTATIONS: int = 499
 """Merchant-clustered permutations behind the separability verdict. 499 gives an
@@ -85,15 +87,23 @@ empirical p-value on a 1/500 grid, which is all the resolution the verdict needs
 
 
 def lag_table(split: Split, seed: int) -> pd.DataFrame:
-    """Median detection lag per model under both flag-day attributions.
+    """Median detection lag per model, as shipped and under the superseded convention.
+
+    `lag_end_days` is what the scorers report today — every `flag_day` is the
+    earliest day its evidence was complete. `lag_start_days` reconstructs the
+    number the repo printed before T-0011 by subtracting
+    `WINDOW_ATTRIBUTION_OFFSET_DAYS` from the window-based models' flag days,
+    so the two are comparable in one table. `rules` never used the superseded
+    convention, so its reconstructed cell is NaN rather than a shifted number.
 
     Args:
         split: The split to score. Every model in `MODEL_REGISTRY` is run.
         seed: Global seed (NFR-003); each model gets `harness._model_rng`.
 
     Returns:
-        One row per model with `lag_start_days` and `lag_end_days` (both in days,
-        NaN when no truly-bad merchant was flagged), their difference
+        One row per model with `lag_end_days` (as shipped) and `lag_start_days`
+        (the superseded convention, NaN where it never applied), both in days and
+        NaN when no truly-bad merchant was flagged, their difference
         `delta_days`, the `flagged_fraction`, the number of bad merchants
         `n_bad`, the number `n_flagged` the median is actually computed over, and
         `n_distinct_flag_days`, the number of distinct days the flags landed on.
@@ -101,12 +111,17 @@ def lag_table(split: Split, seed: int) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for name in MODEL_REGISTRY:
         frame = _normalise(MODEL_REGISTRY[name](split, _model_rng(seed, name)), split)
-        start_lag, flagged_fraction, n_bad = metrics.detection_lag_days(
+        end_lag, flagged_fraction, n_bad = metrics.detection_lag_days(
             frame["flag_day"], split.transition_day, split.labels
         )
-        end_lag, _, _ = metrics.detection_lag_days(
-            frame["flag_day"], split.transition_day, split.labels, attribution="window_end"
-        )
+        if name in WINDOW_BASED_MODELS:
+            start_lag, _, _ = metrics.detection_lag_days(
+                frame["flag_day"] - metrics.WINDOW_ATTRIBUTION_OFFSET_DAYS,
+                split.transition_day,
+                split.labels,
+            )
+        else:
+            start_lag = float("nan")
         bad = split.labels.index[split.labels.astype(bool)]
         flags = frame["flag_day"].reindex(bad).dropna()
         rows.append(
@@ -276,7 +291,9 @@ def _permutation_verdict(
     # the window grid is identical for every merchant. That is what makes "give this
     # pattern to a different merchant" a one-line index shift.
     inside_windows = np.flatnonzero(inside[:n_windows])
-    pre_windows = [np.flatnonzero(pre[m * n_windows : (m + 1) * n_windows]) for m in range(n_merchants)]
+    pre_windows = (
+        np.flatnonzero(pre[m * n_windows : (m + 1) * n_windows]) for m in range(n_merchants)
+    )
     positive_patterns = [w for w in pre_windows if w.size]
     # Only the merchants the real comparison uses: the pre-onset positives and the
     # never-bad controls. Bad merchants with no whole pre-onset window contribute to
@@ -331,9 +348,9 @@ def _lag_section(name: str, split: Split, table: pd.DataFrame, grid: np.ndarray)
     add(f"### `{name}` — days {split.start_day}-{split.end_day - 1}")
     add("")
     add(
-        "| model | flag_day means | median lag, window-START (days) | median lag, "
-        "window-END (days) | delta (days) | flagged frac | n bad | n behind the median | "
-        "distinct flag days used |"
+        "| model | flag_day means | median lag, SUPERSEDED window-START (days) | median "
+        "lag, SHIPPED window-END (days) | delta (days) | flagged frac | n bad | n behind "
+        "the median | distinct flag days used |"
     )
     add("|---|---|---|---|---|---|---|---|---|")
     for row in table.itertuples(index=False):
@@ -357,10 +374,12 @@ def _lag_section(name: str, split: Split, table: pd.DataFrame, grid: np.ndarray)
         "\\* `rules` is day-resolved: it evaluates trailing counters ending on the "
         "decision day **inclusive**, so its `flag_day` is already the last day of the "
         "evidence that fired it. The window-end offset does not apply to it and its "
-        "shifted cell is printed in brackets as a counterfactual only. **This is itself "
-        "a finding: `summary.md` prints `rules`' end-attributed lag in the same column "
-        "as `gbdt`'s and `hmm`'s start-attributed lags, so the existing table compares "
-        "two different conventions without saying so.**"
+        "shifted cell is printed in brackets to show what double-shifting it would have "
+        "produced, and is not a number this repo reports anywhere. **That `rules` was "
+        "already correct is itself the finding: before T-0011 `summary.md` printed its "
+        "end-attributed lag in the same column as `gbdt`'s and `hmm`'s start-attributed "
+        "lags, so the table compared two conventions without saying so. Both window-based "
+        "scorers were moved to match it; `rules` was not touched.**"
     )
     add("")
     add("#### Quantisation — how precise can this median possibly be?")
@@ -491,9 +510,10 @@ def render(
     add("## Verdict, up front")
     add("")
     add(
-        "**The -1.0 day median detection lag reported for `gbdt` and `hmm` in "
-        "`results/summary.md` is a reporting artefact of window-start attribution. It is "
-        "not early warning and it is not generator leakage.**"
+        "**The -1.0 day median detection lag that `results/summary.md` reported for "
+        "`gbdt` and `hmm` before T-0011 was a reporting artefact of window-start "
+        "attribution. It was not early warning and it was not generator leakage. It has "
+        "been corrected at source and `summary.md` no longer prints it.**"
     )
     add("")
     add(
@@ -516,11 +536,12 @@ def render(
     )
     add("")
     add(
-        "**Recommended convention to ship: window-END attribution, applied to `gbdt` and "
-        "`hmm` together, never one alone.** `rules` already reports a window-end day and "
-        "must not be shifted a second time. `summary.md` currently prints both "
-        "conventions in one column; that is the defect this probe found while "
-        "confirming the one it was sent to confirm."
+        "**Shipped: window-END attribution, applied to `gbdt` and `hmm` together.** "
+        "`rules` already reported a window-end day and was not shifted a second time. "
+        "Before T-0011 `summary.md` printed both conventions in one column — that is the "
+        "defect this probe found while confirming the one it was sent to confirm, and it "
+        "is now fixed at source in `models/gbdt.py` and `models/hmm_score.py` rather than "
+        "in the reporting layer, so no future caller can reintroduce it."
     )
     add("")
 
@@ -583,11 +604,14 @@ def render(
     add("")
     add(
         "Every model in `MODEL_REGISTRY` is scored through the harness's own "
-        "`_model_rng` / `_normalise`, so the window-START column reproduces exactly what "
-        "`results/summary.md` prints for `validate`. The window-END column is the same "
-        f"flags shifted by `WINDOW_DAYS - 1` = {WINDOW_DAYS - 1} days, via the "
-        "`attribution=` argument added to `metrics.detection_lag_days` (default "
-        "unchanged, so no existing number moved)."
+        "`_model_rng` / `_normalise`, so the **SHIPPED** column reproduces exactly what "
+        "`results/summary.md` and `results/verdict.md` print. The **SUPERSEDED** column "
+        "reconstructs what those files printed before T-0011, by subtracting "
+        f"`WINDOW_ATTRIBUTION_OFFSET_DAYS` = {WINDOW_DAYS - 1} days from the window-based "
+        "models' flag days. `rules` never used that convention — it has always reported "
+        "the last day of its own trailing evidence — so its superseded cell is `n/a` "
+        "rather than a number it never produced. Subtracting from it would manufacture a "
+        "convention and double-count the correction."
     )
     add("")
     for name, split in splits.items():
@@ -676,11 +700,12 @@ def render(
     add("## 4. What this changes")
     add("")
     add(
-        "- **Ship window-END attribution for `gbdt` and `hmm`.** The corrected medians "
-        "are the window-END column of the tables in section 2."
+        "- **Window-END attribution is shipped for `gbdt` and `hmm`.** The corrected "
+        "medians are the SHIPPED column of the tables in section 2, and they are what "
+        "`summary.md` and `verdict.md` now print."
     )
     add(
-        "- **Move both models together.** Moving one alone would make the two rows "
+        "- **Both models moved together.** Moving one alone would have made the two rows "
         "incomparable, which is precisely the defect this probe found in the `rules` "
         "column."
     )

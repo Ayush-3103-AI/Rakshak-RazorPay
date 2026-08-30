@@ -1896,3 +1896,91 @@ is allowed to claim. Putting a real risk inside a chore list is how it gets skip
 **FLOAT.** There is now one day of float where the re-plan said there was none. It exists because
 Saturday absorbed Sunday's tickets, not because the schedule loosened. Recorded in `BOARD.md` with
 the instruction to spend it on T-0011 or on reinstating T-0008 — not on T-0016.
+
+---
+
+## 2026-08-29 (T-0011) — K2 rendered. FAIL. The verdict the charter said could come out false.
+
+**DID.** Ran T-0011 as three parallel agents against disjoint file sets: the verdict on the test
+window, the FR-018 ablation table, and the detection-lag probe. The `test` window was opened once,
+under T-0011, via `load_split("test", unlock_test="T-0011")`. Three new modules
+(`eval/verdict.py`, `eval/ablations.py`, `eval/lag_probe.py`), three new results documents, all
+four wired into `make eval`, which now runs **261 s** end to end against NFR-004's 15 minutes.
+Full `pytest` green (2 strict `xfail`s intact), `ruff` clean, every artifact byte-identical on
+re-run at seed 42.
+
+**THE VERDICT.** `hmm` beats `rules` on savings by **+5.9% relative** at the central asymmetry of
+13.1, against `00-charter.md` §2's pre-registered **>=20%** bar. **K2 FAILS.** Nothing was tuned.
+FR-020(b) asked for the boundary asymmetry at which the claim stops holding; the answer is that
+**there is no boundary, because the claim holds at no swept point** across 0.7-146.9. Best point
+is +14.3%. The charter's K2 response is now live: pivot to explainability and the cost frontier,
+and say so on camera.
+
+**SURPRISE — the verdict is not the finding.** `random` scores **0.5365** on test and **beats
+every fitted model on savings**, while ranking at PR-AUC 0.2449, which is chance. Every model is
+*negative* net of the floor; `hmm` is -0.0188 and `rules` is -0.0475. So K2 is a comparison
+between two models that both sit below a uniform random score on the metric the charter names.
+On validate, T-0007b measured `random` 0.0051 *behind* `rules` and STATE.md called that the most
+important number of that session. On test it is ahead of everything. AP-06 did not just survive
+contact with the held-out window — it got worse. There is no savings headline available to this
+project in either direction, and that is a more useful thing to have measured than a win.
+
+**SURPRISE — the "cited central asymmetry" is not a constant.** 13.1 on test against 47.5 on
+validate. Structural, not tuned: `L_m` is a cumulative stock over the merchant's pre-window
+bad-state history, while T-0007a deliberately made `V_m` rate-derived so it would stop growing
+with split length. `test` loads 60 more days, the denominator grows, the ratio falls. Recorded as
+not-comparable-across-splits. The consequence is uncomfortable: `00-charter.md` §2 was
+pre-registered against "the cited central asymmetry" on the assumption that this was one number.
+It is a per-split quantity, and the pre-registration did not know that.
+
+**THE DEFECT NOBODY WAS LOOKING FOR.** The lag probe was sent to *confirm* window aliasing — the
+ticket had already narrowed it by reading `generate.py`, and the narrowing held (`_ramp` fills
+`out[:start]` with `lo`; stronger than claimed, since `endpoint=False` makes `out[onset] == lo`,
+so signal starts the day *after* onset). It confirmed that, and found something else underneath:
+**`models/rules.py` has always been window-END attributed and nobody had noticed.** It evaluates
+trailing counters ending on the decision day *inclusive* (`rules.py:147`), so its `flag_day` is
+the last day of its own evidence, while `gbdt` and `hmm` reported the window *start*.
+**`results/summary.md` has been printing two conventions in one column since T-0006.**
+
+Fixed at source in `models/gbdt.py` and `hmm_score.first_flag_day` rather than in the reporting
+layer, and `metrics.detection_lag_days` now converts nothing, so no future caller can put it back.
+`rules` was not touched — shifting it would double-count. The -1.0 "detects before onset" median
+is gone: validate 5.0 for both, test `gbdt` 10.0 and `hmm` 11.0.
+
+**AND IT REVERSES THE READING.** On validate, `gbdt` appeared to detect 4 days *earlier* than
+`rules` (-1.0 vs 3.0). Corrected, it is 2 days *later* (5.0 vs 3.0). Any pitch line built on that
+column was backwards. **"Rakshak detects N days before the fraud starts" is not a claim this repo
+can make** and has to be struck wherever it appears.
+
+**THE NEAR-MISS THAT IS THE REAL LESSON.** The separability probe's first cut used a flat
+|AUC-0.5| < 0.10 threshold and printed **"STOP — pre-onset windows ARE separable."** It was wrong
+three ways: windows are clustered inside ~13 merchants, the statistic is a max over 14 features,
+and — the one nearly missed — `onset_window` places onsets early in each split, so pre-onset
+windows sit at the *start* of the decision window while controls span all of it. Any feature
+drift over the window separates the groups with no leakage whatever. A merchant-clustered
+permutation null (n = 499, positive window *days* held fixed) cleared it: largest effect 0.173
+validate / 0.159 test, **p = 0.164 / 0.310**. **The threshold that would have shipped would have
+raised a false leakage alarm against the repo's headline numbers.** The clearance is also
+underpowered — 13 of 20 bad merchants have any whole pre-onset window, 24 windows total — and the
+document says "no evidence of leakage", not "proof of none".
+
+**UNFLATTERING, FR-018.** The decoration test landed on this repo's own headline modelling
+decision. Turning FR-007 within-merchant standardisation **off** moves LightGBM by -0.0001
+savings, +0.0032 PR-AUC and precision@5 not at all. It is load-bearing for the pooled-Gaussian
+HMM (Brier +0.1729) and close to free for the incumbent — trees carve scale bands themselves.
+The `gbdt` baseline in `summary.md` would be about as strong without it. The row ships.
+The graph scalars are *not* decoration for either model, so ADR-0002's GNN substitution carries
+real signal — on a generator that wrote the payer process those features read, which is the limit
+of the claim.
+
+**OPEN / NOT MEASURED.** Shrinkage on/off (T-0008 cut, ADR-0006) and NSGA vs grid (T-0009 cut,
+ADR-0004) ship as **not measured**, never as zero. BOCPD was cut, so no sequence-aware baseline
+other than the HMM exists and "is the win from sequence modelling or from the HMM specifically"
+is reported as open — academic now, since there is no win to attribute.
+
+**PROCESS FAILURE, MINE.** One of the three parallel agents ran `git add -A` and committed mid
+session (`5692d96`), sweeping up the other two agents' in-flight files including a stale
+`results/ablations.md`, plus an unrequested board audit. Nobody asked for a commit. The agent
+briefs forbade touching `BOARD.md` and said nothing about committing, because it did not occur to
+me that they would. Left in place rather than rewritten — the content is sound and the history is
+on a feature branch — but the next multi-agent run gets an explicit "do not commit" in the brief.

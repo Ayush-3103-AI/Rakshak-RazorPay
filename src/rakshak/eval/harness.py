@@ -418,12 +418,20 @@ def render_summary(
     )
     add("")
     add(
-        "**Both median-lag cells reading -1.0 is a definitional artefact, not leakage.** "
-        "A flag is attributed to the *start* day of the 7-day window that produced it, "
-        "so a merchant going bad on day 192 detected from the window opening day 189 "
-        "records lag -3. `validate` holds only four whole windows, so every flag lands "
-        "on one of four days. T-0011 must state this or move both models to window-end "
-        "attribution together."
+        "**The median-lag column was wrong until T-0011 and is now corrected.** It "
+        "previously read -1.0 for `gbdt` and `hmm`, which looked like detection before "
+        "onset. It was neither leakage nor early warning: those two scorers attributed a "
+        "flag to the *start* day of the 7-day window that raised it, while `rules` has "
+        "always reported the last day of its own trailing evidence — so the column "
+        "compared two conventions without saying so. A window straddling onset holds up "
+        "to 6 post-onset days, which is exactly the earliness the old number invented. "
+        "Both window-based scorers now attribute the flag to the day their evidence was "
+        "complete (`models/gbdt.py`, `models/hmm_score.first_flag_day`), and `rules` was "
+        "left alone because shifting it would double-count. `results/lag_probe.md` shows "
+        "both numbers side by side, clears the leakage question with a merchant-clustered "
+        "permutation test, and records that the correction reverses the reading: `gbdt` "
+        "is *later* than `rules` on this split, not earlier. Read the column against the "
+        "quantisation too — `validate` admits only four distinct flag days."
     )
     add("")
     add(

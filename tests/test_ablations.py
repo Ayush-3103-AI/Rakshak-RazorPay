@@ -218,6 +218,7 @@ def test_struck_rows_render_as_not_measured_never_as_zero(rendered: str) -> None
         line
         for line in rendered.splitlines()
         if line.startswith(("| empirical-Bayes shrinkage", "| NSGA-II vs. grid search"))
+        and ablations._NOT_MEASURED in line
     ]
     assert len(struck) == 2
     for line in struck:

@@ -477,17 +477,22 @@ def render_verdict(
         if not np.isnan(float(r["lag_days"]))
     }
     add(
-        "**The median-lag column is subject to the window-aliasing convention recorded at "
-        "T-0006b**: a flag is attributed to the *start* day of the 7-day window that "
-        "produced it, so a merchant going bad on day 192 detected from the window opening "
-        "day 189 records lag -3. On `validate` that convention plus a four-window span "
-        "produced a -1.0 median for both time-resolved models. Here the medians read "
+        "**The median-lag column was corrected at T-0011 and every model now uses one "
+        "convention.** A flag is attributed to the day its evidence was complete — for "
+        "`gbdt` and `hmm` the *last* day of the 7-day window that raised it, which is what "
+        "`rules` had always reported. Before the correction those two attributed the flag "
+        "to the window's *start* day, crediting them with up to 6 days of earliness they "
+        "never had; on `validate` that produced the -1.0 median that read as detection "
+        "before onset. Here the medians read "
         + ", ".join(f"`{name}` {value:+.1f} d" for name, value in lags.items())
-        + " over a 60-day window, so the negative median does not reproduce and the "
-        "aliasing reading is consistent with it. The HMM's `flag_day` is provably "
-        "forward-only (truncation test with a negative control), so this was never a "
-        "leakage question. If the convention is ever moved to window-end attribution it "
-        "must be moved for every model at once."
+        + " over a 60-day window. **The correction reverses the reading of this column** — "
+        "the window-based models are *later* than `rules`, not earlier. "
+        "`results/lag_probe.md` reports both conventions side by side and clears the "
+        "leakage question separately, with a merchant-clustered permutation test over "
+        "pre-onset windows (largest effect 0.159, p = 0.310 on this split). The HMM's "
+        "`flag_day` is independently provably forward-only — truncation test with a "
+        "negative control — so this was never a leakage question. **No claim of the form "
+        "\"Rakshak detects N days before the fraud starts\" is available to this repo.**"
     )
     add("")
 

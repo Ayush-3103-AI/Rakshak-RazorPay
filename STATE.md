@@ -1,8 +1,118 @@
 # STATE — Rakshak
 
 PHASE:        5 — EXECUTE, in progress
-LAST SESSION: 2026-08-29 — **T-0007b**, **T-0015**, the **FR-020 figure**, the **eight missing ADRs**, and **T-0012** (BAF validation). **FR-021 is met: `CLAUDE.md`'s mandated BAF sentence is backed for the first time.** Full `pytest` green (2 strict `xfail`s intact), `ruff` clean, `make eval` 14.2 s, `make baf` 16 s.
-NEXT ACTION:  **T-0020** and **T-0018** (both unblocked, neither touches a number), then **T-0011** (K2's verdict, on `test` — every blocker closed). **A board audit on 2026-08-29 found that two of the three graded artifacts had no ticket**; T-0018 (architecture doc), T-0019 (video), T-0020 (release hygiene) and T-0021 (verify `make eval` on a clean checkout) now exist. See `11-tickets/BOARD.md`, "Board audit — 2026-08-29".
+LAST SESSION: 2026-08-29 — **T-0011 is DONE. K2 FIRED: FAIL.** The test window was opened once, under T-0011. `results/verdict.md`, `results/ablations.md`, `results/lag_probe.md` are new; `make eval` now regenerates all of them. A detection-lag defect was found and fixed at source. Full `pytest` green (2 strict `xfail`s intact), `ruff` clean, **`make eval` 261 s end to end** against NFR-004's 15 min.
+NEXT ACTION:  **T-0013** (explainability + README, Tue 1 Sep, then freeze) — its last blocker is now closed. **T-0013 must carry K2's negative verdict, not narrate around it.** Also unblocked and touching no number: **T-0020**, **T-0018**. See "T-0011 — the verdict" below before writing a single README number.
+
+## T-0011 — the verdict. Read this before writing any README number.
+
+Test split, days 210-269, 100 merchants, 20 bad, K = 5 review slots (0.40 h), seed 42.
+`results/verdict.md`. The window was opened once, under T-0011, per `06-requirements.md` §3.
+
+| model | savings | vs `random` | PR-AUC | prec@5 | Brier | median lag | flagged | held | capacity binds |
+|---|---|---|---|---|---|---|---|---|---|
+| random | **0.5365** | 0.0000 | 0.2449 | 0.2000 | 0.3069 | n/a | 0.00 | 14 | capacity |
+| rules | 0.4889 | **-0.0475** | 0.5547 | 1.0000 | 0.1358 | 5.0 d | 0.65 | 12 | capacity |
+| gbdt | 0.5069 | **-0.0296** | **0.6523** | 1.0000 | 0.1453 | 10.0 d | 0.65 | 13 | capacity |
+| hmm | 0.5176 | **-0.0188** | 0.3347 | 0.4000 | 0.4321 | 11.0 d | **0.75** | 15 | **none** (wanted 4) |
+
+### K2 FIRED. The verdict is FAIL and it is not to be tuned away.
+
+`hmm` over `rules` at the central asymmetry (13.1) is **+5.9% relative** (+0.0287 absolute)
+against `00-charter.md` §2's pre-registered **>=20%** bar. **The claim does not hold on test.**
+
+**There is no boundary asymmetry, because the claim holds at no swept point** across the full
+derived range 0.7 - 146.9. Best point is +14.3% at 146.9. FR-020(b) asked for the boundary or an
+explicit statement that the claim holds throughout; the honest third answer is that it holds
+nowhere, and that is what `verdict.md` states. The weaker "beats `rules` at all" question crosses
+between **2.6 and 5.1** on test (18.5 - 36.2 on validate), and the margin is **non-monotone**
+(+5.9% at 13.1, dipping to +3.7% at 19.6, then rising).
+
+`00-charter.md` §3's K2 response is now live: **do not tune to win. Pivot the narrative to
+explainability and the cost frontier, and say so on camera.**
+
+### The finding that outranks the verdict: `random` wins the primary metric
+
+**`random` scores 0.5365 on test and beats every fitted model on savings, while ranking at
+PR-AUC 0.2449 — chance.** Every model's savings net of the floor is **negative**. So K2 compares
+two models that both sit below a uniform random score on the metric the charter names.
+
+On validate T-0007b measured `random` 0.0051 *behind* `rules`; on test it is *ahead of
+everything*. This is `07-math.md` §6's AP-06 guard arriving harder than STATE.md anticipated.
+**No savings headline is available to this project in either direction.** Every savings number
+in the README and the video must be printed net of the `random` floor with PR-AUC beside it.
+
+Read it with `results/baf_validation.md`'s other half: on BAF at 1.47% prevalence `random` scores
+**-28.2169**. The floor's competence on the synthetic split is substantially an artefact of the
+generator's 20% `FRAUD_MERCHANT_RATE`, not a property of the savings metric.
+
+### The central asymmetry is not a constant across splits — 13.1 on test, 47.5 on validate
+
+Structural, not tuned: `L_m` is a cumulative stock over the merchant's whole pre-window bad-state
+history, while T-0007a deliberately made `V_m` rate-derived so it would stop growing with split
+length. `test` loads 60 more days, so the denominator grows and the ratio falls. Recorded as
+**not comparable across splits**; the FP-per-100 divergence from the 400-600 commentary band is
+~30x here, stated and **not closed**.
+
+### The detection-lag column was wrong, and the correction reverses its reading
+
+`results/lag_probe.md`. The probe was sent to confirm window aliasing and found a second defect
+underneath it.
+
+- **`models/rules.py` was already window-END attributed and nobody had noticed.** It evaluates
+  trailing counters ending on the decision day *inclusive* (`rules.py:147`), so its `flag_day` is
+  the last day of its own evidence. `gbdt` and `hmm` reported the window *start*.
+  **`summary.md` printed both conventions in one column.**
+- **Fixed at source, not in the reporting layer** — `models/gbdt.py` and
+  `hmm_score.first_flag_day` now add `WINDOW_DAYS - 1`. `rules` was not touched; shifting it
+  would double-count. `metrics.detection_lag_days` now converts nothing and takes `flag_day` as a
+  calendar day, so no future caller can reintroduce the bug.
+- **The -1.0 "detects before onset" median is gone.** validate: `gbdt` and `hmm` -1.0 -> **5.0**.
+  test: `gbdt` 4.0 -> **10.0**, `hmm` 5.0 -> **11.0**. `rules` unchanged at 3.0 / 5.0.
+- **The correction reverses the comparison.** On validate `gbdt` read as detecting 4 days
+  *earlier* than `rules`; corrected, it is 2 days *later*. Any pitch line built on the old column
+  is backwards.
+- **Leakage cleared with a measurement, not an argument.** Largest per-feature |AUC-0.5| on
+  pre-onset windows 0.173 validate / 0.159 test, against a merchant-clustered permutation null
+  (n = 499): **p = 0.164 / 0.310**. Underpowered and the document says so — only 13 of 20 bad
+  merchants have any whole pre-onset window, 24 windows total.
+- **"Rakshak detects N days before the fraud starts" is not a claim this repo can make.** Strike
+  it wherever it appears.
+
+### Ablations (FR-018) — one component is close to decoration, and it is not the one expected
+
+`results/ablations.md`, test window, 6 fits. Reference: `hmm` savings 0.5176 / PR-AUC 0.3347;
+`gbdt` 0.5069 / 0.6523.
+
+| ablation | d savings | d PR-AUC | d prec@5 | d Brier |
+|---|---|---|---|---|
+| HMM **off** (= gbdt path) | -0.0107 | **+0.3176** | **+0.6000** | **-0.2868** (better) |
+| graph features off — HMM | -0.1006 | -0.0390 | 0 | -0.0144 |
+| graph features off — gbdt | +0.0047 | -0.1217 | -0.2000 | -0.0038 |
+| standardisation off — HMM | -0.0318 | -0.0475 | 0 | **+0.1729** (worse) |
+| standardisation off — gbdt | **-0.0001** | **+0.0032** | **0** | -0.0081 |
+| shrinkage on/off | **not measured** — T-0008 cut, ADR-0006 | | | |
+| NSGA-II vs grid search | **not measured** — T-0009 cut, ADR-0004 | | | |
+
+- **FR-007 within-merchant standardisation is nearly free for LightGBM** — savings -0.0001,
+  PR-AUC +0.0032, precision@5 unmoved. It is load-bearing for the pooled-Gaussian HMM
+  (Brier +0.1729) and close to decoration for the incumbent. Trees carve scale bands themselves.
+  FR-018's "a component whose removal changes no number is decoration" landed on the repo's own
+  headline modelling decision, and the row ships.
+- **The graph scalars are not decoration for either model**, so ADR-0002's GNN substitution
+  carries real signal — *on this generator*, which wrote the payer process those features read.
+  That is the limit of the claim and the document states it.
+- **BOCPD (T-0010) was cut, so no sequence-aware baseline other than the HMM was measured.**
+  "Is the win from sequence modelling or from the HMM specifically" is **left open and stated as
+  open.** With K2 failing, there is no win to attribute anyway.
+
+### What T-0011 does not establish
+
+No calibration exists anywhere in the repo (T-0008 cut), so BMR consumes raw scores as
+posteriors. The perfect-hindsight oracle dominates by construction and proves nothing. The
+knapsack ceiling clears hold-everything only because loss is concentrated on this split. The
+`hmm` row's capacity constraint does **not** bind on test — unconstrained BMR wanted 4 of 5
+slots — so that row is not a capacity result.
 
 ## Decisions taken by the user — 2026-08-29
 
@@ -133,6 +243,8 @@ it from this summary.
 | T-0007a | done | `L_m`/`V_m` redefined, `MDR_RATE` deleted, oracle-dominance invariant wired as a harness precondition. `savings` readable |
 | T-0007b | done — 2026-08-29 | BMR policy replaces `budget_policy`, capacity constraint with a reported binding constraint, derived cost-asymmetry sweep. **19 tests. See the `random`-row finding below — it is the most important number this session produced.** |
 | T-0015 | done — 2026-08-29 | Online Retail II procured, hashed, manifested, CC BY 4.0 verified at source. `calibration_profile.json` + `calibration_gap.md` committed. **Recommends cutting T-0016.** |
+| T-0012 | done — 2026-08-29 | BAF Base through the decision layer on BAF's own temporal split. FR-021 met |
+| T-0011 | done — 2026-08-29 | **K2 rendered: FAIL.** `verdict.md`, `ablations.md`, `lag_probe.md`. Test window opened once. Lag attribution defect found and fixed at source. See "T-0011 — the verdict" at the top of this file |
 
 ## The K1 story — read this before touching the sequence layer
 

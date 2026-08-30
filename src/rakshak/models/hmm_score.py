@@ -140,7 +140,15 @@ def filtered_bad_probability(model: HMM, X: np.ndarray) -> np.ndarray:
 def first_flag_day(
     probability: np.ndarray, eligible: np.ndarray, window_start_day: np.ndarray
 ) -> float:
-    """Start day of the first eligible window at or above `FLAG_THRESHOLD`.
+    """**Last** day of the first eligible window at or above `FLAG_THRESHOLD`.
+
+    A window's evidence is not complete until its final day, so that is the
+    earliest day on which the flag could have been raised. Attributing it to the
+    window's *start* day credited the model with up to `WINDOW_DAYS - 1` days of
+    earliness it never had, which is what produced the -1.0 median detection lag
+    reported before T-0011 (`results/lag_probe.md`). `models/rules.py` has always
+    reported the last day of its own evidence, so before this change the lag
+    column of `results/summary.md` compared two conventions silently.
 
     Args:
         probability: Filtered bad-state probability per window, shape (T,).
@@ -155,7 +163,7 @@ def first_flag_day(
     fired = eligible & (probability >= FLAG_THRESHOLD)
     if not fired.any():
         return float("nan")
-    return float(window_start_day[int(np.argmax(fired))])
+    return float(window_start_day[int(np.argmax(fired))] + WINDOW_DAYS - 1)
 
 
 def _panel(matrix: WindowMatrix) -> np.ndarray:

@@ -4,13 +4,13 @@
 
 ## Verdict, up front
 
-**The -1.0 day median detection lag reported for `gbdt` and `hmm` in `results/summary.md` is a reporting artefact of window-start attribution. It is not early warning and it is not generator leakage.**
+**The -1.0 day median detection lag that `results/summary.md` reported for `gbdt` and `hmm` before T-0011 was a reporting artefact of window-start attribution. It was not early warning and it was not generator leakage. It has been corrected at source and `summary.md` no longer prints it.**
 
 A flag was being credited to the *first* day of the seven-day window whose evidence raised it. That window contains up to six days of post-onset behaviour, so the model was given credit for days it had not yet seen. Attributing the flag to the window's **last** day — the first day on which the model could actually have fired — moves every window-based lag by exactly `WINDOW_DAYS - 1` = **+6 days**, and the negative lags disappear.
 
 **Can the repo claim "Rakshak detects N days before the fraud starts"? No.** Under the attribution this document recommends, no model detects before onset. The honest claim is about *how soon after* onset a merchant is flagged, and about how many bad merchants are flagged at all — both of which are in the tables below. Any "detects before the fraud starts" line must be struck from the README, the video and the pitch.
 
-**Recommended convention to ship: window-END attribution, applied to `gbdt` and `hmm` together, never one alone.** `rules` already reports a window-end day and must not be shifted a second time. `summary.md` currently prints both conventions in one column; that is the defect this probe found while confirming the one it was sent to confirm.
+**Shipped: window-END attribution, applied to `gbdt` and `hmm` together.** `rules` already reported a window-end day and was not shifted a second time. Before T-0011 `summary.md` printed both conventions in one column — that is the defect this probe found while confirming the one it was sent to confirm, and it is now fixed at source in `models/gbdt.py` and `models/hmm_score.py` rather than in the reporting layer, so no future caller can reintroduce it.
 
 ## Provenance
 
@@ -35,18 +35,18 @@ A flag was being credited to the *first* day of the seven-day window whose evide
 
 ## 2. Lag under both attributions
 
-Every model in `MODEL_REGISTRY` is scored through the harness's own `_model_rng` / `_normalise`, so the window-START column reproduces exactly what `results/summary.md` prints for `validate`. The window-END column is the same flags shifted by `WINDOW_DAYS - 1` = 6 days, via the `attribution=` argument added to `metrics.detection_lag_days` (default unchanged, so no existing number moved).
+Every model in `MODEL_REGISTRY` is scored through the harness's own `_model_rng` / `_normalise`, so the **SHIPPED** column reproduces exactly what `results/summary.md` and `results/verdict.md` print. The **SUPERSEDED** column reconstructs what those files printed before T-0011, by subtracting `WINDOW_ATTRIBUTION_OFFSET_DAYS` = 6 days from the window-based models' flag days. `rules` never used that convention — it has always reported the last day of its own trailing evidence — so its superseded cell is `n/a` rather than a number it never produced. Subtracting from it would manufacture a convention and double-count the correction.
 
 ### `validate` — days 180-209
 
-| model | flag_day means | median lag, window-START (days) | median lag, window-END (days) | delta (days) | flagged frac | n bad | n behind the median | distinct flag days used |
+| model | flag_day means | median lag, SUPERSEDED window-START (days) | median lag, SHIPPED window-END (days) | delta (days) | flagged frac | n bad | n behind the median | distinct flag days used |
 |---|---|---|---|---|---|---|---|---|
 | random | none — returns no flag_day | n/a | (n/a)* | n/a* | 0.00 | 20 | 0 | 0 |
-| rules | decision day (last day of its own trailing evidence) | 3.0 | (9.0)* | n/a* | 0.45 | 20 | 9 | 6 |
-| gbdt | start day of a 7-day window | -1.0 | 5.0 | 6.0 | 0.50 | 20 | 10 | 4 |
-| hmm | start day of a 7-day window | -1.0 | 5.0 | 6.0 | 0.65 | 20 | 13 | 4 |
+| rules | decision day (last day of its own trailing evidence) | n/a | (3.0)* | n/a* | 0.45 | 20 | 9 | 6 |
+| gbdt | last day of a 7-day window | -1.0 | 5.0 | 6.0 | 0.50 | 20 | 10 | 4 |
+| hmm | last day of a 7-day window | -1.0 | 5.0 | 6.0 | 0.65 | 20 | 13 | 4 |
 
-\* `rules` is day-resolved: it evaluates trailing counters ending on the decision day **inclusive**, so its `flag_day` is already the last day of the evidence that fired it. The window-end offset does not apply to it and its shifted cell is printed in brackets as a counterfactual only. **This is itself a finding: `summary.md` prints `rules`' end-attributed lag in the same column as `gbdt`'s and `hmm`'s start-attributed lags, so the existing table compares two different conventions without saying so.**
+\* `rules` is day-resolved: it evaluates trailing counters ending on the decision day **inclusive**, so its `flag_day` is already the last day of the evidence that fired it. The window-end offset does not apply to it and its shifted cell is printed in brackets to show what double-shifting it would have produced, and is not a number this repo reports anywhere. **That `rules` was already correct is itself the finding: before T-0011 `summary.md` printed its end-attributed lag in the same column as `gbdt`'s and `hmm`'s start-attributed lags, so the table compared two conventions without saying so. Both window-based scorers were moved to match it; `rules` was not touched.**
 
 #### Quantisation — how precise can this median possibly be?
 
@@ -59,14 +59,14 @@ Every model in `MODEL_REGISTRY` is scored through the harness's own `_model_rng`
 
 ### `test` — days 210-269
 
-| model | flag_day means | median lag, window-START (days) | median lag, window-END (days) | delta (days) | flagged frac | n bad | n behind the median | distinct flag days used |
+| model | flag_day means | median lag, SUPERSEDED window-START (days) | median lag, SHIPPED window-END (days) | delta (days) | flagged frac | n bad | n behind the median | distinct flag days used |
 |---|---|---|---|---|---|---|---|---|
 | random | none — returns no flag_day | n/a | (n/a)* | n/a* | 0.00 | 20 | 0 | 0 |
-| rules | decision day (last day of its own trailing evidence) | 5.0 | (11.0)* | n/a* | 0.65 | 20 | 13 | 11 |
-| gbdt | start day of a 7-day window | 4.0 | 10.0 | 6.0 | 0.65 | 20 | 13 | 4 |
-| hmm | start day of a 7-day window | 5.0 | 11.0 | 6.0 | 0.75 | 20 | 15 | 8 |
+| rules | decision day (last day of its own trailing evidence) | n/a | (5.0)* | n/a* | 0.65 | 20 | 13 | 11 |
+| gbdt | last day of a 7-day window | 4.0 | 10.0 | 6.0 | 0.65 | 20 | 13 | 4 |
+| hmm | last day of a 7-day window | 5.0 | 11.0 | 6.0 | 0.75 | 20 | 15 | 8 |
 
-\* `rules` is day-resolved: it evaluates trailing counters ending on the decision day **inclusive**, so its `flag_day` is already the last day of the evidence that fired it. The window-end offset does not apply to it and its shifted cell is printed in brackets as a counterfactual only. **This is itself a finding: `summary.md` prints `rules`' end-attributed lag in the same column as `gbdt`'s and `hmm`'s start-attributed lags, so the existing table compares two different conventions without saying so.**
+\* `rules` is day-resolved: it evaluates trailing counters ending on the decision day **inclusive**, so its `flag_day` is already the last day of the evidence that fired it. The window-end offset does not apply to it and its shifted cell is printed in brackets to show what double-shifting it would have produced, and is not a number this repo reports anywhere. **That `rules` was already correct is itself the finding: before T-0011 `summary.md` printed its end-attributed lag in the same column as `gbdt`'s and `hmm`'s start-attributed lags, so the table compared two conventions without saying so. Both window-based scorers were moved to match it; `rules` was not touched.**
 
 #### Quantisation — how precise can this median possibly be?
 
@@ -148,8 +148,8 @@ Two further signs it is noise rather than signal, both visible in the tables abo
 
 ## 4. What this changes
 
-- **Ship window-END attribution for `gbdt` and `hmm`.** The corrected medians are the window-END column of the tables in section 2.
-- **Move both models together.** Moving one alone would make the two rows incomparable, which is precisely the defect this probe found in the `rules` column.
+- **Window-END attribution is shipped for `gbdt` and `hmm`.** The corrected medians are the SHIPPED column of the tables in section 2, and they are what `summary.md` and `verdict.md` now print.
+- **Both models moved together.** Moving one alone would have made the two rows incomparable, which is precisely the defect this probe found in the `rules` column.
 - **Strike any "detects before the fraud starts" claim.** It was an artefact of crediting a model with a window it had not finished observing.
 - **Report the quantisation with the median, every time.** On a 7-day grid over a handful of flagged merchants the median is a coarse ordinal, not a measured duration.
 - **The leakage suspicion is retired, with a measurement behind it** rather than only a reading of the generator source.

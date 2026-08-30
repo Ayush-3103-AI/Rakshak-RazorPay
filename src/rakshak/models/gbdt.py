@@ -278,7 +278,11 @@ def score_gbdt(
     Returns:
         Frame indexed by merchant_id with `score`, the maximum per-window bad-state
         probability over the decision window (dimensionless, [0, 1]), and `flag_day`,
-        the start day of the first window scoring above `FLAG_THRESHOLD`.
+        the **last** day of the first window scoring above `FLAG_THRESHOLD` — the
+        earliest day that window's evidence was complete. See
+        `hmm_score.first_flag_day` and `results/lag_probe.md`: window-start
+        attribution was what produced the -1.0 median lag, and `models/rules.py`
+        has always reported the last day of its own evidence.
     """
     seed = int(rng.integers(0, 2**31 - 1))
     booster, segment_map, feature_names = _fitted(seed, drop_features, standardise)
@@ -306,7 +310,13 @@ def score_gbdt(
         }
     )
     score = frame.groupby("merchant_row")["proba"].max()
-    flagged = frame[frame["proba"] >= FLAG_THRESHOLD].groupby("merchant_row")["day"].min()
+    # + WINDOW_DAYS - 1: attribute the flag to the last day of the window that
+    # raised it, matching `models/rules.py`. See the docstring above.
+    flagged = (
+        frame[frame["proba"] >= FLAG_THRESHOLD].groupby("merchant_row")["day"].min()
+        + WINDOW_DAYS
+        - 1
+    )
 
     index = pd.Index(matrix.merchant_ids, name="merchant_id")
     positions = pd.RangeIndex(len(index))
