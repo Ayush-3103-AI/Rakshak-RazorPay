@@ -44,10 +44,14 @@ from rakshak.config import (
     BURN_IN_WINDOWS,
     GENERATOR_START_DATE,
     SEED,
-    STATE_PATHS_PARQUET,
     WINDOW_DAYS,
 )
-from rakshak.eval.splits import BAD_STATES, Split, load_split
+from rakshak.eval.splits import (
+    BAD_STATES,
+    Split,
+    active_state_paths_path,
+    load_split,
+)
 from rakshak.features import SegmentMap, build_emissions, window_state_labels
 
 LOGGER = logging.getLogger(__name__)
@@ -135,7 +139,9 @@ def build_window_matrix(
     n_merchants, n_windows, n_features = emissions.X.shape
 
     if state_paths is None:
-        state_paths = pd.read_parquet(STATE_PATHS_PARQUET)
+        # T-0022b: the active dataset, not the config constant, so a shock-dataset
+        # run fits on the shock dataset instead of silently on data/synthetic/.
+        state_paths = pd.read_parquet(active_state_paths_path())
     labels = window_state_labels(
         state_paths, emissions.merchant_ids, n_windows, window_days=WINDOW_DAYS
     )

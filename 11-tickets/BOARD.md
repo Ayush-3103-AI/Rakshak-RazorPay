@@ -41,7 +41,7 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
 | [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
 | ~~[T-0022a](T-0022a.md)~~ | **DONE 2026-08-30.** Shock-capable generator (`data/synthetic_shock/`) | ~~Sun 30 eve~~ | low, additive only | ~~yes~~ | closed |
-| [T-0022b](T-0022b.md) | Harness data-path seam | Sun 30 eve → Mon 31 | low, mechanical | **yes — ranked below every ticket above** | — |
+| ~~[T-0022b](T-0022b.md)~~ | **DONE 2026-08-30.** Harness data-path seam: `harness.run(transactions_path=, state_paths_path=)` + `load_split(...)` overrides, carried to `gbdt.fit` / `hmm_score.fit` through an active-dataset context manager. **Not "low, mechanical" — the ticket's Build list missed four readers and would have shipped models trained on `data/synthetic/` while scoring the shock set. See the dated amendment in T-0022b.md.** | ~~Sun 30 eve~~ | low, mechanical | ~~yes~~ | closed |
 | [T-0022c](T-0022c.md) | Black-swan report (`results/blackswan.md`) | Mon 31 | medium — has a pre-agreed fallback | **yes — ranked below every ticket above** | T-0022a, T-0022b |
 | [T-0023](T-0023.md) | Drift-detection literature survey (doc only) | Sun 30 eve → Mon 31 | low, doc only | **yes — ranked below every ticket above** | — |
 
@@ -82,7 +82,7 @@ ones (T-0007, T-0008, T-0009, T-0010), now has an issue reflecting its current s
 | T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | open — `blocked` | #11, re-run after #8 |
 | T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | open — `ready-for-agent` to draft | — to draft; #8 for numbers |
 | T-0022a | [#27](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/27) | closed — done 2026-08-30 | — |
-| T-0022b | [#28](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/28) | open — `ready-for-agent`, **ranked below everything above** | — |
+| T-0022b | [#28](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/28) | closed — done 2026-08-30 | — |
 | T-0023 | [#29](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/29) | open — `ready-for-agent`, **ranked below everything above** | — |
 | T-0022c | [#30](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/30) | open — `blocked` | #27, #28 |
 
@@ -139,8 +139,8 @@ hour is taken from T-0013, T-0018, T-0020, T-0021, or T-0019.
 
 - **Spine (T-0001–T-0006):** not cuttable at any budget. This is the sequence in CLAUDE.md's countdown that must hold or the project DESCENDs to Phase 2 (LightGBM + cost layer only, no HMM).
 - **Cut order**, if Monday arrives at 60% (first listed cut first):
-  `T-0023 → T-0022c → T-0022b → ~~T-0022a~~ → T-0014 → T-0010 → T-0009 → T-0008`.
-  **T-0022a landed 2026-08-30 and is no longer cuttable**; it is additive and touches no
+  `T-0023 → T-0022c → ~~T-0022b~~ → ~~T-0022a~~ → T-0014 → T-0010 → T-0009 → T-0008`.
+  **T-0022a and T-0022b landed 2026-08-30 and are no longer cuttable**; it is additive and touches no
   committed number, so cutting the rest of the T-0022 chain now simply leaves a shock-capable
   generator with no report, which is a stated outcome rather than dead code. **T-0007 was removed from the cut list at T-0006** — see note below.
 - **Kill criteria checked here:**

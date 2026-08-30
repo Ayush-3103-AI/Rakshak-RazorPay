@@ -2034,3 +2034,58 @@ could see.
 
 **NOT DONE, DELIBERATELY.** No harness seam (T-0022b), no report (T-0022c). Nothing under
 `results/` was written or read. `SPLIT_DAY_BOUNDS` and `MERCHANT_GROUP_CYCLE` untouched.
+
+## 2026-08-30 (T-0022b) — harness data-path seam. The ticket's Build list was wrong, and the wrong version would have shipped a plausible, contaminated report.
+
+**DONE.** `harness.run()` and `load_split()` take dataset overrides. Full `pytest` green (the two
+strict `xfail`s intact), `ruff check src tests` clean. Nothing under `results/` or `data/` was
+written or read. `SPLIT_DAY_BOUNDS`, `MERCHANT_GROUP_CYCLE` and the test-window lock untouched.
+
+**SURPRISE, and it is the whole ticket.** `load_split()` is not the only place a dataset gets
+loaded. Tracing the seam end to end before writing code found four more readers the ticket did not
+know about: `split_summary()` (`splits.py:342` — the harness prints that table), the
+`STATE_PATHS_PARQUET` read inside `gbdt.build_window_matrix` (`gbdt.py:138`), the two internal
+`load_split()` calls in `gbdt.fit` (`gbdt.py:210-212`) and `hmm_score.fit` (`hmm_score.py:227`),
+and `hmm_score.fit`'s own direct parquet read for its training labels (`hmm_score.py:235`).
+
+**Built exactly as written, `harness.run(transactions_path=shock)` would have scored
+`data/synthetic_shock/` with `gbdt` and `hmm` trained on `data/synthetic/`.** Silent
+cross-dataset contamination, no test catching it, and `results/blackswan.md` reading entirely
+plausible and being wrong. `random` and `rules` are stateless (`rules.py:174`), so only the two
+*fitted* models are affected — which makes it worse, not better: those are the two rows the report
+is about. This is the second time in two days that a T-0022 ticket's stated design was unavailable
+for a reason only visible from inside the code (T-0022a: the shocked population is not a paired
+counterfactual). Both were caught before writing, not after.
+
+**The fix collided with the ticket's own "must NOT" list.** The `Scorer` contract is
+`(split, rng) -> frame` (`harness.py:153`), so there is no argument channel down to `fit()`
+without changing `MODEL_REGISTRY`, `evaluate_model` and both `score_*` signatures — all
+explicitly forbidden at `T-0022b.md:29`. Recorded both options as a dated amendment block in
+`T-0022b.md` (the way T-0007b's invariant re-scoping was handled) rather than quietly editing
+`Done when` to match what got built.
+
+**Chose (a): module-level active-dataset state in `splits.py`** — two paths, three accessors, an
+`active_dataset()` context manager that restores on exception. `load_split`, `split_summary`,
+`gbdt.build_window_matrix` and `hmm_score.fit` read it; `harness.run()` enters it and delegates to
+a private `_run()`. ~50 lines with docstrings, no signature change anywhere on the scoring path.
+Rejected (b), threading the dataset through `Scorer`: cleaner and free of global state, but a
+large diff on the primary scoring path two days before freeze, and it contradicts the ticket.
+The ceiling is marked with a `ponytail:` comment naming it — not thread-safe, not nestable across
+concurrent runs — and naming (b) as the upgrade path if the harness ever scores in parallel.
+
+**The guard the ticket did not ask for and needed most.** `tests/test_dataset_seam.py::
+test_override_reaches_every_reader` monkeypatches `pd.read_parquet` for the duration of an
+overridden run and asserts **no read landed under `SYNTHETIC_DIR`**, plus a `len(seen) >= 4` floor
+so a run that read nothing cannot pass vacuously, plus a behavioural check that the printed TOTAL
+follows the override (the copy is thinned by 50 merchants, and the summary prints 450). The path
+assertion is strictly stronger than the merchant-count check alone: with the old code the count
+check would have *passed*, because the stale `data/synthetic/` state paths still contain every
+merchant the override asks about. It also catches any hardcoded parquet read added to the run path
+in future, which is the failure mode that would otherwise return silently at T-0022c.
+
+Non-regression is `harness.run(seed=42)` with no overrides into a `tmp_path` results dir, diffed
+byte-for-byte against the committed `results/summary.md`. The committed file is never written to
+in order to make the test pass. Third test asserts the context manager restores the module state,
+because a leak would poison every later call in the same process, tests included.
+
+**No dependency added. No number moved.**

@@ -75,10 +75,9 @@ from rakshak.config import (
     N_HIDDEN_STATES,
     SEED,
     SPLIT_DAY_BOUNDS,
-    STATE_PATHS_PARQUET,
     WINDOW_DAYS,
 )
-from rakshak.eval.splits import Split, load_split
+from rakshak.eval.splits import Split, active_state_paths_path, load_split
 from rakshak.features import SegmentMap, window_state_labels
 from rakshak.models.gbdt import WindowMatrix, build_window_matrix, decision_mask
 from rakshak.models.hmm import HMM, UNLABELLED
@@ -231,7 +230,8 @@ def fit(
     sequences = _panel(matrix)
     n_merchants, n_windows, n_features = sequences.shape
 
-    labels = training_label_grid(matrix, pd.read_parquet(STATE_PATHS_PARQUET))
+    # T-0022b: active dataset, not the config constant. See gbdt.build_window_matrix.
+    labels = training_label_grid(matrix, pd.read_parquet(active_state_paths_path()))
     model = HMM(n_states=N_HIDDEN_STATES, n_features=n_features)
     history = model.fit_partial(
         [sequences[i] for i in range(n_merchants)],

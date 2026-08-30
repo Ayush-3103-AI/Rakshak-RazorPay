@@ -1,8 +1,32 @@
 # STATE — Rakshak
 
 PHASE:        5 — EXECUTE, in progress
-LAST SESSION: 2026-08-30 — **T-0022a is DONE.** Shock-capable generator, additive only: `--shock-day` / `--shock-magnitude` write to `data/synthetic_shock/`, and the CLI refuses to write shocked data into `data/synthetic/`. No committed number moved. Full `pytest` green (2 strict `xfail`s intact), `ruff` clean. **See "T-0022a — the shocked population is not a paired counterfactual" below; T-0022c cannot be written correctly without it.**
-NEXT ACTION:  **T-0022b** (harness data-path seam, issue #28) per the agreed build order, then **T-0022c**, then **T-0023**. All four still rank **below** T-0013, T-0018, T-0020, T-0021, T-0019 in the cut order — if the Tue 1 Sep freeze comes under pressure, stop this chain and go to **T-0013**. **T-0013 must carry K2's negative verdict, not narrate around it.** See "T-0011 — the verdict" below before writing a single README number.
+LAST SESSION: 2026-08-30 — **T-0022b is DONE.** `harness.run()` and `load_split()` take `transactions_path=` / `state_paths_path=` overrides. **The ticket's Build list was incomplete and the version as written would have shipped a contaminated `blackswan.md`** — `gbdt.fit` and `hmm_score.fit` load their own training data, so an override on `harness.run()` alone would have scored the shock dataset with models trained on `data/synthetic/`. Fixed with an active-dataset context manager; dated amendment recorded in `11-tickets/T-0022b.md`. Non-regression proven byte-identical against the committed `results/summary.md`. Full `pytest` green (2 strict `xfail`s intact), `ruff` clean. No committed number moved. **See "T-0022b — the seam, and the one way to misuse it" below before writing T-0022c.**
+NEXT ACTION:  **T-0022c** (black-swan report, issue #30 — now unblocked), then **T-0023**. Both still rank **below** T-0013, T-0018, T-0020, T-0021, T-0019 in the cut order — if the Tue 1 Sep freeze comes under pressure, stop this chain and go to **T-0013**. **T-0013 must carry K2's negative verdict, not narrate around it.** See "T-0011 — the verdict" below before writing a single README number.
+
+## T-0022b — the seam, and the one way to misuse it. Read before T-0022c.
+
+`harness.run(seed, results_dir=, transactions_path=, state_paths_path=)`. Passing the two paths
+enters `eval.splits.active_dataset()` for the whole run, which redirects **every** dataset reader:
+`load_split`, `split_summary`, `gbdt.build_window_matrix`'s label read, and `hmm_score.fit`'s
+training-label read. That last pair is the point. `gbdt.fit` and `hmm_score.fit` call
+`load_split("train")` **themselves** — the `Scorer` contract is `(split, rng) -> frame` and carries
+no dataset — so overriding only `load_split` at the harness's top level would have fitted both
+models on `data/synthetic/` while scoring `data/synthetic_shock/`. `random` and `rules` are
+stateless, so the contamination would have hit exactly the two rows `blackswan.md` reports on, and
+nothing would have failed.
+
+**So: never reach past `harness.run()`.** Do not call `gbdt.fit()` / `hmm_score.fit()` directly
+from T-0022c with a hand-built split, and do not add a new `pd.read_parquet(TRANSACTIONS_PARQUET)`
+anywhere on the run path — `tests/test_dataset_seam.py::test_override_reaches_every_reader` will
+fail, which is what it is for.
+
+The state is module-level: **not thread-safe, not nestable across concurrent runs.** Marked as such
+in `splits.py`. Score the two datasets sequentially. Upgrade path, if that ever stops being enough,
+is threading the paths through `Scorer` and `evaluate_model`.
+
+A dataset override is **not** a test-window unlock. `load_split("test")` still raises without
+`unlock_test=`, whichever dataset is active, and T-0022c has no business opening it.
 
 ## T-0022a — the shocked population is not a paired counterfactual. Read before T-0022c.
 

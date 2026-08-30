@@ -62,6 +62,7 @@ from rakshak.eval.splits import (
     BAD_STATES,
     SPLIT_DAY_BOUNDS,
     Split,
+    active_dataset,
     load_split,
     split_summary,
 )
@@ -551,13 +552,33 @@ def render_summary(
 # ---------------------------------------------------------------------------
 
 
-def run(seed: int, results_dir: Path = RESULTS_DIR) -> Path:
+def run(
+    seed: int,
+    results_dir: Path = RESULTS_DIR,
+    transactions_path: Path | None = None,
+    state_paths_path: Path | None = None,
+) -> Path:
     """Run the evaluation, write `summary.md` and `sensitivity.md`.
 
     Returns the path to `summary.md`. Both artifacts come from one scoring pass:
     the FR-020 sweep re-uses the posteriors `evaluate_model` already computed, so
     adding it costs no model fit and leaves NFR-004's 15-minute budget alone.
+
+    Args:
+        seed: Determinism seed (NFR-003).
+        results_dir: Where to write. Defaults to the committed `results/`.
+        transactions_path: T-0022b — score an alternate transactions parquet.
+            None runs on `data/synthetic/`, i.e. exactly as before. The override
+            covers *fitting* too (`gbdt.fit`, `hmm_score.fit`), which is the whole
+            point: a shock run must never train on the primary dataset.
+        state_paths_path: T-0022b — the matching state-paths parquet.
     """
+    with active_dataset(transactions_path, state_paths_path):
+        return _run(seed, results_dir)
+
+
+def _run(seed: int, results_dir: Path) -> Path:
+    """`run`'s body, executed inside the active-dataset context."""
     split = load_split(EVAL_SPLIT)
     # ADR-0008: capacity scales with the population being scored, not with an absolute
     # figure that happens to exceed every split we own.

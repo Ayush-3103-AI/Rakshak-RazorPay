@@ -36,7 +36,10 @@ typology 3:1:1.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
@@ -60,6 +63,66 @@ SplitName = Literal["train", "validate", "test"]
 _TEST_UNLOCK_TICKETS: frozenset[str] = frozenset({"T-0011", "T-0013"})
 """Only the tickets that render the final verdict may open the test window
 (06-requirements.md §3: "Test set touched — exactly once, at the end")."""
+
+
+# ---------------------------------------------------------------------------
+# The active dataset (T-0022b)
+# ---------------------------------------------------------------------------
+#
+# T-0022c has to score a second population (`data/synthetic_shock/`) through the
+# exact same fitting and scoring code that produced every committed number. But
+# `load_split` is not the only reader: `split_summary`, `gbdt.build_window_matrix`
+# and `hmm_score.fit` also open the parquets, and the `Scorer` contract
+# (`harness.py`) is `(split, rng) -> frame`, so there is no argument channel to
+# reach the two `fit()` calls without changing `MODEL_REGISTRY` and every
+# `score_*` signature. These two module-level paths are that channel instead.
+# See the 2026-08-30 amendment in `11-tickets/T-0022b.md`.
+#
+# ponytail: module-level mutable state — not thread-safe, and not nestable across
+# concurrent runs. Upgrade path if the harness ever scores datasets in parallel:
+# thread the paths through `Scorer` and `evaluate_model` instead.
+
+_ACTIVE_TRANSACTIONS: Path = TRANSACTIONS_PARQUET
+_ACTIVE_STATE_PATHS: Path = STATE_PATHS_PARQUET
+
+
+def active_transactions_path() -> Path:
+    """Path the current run reads transactions from. Defaults to `data/synthetic/`."""
+    return _ACTIVE_TRANSACTIONS
+
+
+def active_state_paths_path() -> Path:
+    """Path the current run reads state paths from. Defaults to `data/synthetic/`."""
+    return _ACTIVE_STATE_PATHS
+
+
+@contextmanager
+def active_dataset(
+    transactions_path: Path | None = None,
+    state_paths_path: Path | None = None,
+) -> Iterator[None]:
+    """Point every dataset reader at an alternate parquet pair for the duration.
+
+    A dataset override is NOT a test-window unlock: `load_split("test")` still
+    raises without `unlock_test=`, whichever dataset is active.
+
+    Args:
+        transactions_path: Alternate transactions parquet. None keeps the current one.
+        state_paths_path: Alternate state-paths parquet. None keeps the current one.
+
+    Yields:
+        None. Restores the previous paths on exit, including on exception.
+    """
+    global _ACTIVE_TRANSACTIONS, _ACTIVE_STATE_PATHS
+    previous = (_ACTIVE_TRANSACTIONS, _ACTIVE_STATE_PATHS)
+    if transactions_path is not None:
+        _ACTIVE_TRANSACTIONS = Path(transactions_path)
+    if state_paths_path is not None:
+        _ACTIVE_STATE_PATHS = Path(state_paths_path)
+    try:
+        yield
+    finally:
+        _ACTIVE_TRANSACTIONS, _ACTIVE_STATE_PATHS = previous
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +277,8 @@ def load_split(
     unlock_test: str | None = None,
     transactions: pd.DataFrame | None = None,
     state_paths: pd.DataFrame | None = None,
+    transactions_path: Path | None = None,
+    state_paths_path: Path | None = None,
 ) -> Split:
     """Load one evaluation split, running the leakage guard on the way.
 
@@ -226,6 +291,11 @@ def load_split(
             exactly once, at the end".
         transactions: Override for the transactions frame (tests use this).
         state_paths: Override for the state-path frame (tests use this).
+        transactions_path: Override for the transactions parquet path (T-0022b).
+            None reads `active_transactions_path()`. Ignored if `transactions`
+            is given. NOT a test-window unlock — `unlock_test` still applies.
+        state_paths_path: Override for the state-paths parquet path (T-0022b).
+            None reads `active_state_paths_path()`.
 
     Returns:
         A populated `Split`.
@@ -245,9 +315,9 @@ def load_split(
         )
 
     if transactions is None:
-        transactions = pd.read_parquet(TRANSACTIONS_PARQUET)
+        transactions = pd.read_parquet(transactions_path or active_transactions_path())
     if state_paths is None:
-        state_paths = pd.read_parquet(STATE_PATHS_PARQUET)
+        state_paths = pd.read_parquet(state_paths_path or active_state_paths_path())
 
     groups = assign_merchant_groups(state_paths)
     assert_no_leakage(groups)
@@ -331,15 +401,23 @@ def _bad_transaction_mask(
     return mask
 
 
-def split_summary(state_paths: pd.DataFrame | None = None) -> pd.DataFrame:
+def split_summary(
+    state_paths: pd.DataFrame | None = None,
+    state_paths_path: Path | None = None,
+) -> pd.DataFrame:
     """Merchant counts per split and per typology. Used by the harness table.
+
+    Args:
+        state_paths: Override for the state-path frame (tests use this).
+        state_paths_path: Override for the state-paths parquet path (T-0022b).
+            None reads `active_state_paths_path()`.
 
     Returns:
         DataFrame indexed by typology, columns are split names, values are
         merchant counts, plus a "total" row.
     """
     if state_paths is None:
-        state_paths = pd.read_parquet(STATE_PATHS_PARQUET)
+        state_paths = pd.read_parquet(state_paths_path or active_state_paths_path())
     groups = assign_merchant_groups(state_paths)
     per_merchant = state_paths[["merchant_id", "typology"]].drop_duplicates()
     per_merchant = per_merchant.assign(split=per_merchant["merchant_id"].map(groups))
