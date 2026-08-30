@@ -39,6 +39,10 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
 | [T-0016](T-0016.md) | Generator recalibration | **conditional — KEPT, gate answered** | **high — see the scoping note below; one divergence is structural** | **NOT cut — user decision 2026-08-29** | T-0015 — closed |
 | [T-0014](T-0014.md) | Read-only results viewer | **Wed 2 – Thu 3 Sep, video window** | low — cannot affect a number | yes, falls back to matplotlib | T-0013 |
+| [T-0022a](T-0022a.md) | Shock-capable generator (`data/synthetic_shock/`) | Sun 30 eve → Mon 31 | low, additive only | **yes — ranked below every ticket above** | — |
+| [T-0022b](T-0022b.md) | Harness data-path seam | Sun 30 eve → Mon 31 | low, mechanical | **yes — ranked below every ticket above** | — |
+| [T-0022c](T-0022c.md) | Black-swan report (`results/blackswan.md`) | Mon 31 | medium — has a pre-agreed fallback | **yes — ranked below every ticket above** | T-0022a, T-0022b |
+| [T-0023](T-0023.md) | Drift-detection literature survey (doc only) | Sun 30 eve → Mon 31 | low, doc only | **yes — ranked below every ticket above** | — |
 
 ### Published to GitHub Issues
 
@@ -76,8 +80,14 @@ ones (T-0007, T-0008, T-0009, T-0010), now has an issue reflecting its current s
 | T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | open — `ready-for-agent` | — |
 | T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | open — `blocked` | #11, re-run after #8 |
 | T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | open — `ready-for-agent` to draft | — to draft; #8 for numbers |
+| T-0022a | [#27](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/27) | open — `ready-for-agent`, **ranked below everything above** | — |
+| T-0022b | [#28](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/28) | open — `ready-for-agent`, **ranked below everything above** | — |
+| T-0023 | [#29](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/29) | open — `ready-for-agent`, **ranked below everything above** | — |
+| T-0022c | [#30](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/30) | open — `blocked` | #27, #28 |
 
-**Open and actionable now: #8, #9 (conditional), #11, #12, #14.** #10, #13 wait on #8/#11.
+**Open and actionable now: #8, #9 (conditional), #11, #12, #14, #27, #28, #29.** #10, #13
+wait on #8/#11; #30 waits on #27/#28. **#27, #28, #29, #30 rank below every other open issue
+on this board** — see "T-0022a/b/c, T-0023 — added 2026-08-30" above.
 
 Originally three tickets were unblocked: **#1, #2, #3**. Move a ticket's label
 from `blocked` to `ready-for-agent` when its blockers close.
@@ -95,11 +105,39 @@ T-0008, T-0009 and T-0010 have **no issues** — they were cut, not deferred.
 Cut, not deleted. Their rows are absent from the ablation table with a stated reason, never
 zero and never silently missing.
 
+## T-0022a/b/c, T-0023 — added 2026-08-30, additive-only, ranked below the whole backlog
+
+Opened from a grilling session on Sun 30 Aug evening, after K2 had already fired FAIL at
+T-0011. Two gaps the project owner raised: (1) the central cost claim — *"blunt global
+thresholds freeze honest merchants"* — has never been measured inside this repo, because
+the generator has no population-wide/shared shock, only fully-independent per-merchant
+processes; (2) the locked stack has not been re-checked against current prior art on the
+actual problem (post-onboarding drift detection) since the narrow K1 metric survey.
+
+Full spec: `project-context/14-spec-blackswan-and-drift-survey.md`.
+
+- **T-0022a/b/c** — a black-swan shock stress test, split into three tracer-bullet slices
+  (generator shock injection / harness data-path seam / integration + report) so each is
+  independently demoable. T-0022c carries a pre-agreed fallback (shock-only-on-test-window,
+  no retrain) because this repo has no model-persistence machinery, so "reuse the
+  already-fitted T-0011 models" is not actually a lighter option. **Additive only — a new,
+  separate dataset (`data/synthetic_shock/`) and a new results file
+  (`results/blackswan.md`). Cannot touch or invalidate K1, K2, the ablations, or BAF.**
+- **T-0023** — a written literature survey re-checking every ADR (0001-0009) against
+  current prior art on post-onboarding merchant drift detection. Doc only. Explicitly does
+  **not** extend to implementing or benchmarking a new model in the ablation table — that
+  was proposed and rejected in the grilling session as too risky for a one-night,
+  honest-metrics-required build.
+
+**All four rank below every existing ticket on this board, including T-0014.** If the
+Tue 1 Sep freeze is at risk, these are cut, or degraded to their fallbacks, before a single
+hour is taken from T-0013, T-0018, T-0020, T-0021, or T-0019.
+
 ## Reading this table
 
 - **Spine (T-0001–T-0006):** not cuttable at any budget. This is the sequence in CLAUDE.md's countdown that must hold or the project DESCENDs to Phase 2 (LightGBM + cost layer only, no HMM).
-- **Cut order**, if Monday arrives at 60% (last cut first, i.e. cut T-0014 before ever touching T-0007):
-  `T-0014 → T-0010 → T-0009 → T-0008`. **T-0007 was removed from the cut list at T-0006** — see note below.
+- **Cut order**, if Monday arrives at 60% (first listed cut first):
+  `T-0023 → T-0022c → T-0022b → T-0022a → T-0014 → T-0010 → T-0009 → T-0008`. **T-0007 was removed from the cut list at T-0006** — see note below.
 - **Kill criteria checked here:**
   - **K1** (HMM can't recover states) — checked at T-0002 (spike) and re-confirmed at T-0004 (full scale). Sat EOD deadline.
   - **K2** (Rakshak doesn't beat the rule engine) — **FIRED 2026-08-29 at T-0011. FAIL: +5.9% relative against a >=20% bar, and the claim holds at no swept asymmetry.** Nothing was tuned. The response is now live: report the negative result, pivot the narrative to explainability and the cost frontier, say so on camera. `results/verdict.md`.
