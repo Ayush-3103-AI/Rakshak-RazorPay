@@ -33,8 +33,8 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | ID | Title | Day | Risk | Cuttable | Blocked by |
 |---|---|---|---|---|---|
 | ~~[T-0011](T-0011.md)~~ | **DONE 2026-08-29 — K2 rendered: FAIL.** Verdict, ablations, sweep boundary, lag probe | ~~Mon 31~~ | **A-005 verdict, K2 — fired** | **no** | closed |
-| [T-0018](T-0018.md) | Architecture doc + diagram | Sat 29 - Sun 30 | **graded deliverable, was unowned** | **no** | — |
-| [T-0020](T-0020.md) | Release hygiene: LICENSE, `09-interfaces.md`, drop `pymoo` | Sat 29 | low effort, panel-visible | **no** | — |
+| ~~[T-0018](T-0018.md)~~ | **DONE 2026-08-30 — `docs/ARCHITECTURE.md`.** The third graded artifact, previously unowned. Four layers with stated units, all nine ADRs locatable in the shape, **cuts explicitly separated from rejections**, and one Mermaid diagram (parse-checked, `mermaid@11.17.2`) carrying the belief over latent states on the wire. **Contains no number T-0011 or T-0013 could change.** Records that `src/rakshak/explain/` is still empty. | ~~Sat 29 - Sun 30~~ | **was unowned — now shipped** | **no** | closed |
+| ~~[T-0020](T-0020.md)~~ | **DONE 2026-08-30.** `LICENSE` (MIT + dataset-scope section restating the T-0015 BAF trap), `project-context/09-interfaces.md` (written from the code as implemented), `pymoo` dropped from `pyproject.toml` with the removal recorded in ADR-0004. **Discharging the third clause made `results/ablations.md:94` factually false** — the "still declared" claim is a hardcoded string at `src/rakshak/eval/ablations.py:586-589` that regenerates unchanged and no test covers. **Issue #31.** | ~~Sat 29~~ | low effort, panel-visible | ~~**no**~~ | closed |
 | [T-0021](T-0021.md) | Verify `make eval` on a clean checkout | Sun 30, re-run after freeze | **can fail and generate work** | **no** | T-0020 |
 | [T-0019](T-0019.md) | Video: script, shot list, edit checklist | draft Sun 30 - Mon 31; cut Wed 2 - Thu 3 | **graded deliverable, was unowned** | **no** | — to draft; T-0013 for numbers |
 | [T-0013](T-0013.md) | Explainability + README | **Tue 1 Sep** | differentiator — **the artifact the panel reads** | **no** | T-0011, T-0012, T-0015 |
@@ -43,7 +43,7 @@ the gating edge; the Day column carries sequencing, which is ordered by risk ret
 | ~~[T-0022a](T-0022a.md)~~ | **DONE 2026-08-30.** Shock-capable generator (`data/synthetic_shock/`) | ~~Sun 30 eve~~ | low, additive only | ~~yes~~ | closed |
 | ~~[T-0022b](T-0022b.md)~~ | **DONE 2026-08-30.** Harness data-path seam: `harness.run(transactions_path=, state_paths_path=)` + `load_split(...)` overrides, carried to `gbdt.fit` / `hmm_score.fit` through an active-dataset context manager. **Not "low, mechanical" — the ticket's Build list missed four readers and would have shipped models trained on `data/synthetic/` while scoring the shock set. See the dated amendment in T-0022b.md.** | ~~Sun 30 eve~~ | low, mechanical | ~~yes~~ | closed |
 | [T-0022c](T-0022c.md) | Black-swan report (`results/blackswan.md`) | Mon 31 | medium — has a pre-agreed fallback | **yes — ranked below every ticket above** | T-0022a, T-0022b |
-| [T-0023](T-0023.md) | Drift-detection literature survey (doc only) | Sun 30 eve → Mon 31 | low, doc only | **yes — ranked below every ticket above** | — |
+| ~~[T-0023](T-0023.md)~~ | **DONE 2026-08-30.** Drift-detection literature survey — `project-context/15-lit-survey-drift-detection.md`. One verdict on every ADR 0001-0009. **ADR-0004 and ADR-0006 come back RECONSIDERED; both dated addenda applied to their ADR files by the lead.** Doc only: no dependency, no code, no number moved. | ~~Sun 30 eve → Mon 31~~ | low, doc only | ~~yes~~ | closed |
 
 ### Published to GitHub Issues
 
@@ -77,19 +77,21 @@ ones (T-0007, T-0008, T-0009, T-0010), now has an issue reflecting its current s
 | T-0013 | [#8](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/8) | open — `ready-for-agent`, every blocker closed | #7, #6, #3 |
 | T-0016 | [#9](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/9) | open — `conditional`, **kept, not cut** | #3 (closed) |
 | T-0014 | [#10](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/10) | open — `blocked` | #8 |
-| T-0020 | [#11](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/11) | open — `ready-for-agent` | — |
-| T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | open — `ready-for-agent` | — |
-| T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | open — `blocked` | #11, re-run after #8 |
+| T-0020 | [#11](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/11) | closed — done 2026-08-30. **Follow-up #31 created.** | — |
+| T-0018 | [#12](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/12) | closed — done 2026-08-30 | — |
+| T-0021 | [#13](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/13) | open — **unblocked 2026-08-30 by #11**; re-run after #8 | ~~#11~~ |
 | T-0019 | [#14](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/14) | open — `ready-for-agent` to draft | — to draft; #8 for numbers |
 | T-0022a | [#27](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/27) | closed — done 2026-08-30 | — |
 | T-0022b | [#28](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/28) | closed — done 2026-08-30 | — |
-| T-0023 | [#29](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/29) | open — `ready-for-agent`, **ranked below everything above** | — |
-| T-0022c | [#30](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/30) | open — `blocked` | #27, #28 |
+| T-0023 | [#29](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/29) | closed — done 2026-08-30 | — |
+| T-0022c | [#30](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/issues/30) | open — **unblocked 2026-08-30 by #28** | ~~#27, #28~~ |
 
-**Open and actionable now: #8, #9 (conditional), #11, #12, #14, #28, #29.** #10, #13
-wait on #8/#11; #30 now waits on #28 alone (**#27 closed 2026-08-30**). **#28, #29, #30 rank
-below every other open issue on this board** — see "T-0022a/b/c, T-0023 — added 2026-08-30"
-above.
+**Open and actionable now: #8, #9 (conditional), #13, #14, #30, #31.** #10 waits on #8.
+**#11, #12, #27, #28, #29 all closed 2026-08-30**, which unblocked #13 (T-0021) and #30 (T-0022c).
+**#30 still ranks below every other open issue on this board** — see "T-0022a/b/c, T-0023 — added
+2026-08-30" above. **#8 (T-0013) is the spine and is now the next action**; it carries three
+handoffs from 2026-08-30 — the architecture-doc link, T-0023's future-work paragraph, and the fact
+that `src/rakshak/explain/` is still an empty package.
 
 Originally three tickets were unblocked: **#1, #2, #3**. Move a ticket's label
 from `blocked` to `ready-for-agent` when its blockers close.
@@ -409,10 +411,17 @@ Kaggle-gated). No README or video line may cite these as shipped.
 
 ## Still open before freeze
 
-- **`09-interfaces.md` does not exist** but tickets name it as the source of the `Scorer`
-  contract. The contract actually lives in `eval/harness.py`'s module docstring. Write the file or
-  stop pointing at it.
-- **`pymoo` is declared in `pyproject.toml`** for T-0009, which was cut. Remove it or justify it.
+- ~~**`09-interfaces.md` does not exist**~~ **Written 2026-08-30 (T-0020) at
+  `project-context/09-interfaces.md`**, from the code as implemented, with a *Known gaps* section.
+- ~~**`pymoo` is declared in `pyproject.toml`** for T-0009, which was cut.~~ **Removed 2026-08-30
+  (T-0020); ADR-0004 records it, and T-0023's addendum gives a better reason than "the work was
+  cut".** **New, and it is the same defect inverted: `results/ablations.md:94` and
+  `docs/adr/README.md:39-40` still assert `pymoo` IS declared.** The former is a hardcoded string at
+  `src/rakshak/eval/ablations.py:586-589` that `make eval` regenerates unchanged and no test covers.
+  Fixing it edits `src/` and regenerates a committed artifact. **Issue #31.**
+- **`src/rakshak/explain/` is an empty package.** FR-014's merchant-facing reason string — the
+  centrepiece per `CLAUDE.md` — has no ticket of its own and rides on T-0013 (#8) on the last build
+  day. Found by T-0018 on 2026-08-30.
 
 
 ---

@@ -2089,3 +2089,203 @@ in order to make the test pass. Third test asserts the context manager restores 
 because a leak would poison every later call in the same process, tests included.
 
 **No dependency added. No number moved.**
+
+## 2026-08-30 (T-0020) — release hygiene. Three panel-visible defects closed; discharging one of them opened a fourth.
+
+**DONE.** `LICENSE` written (MIT, 2026, with a dataset-scope section). `project-context/09-interfaces.md`
+written from the code as it stands. `pymoo>=0.6.2` removed from `pyproject.toml`, with the removal
+recorded in `docs/adr/ADR-0004-nsga-ii-not-nsga-iii.md`. `200 passed, 2 xfailed` (the two strict
+`xfail`s intact), `ruff check src tests` clean. **Nothing under `results/` or `data/` was written
+or read** — `git diff --stat -- results/ data/` is empty, which for this ticket is the result, not
+a formality: T-0020 cannot move a number and any movement would have meant something else was
+wrong.
+
+**LICENSE.** MIT, `Copyright (c) 2026 Ayush-3103-AI` — taken from the git author identity, because
+no legal name appears anywhere in the repo. **Swap it for a real name before the repo goes public.**
+The file carries a scope section stating that MIT covers the code and only the code: no dataset is
+vendored, `data/` is git-ignored except `data/external/*.manifest.json`, and each manifest carries
+its own `licence` / `licence_url`. It restates the T-0015 trap explicitly — the Feedzai
+`bank-account-fraud` **GitHub repo's `LICENSE` is Apache-2.0 and covers their code, not their
+data**; the data is CC BY-NC-SA 4.0 under the Kaggle dataset page. That is the error that runs in
+the dangerous direction: it would make an NC/SA dataset look vendorable into an MIT repo. Online
+Retail II is CC BY 4.0 and also not vendored. No conflict with the MIT grant: every file MIT is
+granted over is original to this project.
+
+**`09-interfaces.md` is descriptive, not aspirational**, which is the whole reason the ticket
+forbade writing an interface more ambitious than the code. Every signature, field and unit in it
+was read out of `src/` on 2026-08-30. It covers `Scorer`, `Split`, `CostParams`, `PolicyResult`
+and the `results/` artifacts T-0014 consumes, and it closes with a *Known gaps* section that
+states four things the boundary does not do rather than describing a boundary that would: scores
+are not calibrated posteriors but BMR treats them as such (T-0008 cut); the markdown artifacts
+have no versioned schema (T-0014's `docs/CONTRACTS.md` owns that and does not exist yet); the
+dataset seam is module-level state rather than an argument on `Scorer`; `results/reasons.json` is
+cited by T-0014 and does not exist. It also records the obligation from
+`14-spec-blackswan-and-drift-survey.md:233` — `results/blackswan.md`, when it lands, is a
+manually-invoked side track **outside** the NFR-004 15-minute `make eval` budget, so nobody audits
+for it inside `make eval`.
+
+**SURPRISE — discharging clause 3 broke a sentence in a committed results artifact, and I could
+not fix it from this lane.** `results/ablations.md:94` says, in prose, "**`pymoo` is still
+declared as a dependency in `pyproject.toml`** for work that did not happen; it should be removed
+or explicitly justified before freeze." That sentence is a hardcoded string literal at
+`src/rakshak/eval/ablations.py:586-589`, so it survives regeneration — `make eval` reproduces the
+now-false claim byte for byte and no test fails, because nothing tests prose. Removing `pymoo`
+therefore did not fix the repo's account of `pymoo`; it made one of the two accounts wrong, and it
+is the account a panel reader reaches first, because `results/ablations.md` is a results page and
+an ADR is not. The same stale claim also sits in `docs/adr/README.md:39-40`, `STATE.md:236` and
+`11-tickets/BOARD.md:415`. The board's audit framed this as "remove it or justify it", one action;
+it is actually two, and the second one edits `src/` and regenerates a committed artifact — both
+explicitly out of scope for T-0020 ("do not touch `src/` beyond removing a dependency that nothing
+imports"; "no results artifact changes"). Raised rather than patched around. **Nothing imports
+`pymoo`** — the only `src/` hit is that string — so no `src/` edit was needed for the removal
+itself, and none was made.
+
+**Second, smaller surprise: the numbering convention says this file belongs somewhere else.**
+`00-charter.md` through `08-pseudocode.md` all sit at the repo root; `project-context/` holds
+`12`, `13`, `14`. `09-interfaces.md` was written to `project-context/09-interfaces.md` per this
+lane's assigned file ownership, and every citation in the repo names it bare (`09-interfaces.md`,
+no path), so nothing is broken either way. If the root is the right home, it is a `git mv` and a
+one-line edit to `CLAUDE.md`'s context table — a lead decision, not a lane one.
+
+**Third: the ticket's own date was one day stale.** T-0020 says the removal happened "on
+2026-08-29"; it happened on 2026-08-30. The ADR note and the `pyproject.toml` comment both carry
+the true date. A repo that argues its metrics are honest should not date its own edits
+optimistically.
+
+**No dependency added. One removed. No number moved.**
+
+## 2026-08-30 (T-0018) — architecture doc + Mermaid diagram. Design only; the document had to survive the verdict either way.
+
+**DONE.** `docs/ARCHITECTURE.md` written end to end — the gap between Vulcan and Bumblebee, the
+four layers with input/output/units each, an ADR-to-shape table covering all nine ADRs, the
+absent-by-design vs. cut-on-schedule split, and the honest-measurement section. One Mermaid
+flowchart, embedded in the file, source-controlled, no binary. Nothing under `results/`, `data/`,
+`src/` or `tests/` was written or read for a number. **No number that T-0011 or T-0013 could move
+appears anywhere in the document** — the only figures in it are the 45-120 day chargeback lag from
+the charter, the ADR numbers, and structural counts (four latent states, five typologies, three
+actions).
+
+**The diagram was parse-checked, not eyeballed.** `mermaid@11.17.2` under `jsdom`, `mermaid.parse()`
+on the fenced block extracted from the file: PASS. The checker was then run against a deliberately
+malformed diagram and failed with a parse error, so the check is not vacuous. The wire between the
+sequence and decision layers is labelled *"belief over the four latent states, updated once per
+window"* — the ticket's test is that the diagram could not equally describe a transaction
+classifier, and the belief edge plus the Viterbi branch off the same node is what fails that
+description.
+
+**SURPRISE — the centrepiece of the pitch is the one box in the diagram with no code behind it.**
+`CLAUDE.md` says the Viterbi path is why question 3 ("can I explain this to the merchant when they
+call and shout?") is answerable and that it is "the centrepiece and not an afterthought".
+`src/rakshak/explain/` is a one-line package docstring and nothing else. The decode exists in
+`models/hmm.py` and is used by the ablation commentary, but the merchant-facing reason string
+(FR-014) and `results/reasons.json` have never had their own ticket — they are bundled into
+**T-0013, alongside the README, on the last build day**. So the project's stated differentiator is
+scheduled last, shares a slot with the single largest writing deliverable, and is the only layer
+whose box the architecture doc has to describe in the conditional. It is written as a gap, dated,
+in §3 of the document. If T-0013 slips or gets thinned, the thing that slips is the answer to the
+only question no other submission will answer.
+
+**Second, smaller.** The `Done when` clause "no number T-0011 or T-0013 could change" was easy for
+metrics and awkward for **design constants**. Review capacity has a real value in `config.py`, and
+ADR-0008 is explicitly one of the nine that must be locatable in the shape — but a bare "4.0 hours
+per 1000 merchants" reads to a panel like a result. Resolved by naming the *expression*
+(per-1000-merchants, derived from the scored population) and never the value, which is what
+ADR-0008 actually decided anyway. Same treatment for window length and the split day bounds:
+described as geometry, quoted as months, never as day indices.
+
+**Cuts are separated from rejections in their own two tables**, not in prose where the distinction
+would blur: GNN / transformer / RL under "rejected by design, and would still be rejected with more
+time"; NSGA-II (ADR-0004, T-0009), shrinkage (ADR-0006, T-0008) and BOCPD (T-0010) under "decided
+in, then lost to the schedule", each with its ADR still marked *accepted*. The BOCPD row carries
+both halves honestly: it was cut as a **baseline**, and it was separately judged the wrong
+**primary** model, and those are different statements.
+
+**No dependency added to the repo.** `mermaid` and `jsdom` were installed in the session scratchpad
+for the parse check and are not in `pyproject.toml`, not in the repo, and not needed to read the
+file — GitHub renders the fence natively.
+
+---
+
+## 2026-08-30 (T-0023) — drift-detection literature survey. Two of nine ADRs come back reconsidered, and one of them is a contradiction that was checkable inside this repo without any paper at all.
+
+**DONE.** `project-context/15-lit-survey-drift-detection.md` written, following
+`12-lit-survey-k1.md`'s format. 24 web searches, 10 primary sources opened (1 refused, HTTP 403),
+6 US patents read through the USPTO full-text index, 3 PyPI JSON entries. **9 claims verified at
+primary source and marked `[VERIFIED]`; everything else is marked `[snippet-inferred]`.** No code,
+no dependency, no file under `src/`, `results/`, `data/` or `tests/` read or written. Nine ADR
+verdicts, none skipped: **reaffirmed** 0003, 0008; **reaffirmed with a caveat** 0001, 0002, 0005,
+0007, 0009; **RECONSIDERED** 0004, 0006.
+
+**SURPRISE — and it is not the one this ticket was scouting for.** The expectation going in was
+that a survey would either flatter the stack or turn up a compelling new model. It did neither.
+**It found two ADRs whose stated reasoning is wrong while their decisions are fine, and neither
+error needed a paper to see — one of them needed only reading two ADRs side by side.**
+
+*ADR-0004.* Its Context ¶2 rejects NSGA-III because reference-direction machinery "begins to
+matter at four or more objectives". Zheng & Doerr (arXiv:2211.13084, IEEE TEVC / GECCO 2024) prove
+NSGA-II cannot compute the full Pareto front in sub-exponential time **when the number of
+objectives is at least three**, because crowding distance regards objectives independently — a
+property that is harmless at two and breaks beyond two `[VERIFIED at the arXiv abstract]`. Three is
+the *first failing case*, not the last safe one. `CLAUDE.md:69` and `CLAUDE.md:81` repeat the wrong
+claim. The decision survives — NSGA-III is still not the answer — but the uncoupled grid search is
+promoted from mandatory baseline to preferred default, and T-0020's `pymoo` removal now has a
+reason better than "the work was cut".
+
+*ADR-0006, and this is the one that stings.* Its header says it was to produce "the calibrated
+posterior" ADR-0005's BMR policy consumes; ADR-0005's Consequences say "ADR-0006's shrinkage was
+cut, so no recalibration happens anywhere in this repo"; `STATE.md` calls un-cutting T-0008 the
+strongest argument for closing the calibration gap. **All three are describing two different
+objects as one.** ADR-0006's own Context is explicit that the shrinkage is over *per-merchant cost
+parameters* — `L_m` and `c_fp(m)`, pooled toward the segment under FR-011. That is the **cost
+side** of the BMR argmin. What is missing is calibration of the **score side**, `P(bad|merchant)`,
+which the harness passes to the policy raw. Shrinking `L_m` toward a segment mean does not turn
+`hmm`'s Brier-0.4321 score into a posterior. **T-0008, reinstated exactly as written, would not
+have closed the gap it is credited with closing.** The fix is a different and smaller ticket —
+isotonic or Platt on scores fitted on `validate`, `sklearn` is already a dependency — and it is
+explicitly *not* built, because T-0023 forbids implementing anything it surfaces and the freeze is
+Tuesday. This finding cuts against the project's interest: it removes a tidy story and replaces it
+with a wider gap.
+
+**The other unflattering finding, for the video.** The closest deployed system in the literature
+to Rakshak's problem — arXiv:2607.17586, a production money-mule detector — is **LightGBM + 280
+engineered features + TreeSHAP + LLM narration**, reporting yield 61% → 89% and 60% incremental
+adverse detection `[VERIFIED]`. **No sequence model.** It is also a deployed answer to
+`CLAUDE.md:152`'s Question 3. So the README may claim the Viterbi path is a *different kind* of
+explanation — intrinsic and temporal rather than post-hoc and static — and **may not claim nobody
+else in the field answers Question 3.** That sentence, if it exists in the pitch, is now false.
+
+**What was reaffirmed, and the citations got stronger.** `hmmlearn` 0.3.3 still declares
+limited-maintenance mode in its own PyPI description `[VERIFIED]`, so ADR-0001's factual ground is
+current rather than stale. ADR-0002's NICE Actimize citation reads better at source than the repo
+paraphrases it: AUC **0.9245 vs 0.9205** with "no measurable improvement", explicitly "not yet
+production-ready" `[VERIFIED]` — use those numbers on camera. Grinsztajn et al. (arXiv:2207.08815)
+say tree-based models remain state-of-the-art on ~10K-sample tabular data `[VERIFIED]`, which makes
+`gbdt` beating `hmm` on PR-AUC the *expected* result rather than an anomaly. ADR-0003 gains the
+citation its central claim never had (Dal Pozzolo et al. on verification latency). ADR-0007's
+"no public merchant-sequence dataset with merchant-level risk labels exists" survived an active
+search — AMLworld is account-level, CFDB (arXiv:2404.14746) is customer-level, both synthetic —
+so it is now reaffirmed against a named search instead of asserted. **ADR-0008 is the ADR that
+aged best and nobody will ever mention it.**
+
+**The category the repo never considered.** Every ADR treats drift as *per-merchant*. The streaming
+fraud literature's default primitive is *population-level* drift detection — ADWIN/DDM/EDDM, with
+ROSFD (arXiv:2504.10229) reporting ADWIN best of the three `[VERIFIED]`. `river` 0.26.1 is
+BSD-3-Clause and requires-python ≥3.11 `[VERIFIED at PyPI]`, so it is licence- and version-clean.
+**Not added, not built** — but it is the natural instrument for exactly the question T-0022 asks,
+and that connection is in the survey for T-0022c to read.
+
+**Deviation from the ticket, imposed by the lead and recorded rather than worked around.**
+T-0023's Build step 4 requires a dated addendum appended to each reconsidered ADR's own file.
+`docs/adr/**` was owned by another agent this session and a write to `ADR-0004` would have raced.
+**No file under `docs/adr/` was created, modified or deleted by this ticket.** Both addenda are
+reproduced verbatim, in the target files' house format, under
+`15-lit-survey-drift-detection.md` § "ADR addenda — pending application by the lead". **The
+`Done when` clause 3 is therefore satisfied in substance and pending in mechanism** — the lead
+must append them, and until that happens ADR-0004 and ADR-0006 still carry the reasoning this
+survey overturns.
+
+**Also.** The K1 survey's "the domain literature is genuinely absent" finding now has a *reason*:
+the prior art for post-onboarding merchant drift is in the patent literature — MCC-shift detection
+(US 11334895), transaction laundering (US 11651462), MCC misclassification (US 11514533,
+US 12094011), bust-out (US 7428509, US 8001042). "No benchmark exists" reads as a weak search
+until it is paired with where the work actually went.

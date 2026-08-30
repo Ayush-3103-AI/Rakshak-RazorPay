@@ -11,7 +11,9 @@ dependencies = [
     "scipy>=1.11",
     "lightgbm>=4.3",
     "scikit-learn>=1.4",
-    "pymoo>=0.6.2",
+    # T-0020: pymoo>=0.6.2 removed 2026-08-30. It was declared for T-0009 (NSGA-II
+    # frontier), which was cut on 2026-08-28. Nothing imports it. Do not re-add it
+    # without the grid-search ablation ADR-0004 makes mandatory.
     "matplotlib>=3.8",
     # T-0015: UCI ships Online Retail II as .xlsx only. openpyxl is MIT —
     # compatible with the permissive-licence-only constraint in CLAUDE.md.

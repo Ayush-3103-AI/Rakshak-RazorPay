@@ -1,8 +1,33 @@
 # STATE — Rakshak
 
 PHASE:        5 — EXECUTE, in progress
-LAST SESSION: 2026-08-30 — **T-0022b is DONE.** `harness.run()` and `load_split()` take `transactions_path=` / `state_paths_path=` overrides. **The ticket's Build list was incomplete and the version as written would have shipped a contaminated `blackswan.md`** — `gbdt.fit` and `hmm_score.fit` load their own training data, so an override on `harness.run()` alone would have scored the shock dataset with models trained on `data/synthetic/`. Fixed with an active-dataset context manager; dated amendment recorded in `11-tickets/T-0022b.md`. Non-regression proven byte-identical against the committed `results/summary.md`. Full `pytest` green (2 strict `xfail`s intact), `ruff` clean. No committed number moved. **See "T-0022b — the seam, and the one way to misuse it" below before writing T-0022c.**
-NEXT ACTION:  **T-0022c** (black-swan report, issue #30 — now unblocked), then **T-0023**. Both still rank **below** T-0013, T-0018, T-0020, T-0021, T-0019 in the cut order — if the Tue 1 Sep freeze comes under pressure, stop this chain and go to **T-0013**. **T-0013 must carry K2's negative verdict, not narrate around it.** See "T-0011 — the verdict" below before writing a single README number.
+LAST SESSION: 2026-08-30 — **four tickets closed: T-0022b, T-0020, T-0018, T-0023.** T-0022b: harness data-path seam (`transactions_path=` / `state_paths_path=`), built after tracing found the ticket's Build list missed four dataset readers — see below. T-0020: `LICENSE`, `project-context/09-interfaces.md`, `pymoo` dropped. T-0018: `docs/ARCHITECTURE.md` + parse-checked Mermaid diagram, the third graded artifact, no numbers in it. T-0023: `project-context/15-lit-survey-drift-detection.md`, nine ADR verdicts, **ADR-0004 and ADR-0006 reconsidered and their addenda applied**. `200 passed, 2 xfailed`, `ruff` clean, no committed number moved. **Two carried defects below: `results/ablations.md:94` is now factually false, and `src/rakshak/explain/` is empty.**
+NEXT ACTION:  **T-0013** (#8, README + FR-014 explainability — the spine). It now carries three handoffs: T-0018's architecture link, T-0023's future-work paragraph, and the empty `explain/` package. Then **T-0021** (#13, unblocked by T-0020), then **T-0022c** (#30). **T-0013 must carry K2's negative verdict, not narrate around it.** See "T-0011 — the verdict" below before writing a single README number.
+
+## Carried out of 2026-08-30 — two defects nobody owns yet
+
+**1. `results/ablations.md:94` is now factually false.** It asserts in prose that "`pymoo` is still
+declared as a dependency in `pyproject.toml`". T-0020 removed it. The sentence is a hardcoded string
+literal at `src/rakshak/eval/ablations.py:586-589`, so **`make eval` regenerates the false claim byte
+for byte and no test fails, because nothing tests prose.** This is a graded artifact and it is the
+account a panel reader reaches before any ADR. Fixing it edits `src/` and regenerates a committed
+results artifact — both out of T-0020's scope, so it was raised rather than patched around. The same
+stale claim also sits in `docs/adr/README.md:39-40` and `11-tickets/BOARD.md:415`. **Tracked as issue
+#31.** Regenerating must be diffed to confirm the change is prose-only and no number moved.
+
+**2. `src/rakshak/explain/` is an empty package** — a 29-byte `__init__.py`, no `reasons.py`. The
+Viterbi decode exists in `models/hmm.py`, but FR-014's merchant-facing reason string — which
+`CLAUDE.md` calls the centrepiece and the only answer to the audience's Question 3 — has never had its
+own ticket. It is bundled into **T-0013, alongside the entire README, on the last build day**, and
+T-0014 (which also cites FR-014 and `results/reasons.json`) is scheduled *after* the freeze. Found
+independently by T-0018 while writing the architecture doc, which records it as a dated gap in §3.
+**If T-0013 is thinned under time pressure, the thing that gets thinned is the differentiator.**
+
+**Also from T-0023, for the video and the README:** the closest deployed system in the published
+record (arXiv:2607.17586, a production money-mule detector, LightGBM + 280 features + TreeSHAP + LLM
+narration, analyst yield 61% -> 89%, no sequence model) **is an existing answer to Question 3.** The
+README may claim the Viterbi path is a different *kind* of explanation — intrinsic and temporal
+rather than post-hoc and static. It may not claim nobody else in the field answers the question.
 
 ## T-0022b — the seam, and the one way to misuse it. Read before T-0022c.
 
@@ -233,10 +258,15 @@ append-only, and rewriting a log to match a later renumbering is worse than the 
 the part that matters for the README:
 
 - **ADR-0004** (NSGA-II + the mandatory grid-search ablation) - T-0009 cut. No frontier exists,
-  and the ablation obligation is undischarged. **`pymoo` is still declared in `pyproject.toml`
-  for work that did not happen; remove it or justify it before freeze.**
-- **ADR-0006** (empirical-Bayes shrinkage) - T-0008 cut. No calibration happens anywhere in this
-  repo, which is load-bearing because ADR-0005's BMR policy consumes raw scores as posteriors.
+  and the ablation obligation is undischarged. ~~**`pymoo` is still declared in `pyproject.toml`**~~
+  **`pymoo` removed 2026-08-30 (T-0020); ADR-0004 records it.** T-0023 additionally found the ADR's
+  stated rationale wrong — NSGA-II's crowding distance degrades at **three** objectives, not four.
+  Dated addendum applied to the ADR.
+- **ADR-0006** (empirical-Bayes shrinkage) - T-0008 cut. **Corrected 2026-08-30 by T-0023: this ADR
+  shrinks per-merchant COST parameters (`L_m`, `c_fp(m)`), not model scores.** The calibration gap
+  under ADR-0005's BMR policy is real, but T-0008 was never the fix for it and reinstating it would
+  not have closed it. Score calibration (isotonic/Platt on `validate`) is a separate, smaller,
+  unbuilt piece of work. Dated addendum applied to the ADR.
 - **ADR-0007** (hybrid data) - the BAF half is unexecuted, Kaggle-gated.
 
 ## Load for next session

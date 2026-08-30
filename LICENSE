@@ -1,0 +1,47 @@
+MIT License
+
+Copyright (c) 2026 Ayush-3103-AI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Scope — this licence covers the code in this repository, and only the code.
+
+No dataset is vendored here. `data/` is git-ignored except
+`data/external/*.manifest.json`, and each manifest carries its own dataset's
+`licence` and `licence_url` fields. Those terms govern the data; this file does
+not, and cannot, relicense them.
+
+| Dataset | Licence | Vendored here? |
+|---|---|---|
+| Own synthetic merchant streams (`src/rakshak/generator/`) | MIT, as above — it is code in this repo | Output is generated, not committed |
+| BAF — Bank Account Fraud (Feedzai, NeurIPS 2022) | **CC BY-NC-SA 4.0** (Kaggle dataset page) | **No.** Non-commercial + share-alike: usable inside git-ignored `data/`, not vendorable into an MIT repo |
+| Online Retail II (UCI, ID 502) | CC BY 4.0 | No |
+
+**The trap T-0015 recorded, stated here so nobody repeats it:** the Feedzai
+`bank-account-fraud` **GitHub repository** ships an `LICENSE` that is
+**Apache-2.0, and it covers their code, not their data.** The data is
+CC BY-NC-SA 4.0 under its Kaggle dataset page. Reading the GitHub `LICENSE` as
+the data licence would be wrong in the direction that matters — it would make
+an NC/SA dataset look vendorable into this MIT repo. It is not.
+
+Nothing above conflicts with the MIT grant on this repository's code: MIT is
+granted over files that are all original to this project, and no CC BY-NC-SA or
+CC BY material is incorporated into them.

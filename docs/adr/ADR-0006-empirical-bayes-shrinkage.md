@@ -77,3 +77,46 @@ constraint, not a preference.
 * **FR-016 cites this ADR and arguably should not.** FR-016 is Bayes Minimum Risk, whose
   authorities are Elkan (2001) and Bahnsen (2015); the shrinkage this ADR covers is a separate
   concern that belongs to FR-011. Minor mis-citation, recorded rather than silently corrected.
+
+## Addendum — 2026-08-30 (T-0023, drift-detection literature survey)
+
+**The decision above is sound. The claim attached to it — that it would have supplied the
+calibrated posterior ADR-0005's BMR policy consumes — is not, and that claim has propagated.**
+
+The header of this ADR relates it to "ADR-0005 (the policy that consumes the calibrated posterior
+this ADR was to produce)". ADR-0005's Consequences read "ADR-0006's shrinkage was cut, so no
+recalibration happens anywhere in this repo", and `STATE.md` calls reinstating T-0008 "the
+strongest argument" for closing the calibration gap.
+
+**Two different objects have been conflated.** The "Context" section above is explicit that the
+shrinkage estimator applies to *per-merchant cost parameters* — the partial pooling of `theta_m`
+toward its MCC × AOV-band segment mean under FR-011, i.e. `L_m` and `c_fp(m)`. That shrinks the
+**cost side** of the BMR argmin. What ADR-0005 lacks is calibration of the **score side**:
+`P(bad | merchant)`, which `eval/harness.py` currently passes to the policy raw. Shrinking `L_m`
+toward a segment mean does not turn `hmm`'s raw score — PR-AUC 0.3347, Brier 0.4321 on test — into
+a posterior. **Reinstating T-0008 exactly as specified would have left BMR consuming the same
+uncalibrated scores it consumes today.**
+
+The cost-sensitive-learning literature is consistent that calibrated probability estimates are the
+prerequisite for cost-sensitive thresholding, with Platt scaling, isotonic regression and beta
+calibration as the standard remedies (secondary sources; read via search index on 2026-08-30 and
+marked `[snippet-inferred]` in the survey).
+
+**What changes:**
+
+* This ADR retains its decision — closed-form empirical-Bayes shrinkage, no MCMC, per
+  `CLAUDE.md:68` — and **withdraws the claim that it produces the posterior ADR-0005 needs.**
+* The work that would close ADR-0005's calibration gap is **a different, smaller ticket**: an
+  isotonic or Platt calibration of model scores fitted on `validate` and applied before the BMR
+  argmin, using `scikit-learn` (BSD-3, already a declared dependency). It is strictly cheaper than
+  T-0008 was.
+* **It was not built and must not be built before the Tue 1 Sep freeze.** T-0023 is a
+  documentation ticket and forbids implementing any candidate it surfaces. This addendum records
+  the correction; it does not authorise the work.
+
+**Why this is recorded even though it is unflattering:** it removes a tidy explanation the repo
+had been relying on. The calibration gap is not the by-product of one cut ticket that could be
+un-cut; it is a gap nothing on the board ever addressed. `CLAUDE.md`'s first non-negotiable
+applies to decision records as well as to metrics.
+
+Source: `project-context/15-lit-survey-drift-detection.md` §Q3, ADR-0006.
