@@ -1,0 +1,7 @@
+# T-0021: the git blob for this fixture is LF (1831 bytes), but a Windows
+# checkout with core.autocrlf=true silently re-inflates it to CRLF (1882
+# bytes) in the working tree, changing its sha256 out from under
+# tests/test_profile.py — which hashes the working-tree file, not the blob.
+# That made the test pass on Windows and fail on a Linux clone. Force LF on
+# checkout everywhere so the hash this test asserts is the same on both.
+tests/fixtures/online_retail_ii_sample.csv text eol=lf

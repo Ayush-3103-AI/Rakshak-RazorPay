@@ -36,8 +36,11 @@ from rakshak.data.profile import CANNOT_INFORM, build_profile, diff_profile
 
 FIXTURE = Path(__file__).parent / "fixtures" / "online_retail_ii_sample.csv"
 
-# Computed with `sha256sum tests/fixtures/online_retail_ii_sample.csv`, not with hashlib.
-FIXTURE_SHA256 = "73f0af44454385a978643f52db367f2ba143f406296acd44bcee472fa543975f"
+# Computed with `sha256sum tests/fixtures/online_retail_ii_sample.csv` against the LF
+# git blob (T-0021: a Windows checkout with core.autocrlf=true was silently re-inflating
+# this to CRLF and a different hash — see .gitattributes, which now pins this file to LF
+# on checkout everywhere).
+FIXTURE_SHA256 = "ff56ef1217550d68a9fc83fcfb1861a6aaff37ccc0ee48026e2540c3bd6cfdd8"
 
 
 def test_file_manifest_records_sha256_and_row_count() -> None:
@@ -52,7 +55,7 @@ def test_file_manifest_records_sha256_and_row_count() -> None:
     )
     assert manifest["sha256"] == FIXTURE_SHA256
     assert manifest["row_count"] == 50
-    assert manifest["size_bytes"] == 1882
+    assert manifest["size_bytes"] == 1831
     assert manifest["licence"] == "test fixture, hand-authored"
     assert manifest["retrieved_utc"].endswith("Z")
 
