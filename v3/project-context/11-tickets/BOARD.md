@@ -82,13 +82,13 @@ Updated at the end of every session.
 | T-100 | foundation | ✅ **DONE** 2026-08-31 — scaffold, pins, Makefile + `make.ps1`, CI clean-clone job, `v1-frozen` tag |
 | T-101 | foundation | ✅ **DONE** 2026-08-31 — `schemas.py` + `store.py`. **09-interfaces.md FROZEN.** Two tz bugs found by the property suite, see logbook |
 | T-102 | foundation | ✅ **DONE** 2026-08-31 — `FeatureSpec` dual runner, `MerchantState`, registry + NFR-04 budget, `assert_parity` harness |
-| T-110 … T-116 | A generator | ◐ running |
-| T-120 … T-122 | B features | ☐ blocked on T-112 |
-| T-130 … T-133 | C harness | ◐ running |
-| T-140 … T-143 | D rungs | ☐ blocked on T-133 (FREEZE) |
-| T-150 … T-152 | E hardening | ☐ not started |
+| T-110 … T-116 | A generator | ✅ **DONE** 2026-08-31 — 14.82M txns, Fano 12.371 vs 12.25±1.0. G3/G4/G4b/G5 green, **G1b/G2 SKIP (BAF not vendored)** |
+| T-120 … T-122 | B features | ✅ **DONE** 2026-08-31 — 28 features, max parity diff 1.871e-11. **T-121's clause amended, see below.** T1 state 1720 B vs <1024 B bar: unmet, in LIMITATIONS.md |
+| T-130 … T-133 | C harness | ✅ **DONE** 2026-08-31 — **EVAL-LOCK.json committed, open_count 0, frozen at b4bb2ab** |
+| T-140 … T-143 | D rungs | ◐ **next** — unblocked by the freeze |
+| T-150 … T-152 | E hardening | ☐ T-151 is a one-way door and is not delegated |
 
-**Block 1 gate passed:** `ruff` clean, `mypy --strict` clean, 70 tests pass.
+**Blocks 1-5 gate passed:** `ruff` clean, `mypy --strict` clean (27 source files), **402 passed, 2 skipped, 2 xfailed.**
 
 ---
 
