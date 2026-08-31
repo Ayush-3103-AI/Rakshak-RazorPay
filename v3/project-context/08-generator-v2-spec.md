@@ -141,6 +141,18 @@ every merchant**, including fraud merchants. They must be implemented as a separ
 layer in `confounders.py` that the persona and typology layers do not know about — that
 separation is what makes the `prevalence=0, confounders=on` null test meaningful.
 
+**The sigma above is read over each event's own duration, not over a day.** This was
+unstated in the original and it changes the answer by a factor of twenty, so it is now
+explicit. A "3 sigma festival" means three standard deviations of the merchant's own
+5-day volume distribution, not of its daily one — read at daily resolution the same figure
+would be a 5x spike, and P6's annual swing would become a factor of twenty. The reference
+window per confounder is its own shape: P1 5 days, P2 one day (the epoch is daily, so a
+6-hour outage is still resolved as one epoch), and the share-valued P3/P4/P5 over 7 days,
+matching the register's own "7d instrument mix". A generator and a gate that disagree about
+this window are measuring different events and both will look correct.
+
+AMENDED 2026-08-31 after T-114 and T-116. Raised by Lane A rather than worked around.
+
 Cohort heterogeneity matters: P1 (festival) should hit L2 (seasonal D2C) harder than L4
 (B2B). Confounder effects are therefore `base_effect × persona_sensitivity[persona_id]`.
 Without this, the cohort residual has an unfairly easy job and G5 passes for the wrong
@@ -235,7 +247,14 @@ confounders:
   P3_fee_change:   {day: 60}
   P4_new_method:   {day: 90, ramp_days: 30}
   P5_regulatory:   {day: 120, transient_days: 10}
-  P6_macro:        {amplitude: 0.15, period_days: 90}
+  P6_macro:        {amplitude_sigma: 1.2, period_days: 90}
+  # AMENDED 2026-08-31. Was `amplitude: 0.15` — a RELATIVE shift, where P1 and P2 in this
+  # same block are sigma-valued and §4's table states every effect in sigma. At the target
+  # Fano of 12.25 a 15% relative shift is |z| ~ 0.1, so P6 could never clear §7's G5/T-114
+  # floor of mean |z| > 1.0: the config and the gate were asking for different things and
+  # one of them had to be wrong. Made sigma-valued to match §4, the other five confounders,
+  # and the gate. The alternative — dropping §7's threshold — would have weakened the only
+  # test that says a confounder is actually visible in the feature it is supposed to move.
 labels:
   dispute_delay_days: [45, 120]
   fraud_to_dispute_mean_days: 21
