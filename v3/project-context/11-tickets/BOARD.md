@@ -298,10 +298,30 @@ T-121 | Implement cohort assignment, EB shrinkage, and the cohort-residual layer
   Files:      src/rakshak/features/cohort.py (new), tests/unit/test_cohort.py (new),
               tests/parity/test_cohort_parity.py (new)
   Done when:  cohorts assign with the 30-member backoff chain; leave-one-out median is
-              computed without an O(N²) recompute; residuals exist for all 14 flagged T1
-              features; with prevalence=0 under confounder P2, mean |residual| < 0.25
-              while mean |raw z| > 1.0
-  Test:       tests/unit/test_cohort.py — the P2 assertion is the ticket
+              computed without an O(N²) recompute; residuals exist for all flagged T1
+              features; and under prevalence=0 with confounder P2 active, ALL THREE of:
+                (a) the common mode is removed — |median residual| < 0.05 on both the P2
+                    day and a null day, while median raw z > 1.0 on the P2 day;
+                (b) the alert rate at |·| > 3 falls to < 85% of the raw-z alert rate;
+                (c) it does NOT fall to the null-day level — residual alert rate stays
+                    > 5x the null-day residual alert rate. This clause is deliberately
+                    an admission: the residual is a PARTIAL defence against P2 and G5
+                    can still be red on a single feature. A criterion that could only
+                    ever report success is not a criterion.
+  Test:       tests/unit/test_cohort.py — the three-part P2 assertion is the ticket
+
+  AMENDED 2026-08-31, after T-121 measured the original clause and found it unreachable.
+  The original read "mean |residual| < 0.25 while mean |raw z| > 1.0". A z-score has unit
+  scale by definition and E|N(0,1)| = 0.798, so subtracting a cohort median cannot bring
+  the mean absolute value below ~0.6 unless every merchant in a cohort agrees to within
+  0.3σ. Measured on a day with NO confounder at all, mean |residual| was already 0.558.
+  A perfect residual layer fails that clause and so does a useless one — it measured
+  nothing. The original assertion is preserved verbatim in the test as
+  xfail(strict=True) with the arithmetic in its reason; it was not deleted and it was not
+  weakened to go green.
+  **K-1's verdict is NOT rendered here.** It is rendered at T-142, on the Rung 3 vs Rung 2
+  validation delta, which is where the board always put it. This ticket proves the
+  mechanism works; T-142 decides whether the mechanism is worth anything.
   Rollback:   Rung 3 degenerates to Rung 2; nothing else breaks
 ```
 

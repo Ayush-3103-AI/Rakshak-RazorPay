@@ -104,6 +104,38 @@ testing a subset of what exists.
 
 ---
 
+## Carried out of Lane C — three items nobody owns yet
+
+**1. `configs/scenario_v2.yaml` is missing two blocks the harness already depends on.**
+Lane A owns that file, so these were raised rather than patched around:
+- `p_catch` is used by the §2 cost matrix but is absent from the §8 config block and from the
+  landed YAML. Carried as a `CostParams` default of **0.80**; it belongs under `costs:`.
+- §4's HOLD thresholds are spec'd as config but there is no `decision:` block. Defaults
+  **0.90 / ₹25,000** are named on `ActionPolicy`.
+
+Both are currently code defaults standing in for config values, which is exactly the
+"no magic numbers in `src/`" rule being bent. Move them into the YAML when Lane A lands.
+
+**2. `cli.py` must call BOTH `require_unlocked_or_refuse(split)` and `verify_lock()` before
+any scoring path.** `make eval --split test` could not be wired from Lane C — `cli.py` and the
+`Makefile` are owned elsewhere. The tested primitive refuses on anything but the literal
+string `"1"`: `"true"`, `"yes"` and `"TRUE"` all refuse, deliberately. **Whoever writes the
+eval path in Lane D owns this, and it is the guard on a one-way door.**
+
+**3. `RungOutput`, `Truth` and `CostParams` live in `metrics.py`, not `schemas.py`** — against
+the "all types in schemas.py" convention, because `schemas.py` is frozen and a DESCEND to add
+three intra-package types would cost more than it buys. Nothing outside `rakshak.eval`
+constructs them. If that ever stops being true, they move.
+
+**Accepted deviation, recorded in the lock itself:** only `eval_module_sha256` is a hard fail.
+The generator and scenario-config hashes are recorded as freeze-time provenance and reported
+as drift. Enforcing them while Lane A was still in flight would hard-fail on the generator's
+next commit and train everyone to override the lock — and a lock that is routinely overridden
+is worse than no lock, because it still looks like evidence. `verify_lock(strict=True)`
+promotes all three once the generator freezes at T-116; **T-116 should call it that way.**
+
+---
+
 ## Session log pointer
 
 `docs/logbook/T-*.md` — one file per ticket: built / surprised / broke. The surprise field is
