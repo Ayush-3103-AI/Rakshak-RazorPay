@@ -570,6 +570,18 @@ costs:
   false_hold_cost_inr: 8000.0
   review_cost_inr: 250.0
   min_true_loss_inr: 1.0        # floor; GroundTruth requires a strictly positive loss
+  # Probability an analyst review actually stops the fraud. Used by the section 2 cost
+  # matrix: REVIEW on a fraud costs review_cost + (1 - p_catch) * loss. It was referenced
+  # by the matrix but never declared here, so it lived as a CostParams default in code -
+  # a magic number by another name. Landing it changes no result: the value IS the default.
+  p_catch: 0.80
+
+# Where PASS/REVIEW/HOLD is drawn. 10-eval-harness-spec.md section 4 says both thresholds
+# live in config; they were ActionPolicy defaults in eval/capacity.py until now. Same
+# story as p_catch above, and the same values, so no number moves.
+decision:
+  hold_score_threshold: 0.90              # calibrated probability
+  hold_expected_loss_floor_inr: 25000.0   # score * exposure, in rupees
 
 # Per-transaction mark constants. Trivia until one of them is wrong: a single-entry
 # decline_codes list makes f_decline_entropy identically zero for the whole population

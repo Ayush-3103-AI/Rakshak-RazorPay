@@ -1,23 +1,66 @@
 """The typer CLI. Every ``make`` target calls through here rather than into a module.
 
 One entry point per pipeline stage, so that the Makefile stays a list of names and the
-argument handling lives in exactly one place. Other lanes add their own subcommands
-(``features``, ``train``, ``eval``, ``report``); this file owns ``gen``.
+argument handling lives in exactly one place.
+
+**This file is the guard on the one-way door.** Lane C built ``require_unlocked_or_refuse``
+and ``verify_lock`` and tested both, but could not wire them - ``cli.py`` was another
+lane's file. Every path that scores anything now goes through ``_guard(split)``, which
+calls both, in that order, before a single row is read. Nothing else guards the test
+split: the environment variable is checked in exactly one place, ``lock.py``, and it is
+reached from exactly one place, here.
+
+``require_unlocked_or_refuse`` refuses on anything but the literal string ``"1"``.
+``"true"``, ``"yes"`` and ``"TRUE"`` all refuse, deliberately - a guard that accepts
+several spellings is a guard someone eventually trips over by accident.
+
+This file also sits on the eval side of the Prime Directive 3 quarantine, and that is on
+purpose. ``src/rakshak/models/`` may not name a ground-truth field, so the ``Truth`` object
+every metric needs is assembled *here*, and the rungs are handed plain arrays.
 """
 
 from __future__ import annotations
 
 import dataclasses
 import json
+import time as _time
+from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+import polars as pl
 import typer
 
+from rakshak.eval.capacity import DEFAULT_POLICY, ActionPolicy, select_actions
+from rakshak.eval.lock import (
+    LOCK_PATH,
+    load_lock,
+    read_open_count,
+    record_open,
+    require_unlocked_or_refuse,
+    verify_lock,
+)
+from rakshak.eval.metrics import CostParams, PerfBudget, RungOutput, Truth, build_eval_result
+from rakshak.eval.metrics import day_labels as _day_labels
+from rakshak.eval.oracle import oracle_savings
+from rakshak.eval.splits import DEFAULT_BOUNDARIES, available_labels, label_coverage
 from rakshak.generator.config import ScenarioConfig, load_scenario
 from rakshak.generator.engine import generate
+from rakshak.models import dataset, rung0_floors, rung1_rules, rung2_lgbm, rung3_cohort, rung4_cost
+from rakshak.schemas import Split
 
 app = typer.Typer(add_completion=False, help="Rakshak v2 — merchant risk sentinel.")
+
+#: The repository root, derived from this file rather than from the working directory —
+#: EVAL-LOCK.json hashes paths relative to it, so `make eval` run from a subdirectory must
+#: still verify the same tree.
+ROOT = Path(__file__).resolve().parents[2]
+
+#: Where trained boosters and scored results land. Under `data/`, which is gitignored and
+#: regenerable from seed + config; nothing here is an input to anything.
+MODEL_DIR = Path("data/v2/models")
+RESULT_DIR = Path("data/v2/eval")
 
 
 @app.callback()
@@ -107,6 +150,488 @@ def _apply_overrides(
         population=population,
         confounders=dataclasses.replace(scenario.confounders, enabled=confounders),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The guard. Both halves, before any scoring path, no exceptions.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _guard(split: Split, *, root: Path = ROOT) -> list[str]:
+    """``require_unlocked_or_refuse`` **and** ``verify_lock``, in that order.
+
+    Order matters. The split guard is the cheap, loud one and it should fire before the
+    hash check has a chance to fail for an unrelated reason — a run that is not permitted
+    to happen at all should not first spend time telling you the generator moved.
+
+    Returns the *unenforced* drift as human-readable lines. Drift is reported on every run
+    and never silently: only ``eval_module_sha256`` is a hard fail (LIMITATIONS.md §4), and
+    a recorded hash that no longer matches is provenance the reader is entitled to see.
+    """
+    require_unlocked_or_refuse(split)
+    return [f"{d.key}: recorded {d.expected[:12]}… now {d.actual[:12]}…" for d in verify_lock(root)]
+
+
+def _epoch_end(day: int) -> datetime:
+    return datetime.combine(DEFAULT_BOUNDARIES.origin + timedelta(days=day), time.max, tzinfo=UTC)
+
+
+#: An as_of past every ``label_available_at`` the generator can emit. Used for **one**
+#: thing: recovering which merchants are label-censored, so the metric suite can exclude
+#: them (10-eval-harness-spec.md §1). Censoring is an eval-side fact — within the 180-day
+#: window a censored merchant is indistinguishable from a pending one, so it cannot be
+#: recovered at an in-window as_of. It is never used to obtain a training label; those come
+#: from ``available_labels(train_as_of)`` and nothing else.
+_CENSORING_AS_OF = datetime(2099, 1, 1, tzinfo=UTC)
+
+
+def _label_path(root: Path) -> Path:
+    """The label table for a dataset root, named through ``splits`` rather than spelled
+    out here — there is one door and this file is not it."""
+    from rakshak.eval.splits import DEFAULT_LABEL_PATH
+
+    return root / DEFAULT_LABEL_PATH.name
+
+
+def _observed_volume(root: Path, merchants: list[str], cutoff_day: int) -> np.ndarray:
+    """Captured, non-refunded GMV per merchant up to ``cutoff_day``. The volume the
+    ``volume_rank`` floor ranks on, and ``Truth.volume``.
+
+    Cut at the day *before* the scored window opens, so the dumbest heuristic is still a
+    point-in-time one and cannot rank merchants on volume it has not seen yet.
+    """
+    frame = (
+        pl.scan_parquet(root / "transactions.parquet")
+        .filter(
+            (pl.col("event_date") <= _epoch_end(max(cutoff_day, 0)).date())
+            & (pl.col("status") == "captured")
+            & ~pl.col("is_refund")
+        )
+        .group_by("merchant_id")
+        .agg(pl.col("amount_inr").sum().alias("volume"))
+        .collect()
+    )
+    lookup = dict(zip(frame["merchant_id"], frame["volume"], strict=True))
+    return np.array([float(lookup.get(m, 0.0)) for m in merchants], dtype=np.float64)
+
+
+def _build_truth(root: Path, merchants: list[str], cutoff_day: int) -> Truth:
+    """One row per scored merchant, from the generator's truth table.
+
+    Assembled here rather than under ``models/`` because it names quarantined fields, and
+    Prime Directive 3's AST gate covers ``models/``. The rungs never see this object; they
+    are handed a score vector's worth of arrays and nothing else.
+    """
+    truth_frame = (
+        pl.read_parquet(root / "ground_truth.parquet")
+        .filter(pl.col("merchant_id").is_in(merchants))
+        .sort("merchant_id")
+    )
+    by_id = {row["merchant_id"]: row for row in truth_frame.iter_rows(named=True)}
+    missing = [m for m in merchants if m not in by_id]
+    if missing:
+        raise KeyError(f"{len(missing)} scored merchants are absent from the truth table")
+
+    # Narrowed to the merchants being scored, so this future-dated read cannot see a row
+    # for a merchant in another split even incidentally.
+    censored_ids = set(
+        available_labels(_CENSORING_AS_OF, _label_path(root), include_censored=True)
+        .filter(pl.col("is_censored") & pl.col("merchant_id").is_in(merchants))
+        .collect()["merchant_id"]
+        .to_list()
+    )
+
+    origin = DEFAULT_BOUNDARIES.origin
+    onset = np.array(
+        [
+            (by_id[m]["drift_onset_at"].date() - origin).days
+            if by_id[m]["drift_onset_at"] is not None
+            else np.nan
+            for m in merchants
+        ],
+        dtype=np.float64,
+    )
+    typology = np.array(
+        [by_id[m]["risk_typology_id"] for m in merchants], dtype=object
+    )
+
+    # The loss is AMORTISED OVER THE DAYS IT ACCRUES, and this is a decision, not a
+    # detail. The harness's unit of evaluation is the merchant-day, and `row_cost` charges
+    # `loss` on every merchant-day a fraud is left to PASS. A merchant-level total handed
+    # in unamortised is therefore charged once per day - a merchant that turns on day 40
+    # of 180 is billed 140 times its own loss - which inflates the all-PASS denominator
+    # until `all_hold` looks profitable and every capacity-constrained rung FLOOR-FAILs
+    # against it for an accounting reason rather than a modelling one. Dividing by the
+    # days from onset to the end of the horizon makes the loss summed over any window the
+    # loss actually accrued in that window, which is what the cost matrix is charging for.
+    # Made here rather than in eval/, which is frozen and correct as written.
+    horizon = float(DEFAULT_BOUNDARIES.n_days)
+    accrual_days = np.maximum(horizon - np.nan_to_num(onset, nan=horizon - 1.0), 1.0)
+    return Truth(
+        merchant_id=np.array(merchants, dtype=object),
+        label=np.array([int(t is not None) for t in typology], dtype=np.int8),
+        is_censored=np.array([m in censored_ids for m in merchants], dtype=bool),
+        loss_inr=np.array(
+            [float(by_id[m]["true_loss_amount_inr"]) for m in merchants], dtype=np.float64
+        )
+        / accrual_days,
+        onset_day=onset,
+        typology=typology,
+        volume=_observed_volume(root, merchants, cutoff_day),
+    )
+
+
+def _cost_params(config: Path) -> CostParams:
+    """The cost matrix, from ``configs/scenario_v2.yaml`` where the numbers exist.
+
+    ``p_catch`` is **not in the manifest** and the §2 cost matrix needs it. It stands in as
+    ``CostParams``' own default of 0.80, which is a code default impersonating config —
+    reported as a carry-forward rather than patched around, because ``configs/`` is Lane
+    A's file. The exact block it wants is in docs/logbook/T-140.md.
+    """
+    import yaml
+
+    costs = yaml.safe_load(config.read_text(encoding="utf-8")).get("costs", {})
+    return CostParams(
+        review_cost_inr=float(costs["review_cost_inr"]),
+        false_hold_cost_inr=float(costs["false_hold_cost_inr"]),
+        fraud_loss_multiplier=float(costs["fraud_loss_multiplier"]),
+        **({"p_catch": float(costs["p_catch"])} if "p_catch" in costs else {}),
+    )
+
+
+def _action_policy(config: Path) -> ActionPolicy:
+    """The HOLD thresholds. Config if the manifest has a ``decision:`` block, defaults
+    otherwise — the second half of the same carry-forward as ``p_catch``."""
+    import yaml
+
+    decision = yaml.safe_load(config.read_text(encoding="utf-8")).get("decision") or {}
+    if not decision:
+        return DEFAULT_POLICY
+    return ActionPolicy(
+        hold_score_threshold=float(decision["hold_score_threshold"]),
+        hold_expected_loss_floor_inr=float(decision["hold_expected_loss_floor_inr"]),
+    )
+
+
+def _capacity(n_merchants: int, root: Path = ROOT) -> int:
+    """K for the population actually scored, from the ratio EVAL-LOCK records.
+
+    The lock stores ``capacity_k: 50`` alongside ``capacity_per_n_merchants: 10000``
+    precisely because it is a rate, not a constant: a split holds a fold of the population,
+    and holding K at 50 over a sixth of the merchants would hand that split six times the
+    analyst budget the system is claimed to run under.
+    """
+    lock = load_lock(root)
+    per = int(lock["capacity_per_n_merchants"])
+    return max(1, round(int(lock["capacity_k"]) * n_merchants / per))
+
+
+def _training_labels(root: Path, merchants: np.ndarray, as_of: datetime) -> np.ndarray:
+    """Per-row target: 1 iff this merchant has a **resolved, available** positive label.
+
+    Everything else is 0, including merchants whose dispute has not landed yet. That is
+    positive-unlabelled by construction and it is the real operating condition — the
+    system cannot tell "clean" from "not disputed yet", and a harness that could would be
+    measuring a system that cannot exist (10-eval-harness-spec.md §1).
+
+    The label is broadcast to every one of the merchant's rows in the window. The drift
+    onset is *not* known at training time, so the days before a merchant turned are
+    labelled positive too. That is real label noise and it is not corrected here: any
+    correction would need a lead-time constant nobody has measured, and inventing one to
+    improve the number is the kind of tuning this project exists to avoid.
+    """
+    positives = set(
+        available_labels(as_of, _label_path(root))
+        .filter(pl.col("label") == 1)
+        .collect()["merchant_id"]
+        .to_list()
+    )
+    return np.fromiter((m in positives for m in merchants), dtype=np.int8, count=len(merchants))
+
+
+def _model_path(rung: int, seed: int) -> Path:
+    return MODEL_DIR / f"rung{rung}_seed{seed}.txt"
+
+
+def _sidecar_path(rung: int, seed: int) -> Path:
+    return MODEL_DIR / f"rung{rung}_seed{seed}.json"
+
+
+def _columns_for(rung: int) -> tuple[str, ...]:
+    if rung == 2:
+        return dataset.base_columns()
+    if rung in (3, 4):
+        return rung3_cohort.feature_columns()
+    raise ValueError(f"rung {rung} is not a trained rung; 2, 3 and 4 are")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pipeline stages
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@app.command()
+def features(
+    seed: int = typer.Option(42, "--seed", help="Recorded for provenance; the panel is "
+                             "deterministic given the dataset."),
+    root: Path = typer.Option(Path("data/v2"), "--root", help="Generated dataset."),  # noqa: B008
+    out: Path = typer.Option(  # noqa: B008
+        dataset.DEFAULT_PANEL, "--out", "-o", help="Panel destination."
+    ),
+    last_day: int | None = typer.Option(
+        None, "--last-day", help="Final epoch to materialise. Defaults to the last "
+        "VALIDATION day; the test split cannot be materialised from here at all."
+    ),
+) -> None:
+    """Materialise the (merchant-day x feature) panel every rung trains and scores on."""
+    summary = dataset.materialise(root, out, last_day=last_day, echo=typer.echo)
+    summary["seed"] = seed
+    (out.parent / "features_summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8"
+    )
+    typer.echo(json.dumps(summary, indent=2))
+
+
+@app.command()
+def train(
+    rung: int = typer.Option(2, "--rung", help="2, 3 or 4."),
+    seed: int = typer.Option(42, "--seed", help="Threaded into LightGBM; identical "
+                             "across rungs so the Rung-3 delta is single-variable."),
+    root: Path = typer.Option(Path("data/v2"), "--root", help="Generated dataset."),  # noqa: B008
+    panel: Path = typer.Option(  # noqa: B008
+        dataset.DEFAULT_PANEL, "--panel", help="Materialised feature panel."
+    ),
+    config: Path = typer.Option(  # noqa: B008
+        Path("configs/scenario_v2.yaml"), "--config", "-c", help="Scenario manifest."
+    ),
+) -> None:
+    """Train one rung on the TRAIN split only, with labels available at the train boundary.
+
+    Guarded exactly like ``eval``: the split guard and the lock hash both run before a row
+    is read. Training is a scoring path in every sense that matters — it reads features and
+    labels — so it gets the same door.
+    """
+    drift = _guard("train", root=ROOT)
+    for line in drift:
+        typer.echo(f"[lock drift, unenforced] {line}")
+
+    full = dataset.load_panel(panel)
+    rows = full.select("train")
+    columns = _columns_for(rung)
+    x = rows.with_columns(columns).x
+    as_of = _epoch_end(DEFAULT_BOUNDARIES.train[1])
+    y = _training_labels(root, rows.merchant_id, as_of)
+    coverage = label_coverage(as_of, _label_path(root))
+
+    # One HParams instance, one seed, for every rung. Rung 3's delta is attributable to
+    # the residual columns only if literally nothing else moved (FR-031), and "nothing
+    # else" includes the four separate seeds LightGBM reads.
+    hparams = rung2_lgbm.DEFAULT_PARAMS.with_seed(seed)
+    if rung == 2:
+        model = rung2_lgbm.train(x, y, columns, params=hparams, merchant_id=rows.merchant_id)
+    elif rung == 3:
+        model = rung3_cohort.train(
+            x,
+            y,
+            columns,
+            rung2_columns=dataset.base_columns(),
+            params=hparams,
+            merchant_id=rows.merchant_id,
+        )
+    else:
+        params = _cost_params(config)
+        model = rung4_cost.train(
+            x,
+            y,
+            columns,
+            exposure_inr=rows.column("p_declared_monthly_gmv"),
+            review_cost_inr=params.review_cost_inr,
+            params=hparams,
+            merchant_id=rows.merchant_id,
+        )
+
+    path = model.save(_model_path(rung, seed))
+    summary = {
+        "rung": rung,
+        "seed": seed,
+        "train_as_of_day": DEFAULT_BOUNDARIES.train[1],
+        "columns": list(columns),
+        "n_columns": len(columns),
+        "n_train_rows": model.n_train_rows,
+        "n_train_positive_rows": model.n_train_positive_rows,
+        "n_train_positive_merchants": model.n_train_positive_merchants,
+        "train_seconds": model.train_seconds,
+        "model_size_mb": round(model.size_mb(path), 4),
+        "hparams": dataclasses.asdict(model.params),
+        "label_coverage_at_train_boundary": {
+            "n_merchants": coverage.n_merchants,
+            "n_available": coverage.n_available,
+            "n_positive": coverage.n_positive,
+            "n_censored": coverage.n_censored,
+            "n_pending": coverage.n_pending,
+        },
+    }
+    _sidecar_path(rung, seed).write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    typer.echo(json.dumps(summary, indent=2))
+
+
+def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
+    import lightgbm as lgb
+
+    path = _model_path(rung, seed)
+    sidecar = json.loads(_sidecar_path(rung, seed).read_text(encoding="utf-8"))
+    return rung2_lgbm.TrainedRung(
+        rung=rung,
+        booster=lgb.Booster(model_file=str(path)),
+        columns=tuple(sidecar["columns"]),
+        params=rung2_lgbm.HParams(**sidecar["hparams"]),
+        n_train_rows=sidecar["n_train_rows"],
+        n_train_positive_rows=sidecar["n_train_positive_rows"],
+        n_train_positive_merchants=sidecar["n_train_positive_merchants"],
+        train_seconds=sidecar["train_seconds"],
+    )
+
+
+@app.command("eval")
+def score_split(
+    rung: int = typer.Option(2, "--rung", help="0, 1, 2, 3 or 4."),
+    seed: int = typer.Option(42, "--seed", help="Threaded into the random_at_k floor."),
+    split: str = typer.Option("val", "--split", help="val (default) or test. "
+                              "test REFUSES without RAKSHAK_UNLOCK=1."),
+    root: Path = typer.Option(Path("data/v2"), "--root", help="Generated dataset."),  # noqa: B008
+    panel: Path = typer.Option(  # noqa: B008
+        dataset.DEFAULT_PANEL, "--panel", help="Materialised feature panel."
+    ),
+    config: Path = typer.Option(  # noqa: B008
+        Path("configs/scenario_v2.yaml"), "--config", "-c", help="Scenario manifest."
+    ),
+    floor: str = typer.Option("", "--floor", help="With --rung 0: which floor to score."),
+) -> None:
+    """Score one rung and write a complete ``EvalResult`` row.
+
+    Refuses the test split unless ``RAKSHAK_UNLOCK=1`` and refuses any split at all if the
+    frozen eval modules have changed. Both checks happen before the panel is opened.
+    """
+    if split not in ("train", "val", "test"):
+        raise typer.BadParameter(f"split is train/val/test; got {split!r}")
+    drift = _guard(split, root=ROOT)  # type: ignore[arg-type]
+    for line in drift:
+        typer.echo(f"[lock drift, unenforced] {line}")
+
+    rng = np.random.default_rng(seed)
+    params = _cost_params(config)
+    policy = _action_policy(config)
+    full = dataset.load_panel(panel)
+    rows = full.select(split)  # type: ignore[arg-type]
+    if rows.x.shape[0] == 0:
+        raise typer.BadParameter(f"the panel holds no {split!r} rows")
+
+    merchants = sorted(set(rows.merchant_id.tolist()))
+    span = getattr(DEFAULT_BOUNDARIES, split)
+    truth = _build_truth(root, merchants, cutoff_day=span[0] - 1)
+    k = _capacity(len(merchants))
+    exposure = rows.column("p_declared_monthly_gmv")
+
+    latency_ms = float("nan")
+    model_size_mb = float("nan")
+    label = f"rung{rung}"
+    if rung == 0:
+        label = floor or "volume_rank"
+        if label not in rung0_floors.ROW_FLOORS:
+            raise typer.BadParameter(
+                f"--floor must be one of {rung0_floors.ROW_FLOORS}; got {label!r}. "
+                "all_hold alerts on the whole population, so alerts_per_day is the "
+                "population size and the harness refuses to compute metrics above "
+                "capacity K. Its savings is on every row as savings_floor_all_hold."
+            )
+        if label == "all_pass":
+            score = np.zeros(rows.x.shape[0], dtype=np.float64)
+            action = rung0_floors.all_pass_actions(rows.x.shape[0])
+        else:
+            volume_by_id = dict(zip(truth.merchant_id, truth.volume, strict=True))
+            score = (
+                rung0_floors.random_scores(rows.x.shape[0], rng)
+                if label == "random_at_k"
+                else rung0_floors.volume_scores(
+                    np.array([volume_by_id[m] for m in rows.merchant_id])
+                )
+            )
+            action = rung0_floors.floor_actions(score, rows.day, k)
+    else:
+        if rung == 1:
+            score = rung1_rules.score(rows.x, rows.columns)
+        else:
+            model = _load_trained(rung, seed)
+            started = _time.perf_counter()
+            score = model.predict(rows.x, rows.columns)
+            latency_ms = (_time.perf_counter() - started) / rows.x.shape[0] * 1000.0
+            model_size_mb = round(model.size_mb(_model_path(rung, seed)), 4)
+        action = select_actions(score, rows.day, exposure, k, params, policy)
+
+    output = RungOutput(
+        merchant_id=rows.merchant_id, day=rows.day, score=score, action=action
+    )
+    y, keep = _day_labels(output, truth)
+    order = np.argsort(truth.merchant_id)
+    idx = order[np.searchsorted(truth.merchant_id[order], output.merchant_id)]
+    ceiling = oracle_savings(
+        output.day[keep], y[keep], truth.loss_inr[idx][keep], k, params
+    )
+
+    summary_path = panel.parent / "features_summary.json"
+    state_bytes = (
+        float(json.loads(summary_path.read_text(encoding="utf-8"))["state_bytes_p99"])
+        if summary_path.exists()
+        else float("nan")
+    )
+    result = build_eval_result(
+        rung=rung,
+        split=split,  # type: ignore[arg-type]
+        output=output,
+        truth=truth,
+        k=k,
+        params=params,
+        rng=rng,
+        perf=PerfBudget(
+            p99_latency_ms=latency_ms,
+            state_bytes_p99=state_bytes,
+            model_size_mb=model_size_mb,
+        ),
+        oracle_savings=ceiling,
+        eval_lock_sha=load_lock(ROOT)["eval_module_sha256"],
+        open_count=read_open_count(ROOT),
+        git_sha=str(load_lock(ROOT)["frozen_at_git_sha"]),
+    )
+
+    if split == "test":
+        record_open(ROOT, [rung])
+        typer.echo(
+            f"opened the test split. {LOCK_PATH} open_count is now "
+            f"{read_open_count(ROOT)} — COMMIT IT."
+        )
+
+    payload: dict[str, Any] = dataclasses.asdict(result)
+    payload["recall_by_typology"] = {
+        str(key): value for key, value in result.recall_by_typology.items()
+    }
+    payload |= {
+        "label": label,
+        "capacity_k": k,
+        "n_merchants_scored": len(merchants),
+        "n_rows_scored": int(rows.x.shape[0]),
+        "n_rows_kept": int(keep.sum()),
+        "n_censored_dropped": int((~keep).sum()),
+        "oracle_savings": ceiling,
+        "beats_all_floors": result.beats_all_floors,
+        "n_features": len(rows.columns) if rung in (0, 1) else len(_columns_for(rung)),
+    }
+    results = panel.parent / RESULT_DIR.name
+    results.mkdir(parents=True, exist_ok=True)
+    (results / f"{label}_{split}_seed{seed}.json").write_text(
+        json.dumps(payload, indent=2, default=str), encoding="utf-8"
+    )
+    typer.echo(json.dumps(payload, indent=2, default=str))
 
 
 if __name__ == "__main__":  # pragma: no cover - `python -m rakshak.cli`

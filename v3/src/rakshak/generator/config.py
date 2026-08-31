@@ -17,7 +17,7 @@ from the rest of the generator.
 from __future__ import annotations
 
 import dataclasses
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import UnionType
 from typing import Any, Union, get_args, get_origin, get_type_hints
@@ -350,6 +350,28 @@ class CostsConfig:
     #: (it is the knapsack weight), and a vanished R1 with almost no post-onset GMV would
     #: otherwise round to zero and fail construction.
     min_true_loss_inr: float
+    #: Probability an analyst review actually stops the fraud. The section 2 cost matrix
+    #: charges REVIEW-on-fraud as review_cost + (1 - p_catch) * loss, so this is the
+    #: difference between a review that works and a review that only costs money. It was
+    #: referenced by the matrix and declared nowhere, living as a code default - a magic
+    #: number wearing a different hat. Defaulted to its former code value so no result moves.
+    p_catch: float = 0.80
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionConfig:
+    """Where PASS/REVIEW/HOLD is drawn.
+
+    10-eval-harness-spec.md section 4 says both thresholds live in config. They were
+    ActionPolicy defaults in eval/capacity.py, which is frozen under the lock, so they are
+    declared here and read by the CLI. Same values as the defaults they replace.
+    """
+
+    #: A HOLD needs a calibrated probability at least this high...
+    hold_score_threshold: float = 0.90
+    #: ...AND an expected loss (score x exposure) at least this large. Both, not either:
+    #: a confident score on a merchant with nothing at stake is not worth freezing.
+    hold_expected_loss_floor_inr: float = 25_000.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -407,6 +429,9 @@ class ScenarioConfig:
     #: inferred from the group name, so renaming a group in the YAML cannot silently
     #: make every merchant declarable into it.
     mcc_drift_group: str
+    #: Last because it is the only defaulted field: absent from an older manifest, in which
+    #: case the DecisionConfig defaults stand and behaviour is unchanged.
+    decision: DecisionConfig = field(default_factory=DecisionConfig)
 
     def __post_init__(self) -> None:
         _check_shares(

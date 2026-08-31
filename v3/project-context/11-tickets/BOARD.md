@@ -85,8 +85,11 @@ Updated at the end of every session.
 | T-110 … T-116 | A generator | ✅ **DONE** 2026-08-31 — 14.82M txns, Fano 12.371 vs 12.25±1.0. G3/G4/G4b/G5 green, **G1b/G2 SKIP (BAF not vendored)** |
 | T-120 … T-122 | B features | ✅ **DONE** 2026-08-31 — 28 features, max parity diff 1.871e-11. **T-121's clause amended, see below.** T1 state 1720 B vs <1024 B bar: unmet, in LIMITATIONS.md |
 | T-130 … T-133 | C harness | ✅ **DONE** 2026-08-31 — **EVAL-LOCK.json committed, open_count 0, frozen at b4bb2ab** |
-| T-140 … T-143 | D rungs | ◐ **next** — unblocked by the freeze |
-| T-150 … T-152 | E hardening | ☐ T-151 is a one-way door and is not delegated |
+| T-140 … T-143 | D rungs | ✅ **DONE** 2026-08-31 — **every rung FLOOR-FAILs on savings against `volume_rank`.** K-1: PR-AUC +6.89% mean over 5 locked seeds (4/5 positive), savings −7.67% (2/5). Charter adoption margin NOT met → **Rung 3 not adopted.** Rung 4 a clean negative, dropped |
+| T-116b | A/E1 | ✅ **DONE** — BAF anchor run. G1c GREEN (Poisson rejected 2-3 orders), **G1b RED** (count_56d KS 0.2679), **G2 NOT WELL-POSED** (a coin flip passes its bar) |
+| T-150 | E hardening | ✅ **DONE** — every NFR asserted. **NFR-04 FAILS: 9,634 B vs 4,096 B**, and it is a feature problem, not serialization |
+| T-152a | F | ✅ **DONE** — `report.py`, provenance refuses rather than warns |
+| T-151 … T-152 | E hardening | ☐ **T-151 is a one-way door and is not delegated** |
 
 **Blocks 1-5 gate passed:** `ruff` clean, `mypy --strict` clean (27 source files), **402 passed, 2 skipped, 2 xfailed.**
 
