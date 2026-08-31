@@ -91,7 +91,7 @@ FR-018 names five components. Two of them cannot be measured because the tickets
 | row | why it is absent | what is undischarged |
 |---|---|---|
 | empirical-Bayes shrinkage on / off | **T-0008 was cut.** ADR-0006 records the decision and its status line says it was never built. | No recalibration happens anywhere in this repo, and the BMR policy in `decision/policy.py` consumes each model's raw score **as if it were a calibrated posterior**. Under a rank-only policy miscalibration would only cost the Brier column; under BMR it moves the argmin. Every `savings` number on this page inherits that. |
-| NSGA-II vs. grid search | **T-0009 was cut.** ADR-0004 chose NSGA-II over NSGA-III and made the grid-search comparison a *mandatory* ablation. | No Pareto frontier exists, so the obligation ADR-0004 wrote down is **undischarged**. `pymoo` is still declared as a dependency in `pyproject.toml` for work that did not happen; it should be removed or explicitly justified before freeze. |
+| NSGA-II vs. grid search | **T-0009 was cut.** ADR-0004 chose NSGA-II over NSGA-III and made the grid-search comparison a *mandatory* ablation. | No Pareto frontier exists, so the obligation ADR-0004 wrote down is **undischarged**. `pymoo` was removed from `pyproject.toml` (T-0020); that obligation is still open and should be explicitly discharged or re-justified before freeze. |
 
 ### No sequence-aware baseline other than the HMM was measured
 

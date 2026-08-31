@@ -38,8 +38,9 @@ that do not exist.
 
 Do not let a README or the video cite these as though they shipped:
 
-* **ADR-0004** — no multi-objective frontier exists. `pymoo` is declared in `pyproject.toml` for
-  work that was cut. Remove it or justify it before freeze.
+* **ADR-0004** — no multi-objective frontier exists. `pymoo` was removed from `pyproject.toml`
+  (T-0020); ADR-0004's grid-search obligation is still undischarged and should be closed or
+  explicitly re-justified before freeze.
 * **ADR-0006** — no calibration happens anywhere in this repo, which is load-bearing because
   ADR-0005's BMR policy consumes raw scores as posteriors.
 

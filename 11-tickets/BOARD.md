@@ -415,10 +415,10 @@ Kaggle-gated). No README or video line may cite these as shipped.
   `project-context/09-interfaces.md`**, from the code as implemented, with a *Known gaps* section.
 - ~~**`pymoo` is declared in `pyproject.toml`** for T-0009, which was cut.~~ **Removed 2026-08-30
   (T-0020); ADR-0004 records it, and T-0023's addendum gives a better reason than "the work was
-  cut".** **New, and it is the same defect inverted: `results/ablations.md:94` and
-  `docs/adr/README.md:39-40` still assert `pymoo` IS declared.** The former is a hardcoded string at
-  `src/rakshak/eval/ablations.py:586-589` that `make eval` regenerates unchanged and no test covers.
-  Fixing it edits `src/` and regenerates a committed artifact. **Issue #31.**
+  cut".** ~~**New, and it is the same defect inverted: `results/ablations.md:94` and
+  `docs/adr/README.md:39-40` still assert `pymoo` IS declared.**~~ **Fixed: the hardcoded string at
+  `src/rakshak/eval/ablations.py:586-589` and the prose in `docs/adr/README.md:41-42` now state
+  pymoo was removed (T-0020) rather than still declared. Issue #31.**
 - **`src/rakshak/explain/` is an empty package.** FR-014's merchant-facing reason string — the
   centrepiece per `CLAUDE.md` — has no ticket of its own and rides on T-0013 (#8) on the last build
   day. Found by T-0018 on 2026-08-30.

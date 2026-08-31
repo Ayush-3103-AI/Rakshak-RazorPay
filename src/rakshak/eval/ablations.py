@@ -585,9 +585,9 @@ def render_ablations(
     add(
         "| NSGA-II vs. grid search | **T-0009 was cut.** ADR-0004 chose NSGA-II over NSGA-III "
         "and made the grid-search comparison a *mandatory* ablation. | No Pareto frontier "
-        "exists, so the obligation ADR-0004 wrote down is **undischarged**. `pymoo` is still "
-        "declared as a dependency in `pyproject.toml` for work that did not happen; it should "
-        "be removed or explicitly justified before freeze. |"
+        "exists, so the obligation ADR-0004 wrote down is **undischarged**. `pymoo` was "
+        "removed from `pyproject.toml` (T-0020); that obligation is still open and should be "
+        "explicitly discharged or re-justified before freeze. |"
     )
     add("")
 
