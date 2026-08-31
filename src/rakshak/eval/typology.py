@@ -56,12 +56,11 @@ import numpy as np
 import pandas as pd
 
 from rakshak.cli import base_parser, seed_everything
-from rakshak.config import RESULTS_DIR, SEED
+from rakshak.config import RESULTS_DIR, REVIEW_CAPACITY_HOURS_PER_1000_MERCHANTS, SEED
 from rakshak.decision.policy import HOLD, REVIEW
 from rakshak.eval.harness import MODEL_REGISTRY, _f, evaluate_model
 from rakshak.eval.oracle import review_slots
 from rakshak.eval.splits import Split, active_state_paths_path, load_split
-from rakshak.config import REVIEW_CAPACITY_HOURS_PER_1000_MERCHANTS
 
 UNLOCK_TICKET: str = "T-0013"
 """`eval.splits.load_split` requires this to open the test window."""
