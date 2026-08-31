@@ -5,3 +5,17 @@
 # That made the test pass on Windows and fail on a Linux clone. Force LF on
 # checkout everywhere so the hash this test asserts is the same on both.
 tests/fixtures/online_retail_ii_sample.csv text eol=lf
+
+# T-0021: same autocrlf trap, wider blast radius. `results/*.csv` and
+# `results/*.md` are written by the eval harness with newline="\n" (LF), so
+# the git blob is LF, but a Windows checkout with core.autocrlf=true was
+# still re-inflating some of them to CRLF in the working tree — enough to
+# make the "regenerated results/ are byte-identical to committed, at seed
+# 42" claim in CLAUDE.md false on a fresh Linux clone even though the
+# generated *numbers* matched. Force LF for every generated results/ text
+# artifact so the working tree always matches what the writers actually
+# wrote, regardless of platform or checkout history. results/figures/*.png
+# is binary and intentionally excluded.
+results/*.md text eol=lf
+results/*.csv text eol=lf
+results/*.json text eol=lf
