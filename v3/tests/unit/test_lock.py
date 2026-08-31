@@ -242,3 +242,45 @@ def test_the_committed_lock_verifies_against_this_working_tree() -> None:
     drift = verify_lock(root)
     # Generator/config drift is expected and reported; eval drift would have raised above.
     assert all(d.key != "eval_module_sha256" for d in drift)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The guard that was missing, added 2026-08-31 after it was needed.
+#
+# Every test above runs against a tmp `fake_root`, on the correct reasoning that the real
+# lock is a one-way door and a test must never write to it. But that left NOTHING checking
+# the real lock against the real tree, and the gap was not theoretical: a lane edited
+# `eval/splits.py` — inside the enforced hash set — and reported that it had not. The
+# violation was caught by a manual check, which is not a control.
+#
+# `verify_lock()` is READ-ONLY. Calling it on the real root cannot open the split, cannot
+# increment the counter, and cannot write anything. So the one thing the suite was missing
+# is also the one thing it was always safe to do.
+# ─────────────────────────────────────────────────────────────────────────────
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_the_real_tree_still_matches_the_real_committed_lock() -> None:
+    """The frozen harness is byte-for-byte what EVAL-LOCK.json recorded.
+
+    If this fails, someone changed a module under the enforced hash and every number
+    measured since is incomparable to everything measured before. Restore the module or
+    accept that it is a new harness and say so in writing — do not edit the lock to match.
+    """
+    verify_lock(REPO_ROOT)
+
+
+def test_the_real_lock_has_never_been_opened_outside_t_151() -> None:
+    """`open_count` is the project's most load-bearing integer.
+
+    It is committed, so anyone can read it in the git history. T-151 is the only ticket
+    permitted to raise it, and only once. A value above 1 means the test split was opened
+    more than once and no result in this repo can be trusted.
+    """
+    lock = load_lock(REPO_ROOT)
+    assert lock["open_count"] <= 1, (
+        f"open_count is {lock['open_count']}; the test split may be opened exactly once, "
+        f"in T-151. open_log: {lock['open_log']}"
+    )
+    assert len(lock["open_log"]) == lock["open_count"]
