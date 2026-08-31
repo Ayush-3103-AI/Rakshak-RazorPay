@@ -8,7 +8,7 @@
 > Nothing in this file is here because it was too awkward to fix elsewhere. Each entry names
 > what was cut, why, and what it would take to un-cut it.
 
-**Status:** accumulating · last updated 2026-08-31, after Lane B (T-120…T-122)
+**Status:** accumulating · last updated 2026-08-31, after Lanes A, B and C (T-110…T-133)
 
 ---
 
@@ -136,7 +136,54 @@ have invalidated the diff against the implementation that is its purpose.
 
 ---
 
-## 5. Findings about the tests themselves
+## 5. The external anchor is not green — it is absent
+
+**G2 (baseline transfer) and G1b did not run.** BAF (Feedzai, NeurIPS 2022) is not vendored:
+roughly a million rows under a research licence, and `make gates` has to survive a clean
+clone. Both gates record `SKIP` with the reason, and `RAKSHAK_BAF_PATH` or a `Base.csv` in
+`data/external/baf/` enables them.
+
+**This must be stated plainly in the report, because it is the weakest point in the whole
+argument.** G2 is the only gate that offers evidence against "the generator is fiction and
+the models are measuring it". Every other gate is internal — G1 checks the generator against
+its own target, G3 checks determinism, G4 checks the quarantine, G5 checks the generator
+against a detector built on the same generator. A skipped external anchor is a materially
+weaker claim than a green one, and describing the gate suite as "five gates, all passing"
+would be false: it is three green, one green-with-two-halves, and one absent.
+
+---
+
+## 6. G5 is green for the RAW detector too — the demo premise does not hold
+
+The narrative the project was built around is that a platform-wide confounder makes raw
+z-scores spike while cohort residuals stay flat. **Measured on the real generator at
+prevalence = 0, that is not what happens.**
+
+| Detector | Worst window excess over nominal | Verdict |
+|---|---|---|
+| raw z-score | **+1.27pp** | GREEN (allowance +2pp) |
+| cohort residual | **+0.72pp** | GREEN |
+
+Both pass. The residual is better — 0.72 against 1.27 — but the raw detector did not fail,
+so the confounder does not demonstrate the failure the residual is supposed to repair.
+
+Three explanations, and this lane could not distinguish them:
+1. The **+2pp allowance is generous** against a 0.5% nominal alert rate — it permits a 5x
+   inflation before firing.
+2. A **single-feature z-threshold is too weak a stand-in for Rung 2.** The real question is
+   whether a trained model alerts on confounders, and a one-feature rule is not that model.
+3. The **trailing 28-day baseline already absorbs a 5-day festival**, so by the time the
+   confounder window opens the baseline has partly moved with it.
+
+**T-151 re-runs G5 against Rungs 2 and 3, and that is the number that counts.** If the raw
+detector still does not fail there, then charter K-1 has fired on its own terms and **the
+figure to publish is the falsification**: the cohort-residual layer would be a solution to a
+problem this generator does not create. That would be a real finding and it must not be
+softened into "the residual was slightly better".
+
+---
+
+## 7. Findings about the tests themselves
 
 **Parity is necessary and nowhere near sufficient.** T-120 found a real bug that the parity
 suite was structurally incapable of catching: the warmup window was anchored on

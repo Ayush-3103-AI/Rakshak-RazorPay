@@ -11,10 +11,16 @@ The scan is AST-based rather than textual. A substring search would both miss
 a docstring that explains the quarantine. Imports, attribute access, bare names and
 string literals are all checked; docstrings are excluded.
 
-**One half of this gate is deferred, and that is stated rather than hidden.** §7's G4
-also requires that "point-in-time recomputation at time t matches the stored feature
-vector exactly". That needs a feature layer, which is Lane B (T-120/T-121) and does not
-exist as this ticket lands. It is recorded below as a SKIP with its owner.
+G4 has a second clause in the spec - point-in-time recomputation at time t must match
+the stored feature vector exactly. That needed a feature layer, which did not exist
+when this gate was first written; Lane B has since landed one, so G4b below now runs
+against real generator output rather than recording a SKIP.
+
+The distinction matters. ``tests/parity/`` proves the two runners agree on a SYNTHETIC
+stream, and T-120 found a bug that survived exactly that check: warmup was anchored on
+``onboarded_at`` while the stream starts at day 0, so every baseline was empty and both
+runners agreed perfectly on the wrong answer. Recomputing against real generator output
+is the half that catches a feature which is servable and wrong.
 """
 
 from __future__ import annotations
@@ -22,9 +28,20 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from gates_report import green_if, record
+import numpy as np
+import polars as pl
+from gates_report import GATE_SEED, green_if
+from parity_harness import ParityFailure, assert_parity
 
-from rakshak.schemas import RADIOACTIVE_FIELDS
+from rakshak.features import registry, tier1
+from rakshak.generator.engine import GeneratedData
+from rakshak.schemas import (
+    RADIOACTIVE_FIELDS,
+    Instrument,
+    MerchantProfile,
+    Transaction,
+    TxnStatus,
+)
 
 SRC = Path(__file__).resolve().parents[2] / "src" / "rakshak"
 QUARANTINED_FROM = ("features", "models")
@@ -113,13 +130,98 @@ def test_g4_the_scanner_actually_catches_leakage(tmp_path: Path) -> None:
     assert not scan(clean)
 
 
-def test_g4_point_in_time_recomputation_is_deferred() -> None:
-    """§7's second G4 clause needs a feature layer, and Lane B has not landed one yet."""
-    record(
-        "G4b point-in-time",
-        "SKIP",
-        "no feature layer to recompute against",
-        "08-generator-v2-spec.md §7 G4 also requires that a point-in-time recomputation "
-        "at time t matches the stored feature vector exactly. Owner: Lane B, "
-        "T-120/T-121. The framework half is already proven by tests/parity/ (T-102).",
+def test_g4_point_in_time_recomputation_matches_the_online_state(
+    gate_data: GeneratedData,
+) -> None:
+    """G4's second clause, against real generator output.
+
+    For a sample of merchants, fold the real event stream through every registered
+    feature's ``update()`` and compare, at each epoch, against ``batch()`` recomputed from
+    the point-in-time prefix. A disagreement means the value a model would be trained on is
+    not the value the online path would have produced — the same number by two routes, and
+    only one of those routes is the one that would actually run.
+
+    Sampled rather than exhaustive, for two reasons. 14.8M transactions will not become
+    Python objects on a laptop; and a leak of this kind is a property of the feature, not
+    of the merchant, so a sample that covers every feature is the relevant coverage. The
+    sample is seeded, and it deliberately over-weights the fraud population: a feature that
+    is only wrong on the drifting merchants is the one that would flatter every metric in
+    the project while looking correct everywhere a casual check would land.
+    """
+    profiles_by_id = {
+        row["merchant_id"]: MerchantProfile(
+            merchant_id=row["merchant_id"],
+            onboarded_at=row["onboarded_at"],
+            mcc=row["mcc"],
+            mcc_group=row["mcc_group"],
+            declared_monthly_gmv=row["declared_monthly_gmv"],
+            kyc_tier=row["kyc_tier"],
+            vintage_months=row["vintage_months"],
+            city_tier=row["city_tier"],
+        )
+        for row in gate_data.profiles.iter_rows(named=True)
+    }
+
+    # ground_truth is readable here: tests/gates/ is not features/ or models/, and the
+    # quarantine G4a enforces is about what the SYSTEM can reach, not what a gate can.
+    fraud = set(
+        gate_data.ground_truth.filter(pl.col("risk_typology_id").is_not_null())[
+            "merchant_id"
+        ].to_list()
     )
+    clean = sorted(set(profiles_by_id) - fraud)
+    rng = np.random.default_rng(GATE_SEED)
+    sample = sorted(
+        {
+            *rng.choice(sorted(fraud), size=min(12, len(fraud)), replace=False).tolist(),
+            *rng.choice(clean, size=min(24, len(clean)), replace=False).tolist(),
+        }
+    )
+
+    frame = gate_data.transactions.filter(pl.col("merchant_id").is_in(sample))
+    txns = [
+        Transaction(
+            event_id=r["event_id"],
+            merchant_id=r["merchant_id"],
+            payer_id=r["payer_id"],
+            event_time=r["event_time"],
+            event_date=r["event_date"],
+            amount_inr=r["amount_inr"],
+            instrument=Instrument(r["instrument"]),
+            is_cnp=r["is_cnp"],
+            is_international=r["is_international"],
+            bin_hash=r["bin_hash"],
+            device_hash=r["device_hash"],
+            ip_hash=r["ip_hash"],
+            status=TxnStatus(r["status"]),
+            decline_code=r["decline_code"],
+            mcc=r["mcc"],
+            is_refund=r["is_refund"],
+            refund_of=r["refund_of"],
+        )
+        for r in frame.iter_rows(named=True)
+    ]
+    sampled_profiles = {m: profiles_by_id[m] for m in sample}
+    tier1.load_profiles(sampled_profiles)
+
+    failure = ""
+    for spec in registry.REGISTRY.values():
+        try:
+            assert_parity(spec, txns, sampled_profiles)
+        except ParityFailure as exc:
+            failure = f"{spec.name}: {exc}"
+            break
+
+    green_if(
+        "G4b point-in-time",
+        not failure,
+        (
+            f"{len(registry.REGISTRY)} features x {len(sample)} merchants "
+            f"({len(txns):,} real events) agree online vs offline at every epoch"
+        )
+        if not failure
+        else f"DISAGREEMENT {failure}",
+        "recomputed from real generator output, not a synthetic stream - T-120 found a "
+        "warmup bug that survived the synthetic check because both runners were wrong",
+    )
+    assert not failure, failure

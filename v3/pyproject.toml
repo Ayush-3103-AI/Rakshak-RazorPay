@@ -66,7 +66,9 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# tests/parity carries parity_harness.py, which tests/gates imports for G4b. A conftest
+# cannot be shared across directories; a named module on the path can be.
+pythonpath = ["src", "tests/parity"]
 addopts = "-q --strict-markers"
 markers = [
     "slow: full-population runs; excluded from the fast loop with -m 'not slow'",
