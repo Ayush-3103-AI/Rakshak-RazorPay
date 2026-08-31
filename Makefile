@@ -11,6 +11,9 @@ setup:
 
 # CLAUDE.md: every number in the README must be regenerable by `make eval`.
 # Order matters only for readability; each target writes its own file.
+#   generator -> data/synthetic/{transactions,state_paths}.parquet (git-ignored
+#                inputs every step below reads; T-0021 found `eval` assumed a
+#                prior run had already written these — a clean checkout has none)
 #   harness   -> summary.md, sensitivity.md/.csv, figures/sensitivity.png  (validate)
 #   verdict   -> verdict.md, sensitivity_test.csv, figures/sensitivity_test.png (test, K2)
 #   ablations -> ablations.md    (FR-018, 6 fits, the slowest step at ~70 s)
@@ -20,6 +23,7 @@ setup:
 # BAF is +16 s. The `-` lets a clean checkout without the git-ignored 558 MB
 # download still complete eval; baf.py prints the command that fetches it.
 eval:
+	$(PY) -m rakshak.generator --seed $(SEED)
 	$(PY) -m rakshak.eval.harness --seed $(SEED)
 	$(PY) -m rakshak.eval.verdict --seed $(SEED)
 	$(PY) -m rakshak.eval.ablations --seed $(SEED)
