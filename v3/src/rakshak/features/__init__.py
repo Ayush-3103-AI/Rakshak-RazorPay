@@ -5,7 +5,13 @@ must never import from ``rakshak.generator`` or touch ``GroundTruth`` — Prime 
 enforced by an AST scan in ``tests/gates/test_no_ground_truth_import.py``.
 """
 
-from rakshak.features import registry
+# The tier modules are imported here in a FIXED sequence, because import order *is* column
+# order (registry.ORDER) and column order is part of the contract (09-interfaces.md §9). A
+# model trained on one order and scored on another fails silently. T-120 appended tier1,
+# T-122 appends tier2 after it; append deliberately, never alphabetically. ruff's import
+# sort happens to agree with the deliberate order here (tier1 < tier2) — if it ever stops
+# agreeing, the deliberate order wins and the sort gets the noqa.
+from rakshak.features import registry, tier1, tier2
 from rakshak.features.spec import PARITY_TOLERANCE, FeatureSpec
 from rakshak.features.state import (
     STATE_BYTES_BUDGET,
@@ -13,11 +19,6 @@ from rakshak.features.state import (
     FeatureState,
     MerchantState,
 )
-
-# Tier modules are imported here, in this order, because import order *is* column order
-# (registry.ORDER) and column order is part of the contract. T-120 appends tier1, T-122
-# appends tier2. Adding an import here changes every trained model's feature layout, so it
-# is done deliberately and never alphabetically.
 
 __all__ = [
     "PARITY_TOLERANCE",
@@ -27,4 +28,6 @@ __all__ = [
     "FeatureState",
     "MerchantState",
     "registry",
+    "tier1",
+    "tier2",
 ]

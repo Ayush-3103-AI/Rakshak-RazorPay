@@ -61,7 +61,14 @@ class FeatureSpec(ABC):
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
-        if getattr(cls, "__abstractmethods__", None):
+        # `cls.__abstractmethods__` is NOT readable here: ABCMeta populates it after
+        # `type.__new__` returns, so it is always None inside `__init_subclass__` and a
+        # guard written against it never fires. (Found by Lane B in T-120, which had to
+        # give its intermediate bases placeholder metadata to get past it.) Walking the
+        # MRO for unimplemented abstract methods answers the same question, correctly.
+        if any(
+            getattr(getattr(cls, attr, None), "__isabstractmethod__", False) for attr in dir(cls)
+        ):
             return  # an intermediate abstract base, not a concrete feature
         missing = [
             attr
