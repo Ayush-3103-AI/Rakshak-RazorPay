@@ -1,0 +1,607 @@
+# Rakshak v2 — the scenario manifest.
+#
+# This file is the whole parameter surface of the generator. `src/rakshak/generator/`
+# contains no numeric literal that is not a loop index or a mathematical constant; every
+# behavioural number is here, named and commented, and `config.py` requires all of them
+# (there are no defaults — a default is a magic number with a nicer name).
+#
+# The file is hashed into EVAL-LOCK.json, so a change here after the freeze is visible.
+#
+# Spec: project-context/08-generator-v2-spec.md §8.
+# Confirmed scenario parameters: charter §10, settled 2026-08-31.
+
+seed: 42
+
+population:
+  n_merchants: 10000
+  n_days: 180
+  prevalence: 0.0147            # BAF-native. AP-06: NEVER evaluate at 0.20.
+  start_date: "2026-01-01"      # simulation day 0, UTC midnight
+  onboarding_spread_days: 120   # merchants onboarded 0-120 days before day 0
+  declaration_error_sigma: 0.55 # lognormal spread of declared vs actual monthly GMV.
+                                # At 0, v_declared_ratio is a constant and F1 loses a
+                                # feature; the gap is the whole point of the signal.
+  max_vintage_months: 96        # business age at onboarding, uniform on [0, 96)
+
+arrivals:
+  target_fano: 12.25            # measured in v1; Poisson is 1.0. G1 calibrates on this.
+  hawkes_excitation: 0.35       # branching ratio; only active for bursty typologies (R3)
+  hawkes_decay_minutes: 3.0     # exponential kernel time constant
+  hawkes_window_minutes: 10.0   # spec §1: "raises the intensity for the next 10 minutes"
+  hawkes_max_children: 40       # hard cap per parent; a mis-set excitation fails, not hangs
+  # Monday-first. Indian retail dips midweek and peaks Fri-Sun.
+  dow_factors: [0.95, 0.92, 0.94, 1.00, 1.12, 1.15, 0.92]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Legitimate personas L1-L8. Shares must sum to 1.0.
+# The hard-negative annotations (spec §2) are the reason each exists; do not "simplify"
+# a persona toward the mean, because that is precisely what makes the negatives easy.
+# ─────────────────────────────────────────────────────────────────────────────
+personas:
+
+  L1:   # Steady small retail (kirana). The bulk; the easy negative.
+    share: 0.30
+    base_daily_txns: 6.0
+    amount_mu: 6.0              # exp(6.0) ~ Rs 403 median ticket
+    amount_sigma: 0.55
+    refund_rate: 0.012
+    refund_latency_hours: 48.0
+    new_payer_rate: 0.22
+    payer_pool: 400
+    regular_arrivals: false
+    payout_period_days: 7.0
+    payout_drawdown: 0.85
+    shape: flat
+    shape_strength: 1.0
+    shape_span: 0.0
+    shape_count: 0
+    shape_jitter: 0.0
+    cnp_share: 0.35
+    fail_rate: 0.045
+    instrument_mix: {upi: 0.58, card_debit: 0.16, card_credit: 0.10, wallet: 0.09, netbanking: 0.05, emi: 0.015, intl_card: 0.005}
+    hour_weights: [0.2,0.1,0.1,0.1,0.2,0.5,1.0,1.6,2.2,2.6,2.8,2.9,2.6,2.2,2.1,2.3,2.6,3.0,3.2,2.9,2.2,1.5,0.9,0.4]
+
+  L2:   # Seasonal D2C. HARD NEGATIVE for v_gmv_z: big spikes, zero fraud.
+    share: 0.15
+    base_daily_txns: 8.0
+    amount_mu: 6.7
+    amount_sigma: 0.70
+    refund_rate: 0.045
+    refund_latency_hours: 96.0
+    new_payer_rate: 0.45
+    payer_pool: 1200
+    regular_arrivals: false
+    payout_period_days: 7.0
+    payout_drawdown: 0.80
+    shape: seasonal
+    shape_strength: 4.5         # peak multiple during a sale window
+    shape_span: 0.06            # each sale window is 6% of the horizon (~11 days)
+    shape_count: 3
+    shape_jitter: 0.0
+    cnp_share: 0.85
+    fail_rate: 0.055
+    instrument_mix: {upi: 0.42, card_debit: 0.16, card_credit: 0.22, wallet: 0.08, netbanking: 0.05, emi: 0.05, intl_card: 0.02}
+    hour_weights: [0.4,0.2,0.1,0.1,0.1,0.3,0.7,1.2,1.8,2.4,2.8,3.0,2.7,2.4,2.4,2.6,2.9,3.2,3.6,3.8,3.2,2.4,1.5,0.8]
+
+  L3:   # High-growth genuine. THE HARDEST NEGATIVE — looks like R1 on volume features.
+        # Separable only by convexity (v_gmv_accel), payer diversity and payout behaviour.
+    share: 0.08
+    base_daily_txns: 3.5
+    amount_mu: 6.5
+    amount_sigma: 0.65
+    refund_rate: 0.03
+    refund_latency_hours: 72.0
+    new_payer_rate: 0.55        # growth means genuinely new customers, unlike R1
+    payer_pool: 2000
+    regular_arrivals: false
+    payout_period_days: 7.0
+    payout_drawdown: 0.75
+    shape: growth
+    shape_strength: 6.0         # LINEAR ramp to 6x over the horizon. Linear on purpose:
+                                # R1's ramp is convex, and convexity is the separator.
+    shape_span: 1.0             # ramp occupies the whole horizon
+    shape_count: 0
+    shape_jitter: 0.35
+    cnp_share: 0.80
+    fail_rate: 0.05
+    instrument_mix: {upi: 0.46, card_debit: 0.15, card_credit: 0.20, wallet: 0.09, netbanking: 0.05, emi: 0.035, intl_card: 0.015}
+    hour_weights: [0.4,0.2,0.1,0.1,0.1,0.3,0.8,1.4,2.0,2.6,2.9,3.0,2.7,2.4,2.4,2.6,2.9,3.2,3.4,3.4,2.9,2.2,1.4,0.7]
+
+  L4:   # Lumpy B2B. Few txns, very high ticket. Legitimately high t_p95_median_ratio.
+    share: 0.10
+    base_daily_txns: 0.8
+    amount_mu: 10.2             # exp(10.2) ~ Rs 27,000 median ticket
+    amount_sigma: 1.25
+    refund_rate: 0.008
+    refund_latency_hours: 168.0
+    new_payer_rate: 0.10
+    payer_pool: 60
+    regular_arrivals: false
+    payout_period_days: 14.0
+    payout_drawdown: 0.95
+    shape: lumpy
+    shape_strength: 5.0         # burst-day multiple
+    shape_span: 0.10            # fraction of days that are burst days
+    shape_count: 0
+    shape_jitter: 0.0
+    cnp_share: 0.20
+    fail_rate: 0.03
+    instrument_mix: {netbanking: 0.46, card_credit: 0.20, upi: 0.16, emi: 0.08, card_debit: 0.04, intl_card: 0.06, wallet: 0.00}
+    hour_weights: [0.05,0.05,0.05,0.05,0.05,0.1,0.4,1.0,2.2,3.4,4.0,4.0,2.6,2.2,3.4,3.8,3.6,2.6,1.4,0.7,0.4,0.2,0.1,0.05]
+
+  L5:   # Subscription / recurring. HARD NEGATIVE for h_interarrival_cv — scripted-looking,
+        # entirely legitimate. `regular_arrivals` is what makes it so.
+    share: 0.12
+    base_daily_txns: 7.0
+    amount_mu: 5.9
+    amount_sigma: 0.25          # tight: same plan prices every day
+    refund_rate: 0.02
+    refund_latency_hours: 24.0
+    new_payer_rate: 0.06        # a subscriber base churns slowly
+    payer_pool: 3000
+    regular_arrivals: true
+    payout_period_days: 7.0
+    payout_drawdown: 0.90
+    shape: flat
+    shape_strength: 1.0
+    shape_span: 0.0
+    shape_count: 0
+    shape_jitter: 0.0
+    cnp_share: 0.95
+    fail_rate: 0.09             # recurring mandates fail more often; also a hard negative
+    instrument_mix: {card_credit: 0.38, card_debit: 0.22, upi: 0.24, netbanking: 0.08, wallet: 0.05, emi: 0.02, intl_card: 0.01}
+    hour_weights: [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+
+  L6:   # Marketplace sub-merchant. HARD NEGATIVE for g_new_payer_ratio; adjacent to R4.
+    share: 0.12
+    base_daily_txns: 11.0
+    amount_mu: 6.3
+    amount_sigma: 0.90
+    refund_rate: 0.06
+    refund_latency_hours: 120.0
+    new_payer_rate: 0.72        # aggregator traffic is mostly strangers
+    payer_pool: 8000
+    regular_arrivals: false
+    payout_period_days: 3.0     # marketplaces settle fast, legitimately
+    payout_drawdown: 0.92
+    shape: flat
+    shape_strength: 1.0
+    shape_span: 0.0
+    shape_count: 0
+    shape_jitter: 0.0
+    cnp_share: 0.88
+    fail_rate: 0.06
+    instrument_mix: {upi: 0.50, card_credit: 0.16, card_debit: 0.14, wallet: 0.10, netbanking: 0.04, emi: 0.02, intl_card: 0.04}
+    hour_weights: [0.6,0.4,0.3,0.2,0.2,0.4,0.9,1.5,2.1,2.5,2.7,2.8,2.6,2.4,2.4,2.5,2.7,3.0,3.3,3.4,3.0,2.2,1.5,0.9]
+
+  L7:   # Dormant-then-revived. HARD NEGATIVE for v_dormant_burst.
+    share: 0.05
+    base_daily_txns: 3.5
+    amount_mu: 6.4
+    amount_sigma: 0.75
+    refund_rate: 0.02
+    refund_latency_hours: 72.0
+    new_payer_rate: 0.40
+    payer_pool: 500
+    regular_arrivals: false
+    payout_period_days: 10.0
+    payout_drawdown: 0.88
+    shape: dormant
+    shape_strength: 0.02        # residual activity during the gap (2% of base)
+    shape_span: 0.25            # gap length as a share of the horizon (~45 days)
+    shape_count: 1
+    shape_jitter: 0.0
+    cnp_share: 0.60
+    fail_rate: 0.05
+    instrument_mix: {upi: 0.54, card_debit: 0.16, card_credit: 0.13, wallet: 0.09, netbanking: 0.05, emi: 0.02, intl_card: 0.01}
+    hour_weights: [0.3,0.2,0.1,0.1,0.2,0.5,1.0,1.6,2.2,2.6,2.8,2.9,2.6,2.2,2.1,2.3,2.6,3.0,3.2,2.9,2.2,1.5,0.9,0.4]
+
+  L8:   # Travel / OTA. HARD NEGATIVE for the whole F6 refund family.
+    share: 0.08
+    base_daily_txns: 4.5
+    amount_mu: 8.6              # exp(8.6) ~ Rs 5,400 median ticket
+    amount_sigma: 1.15          # high ticket variance, legitimately
+    refund_rate: 0.22           # cancellations. Must stay > 0.15 — T-112 asserts it.
+    refund_latency_hours: 240.0 # long refund latency is the other half of the trap
+    new_payer_rate: 0.60
+    payer_pool: 2500
+    regular_arrivals: false
+    payout_period_days: 7.0
+    payout_drawdown: 0.70
+    shape: seasonal
+    shape_strength: 2.6
+    shape_span: 0.10
+    shape_count: 2
+    shape_jitter: 0.0
+    cnp_share: 0.95
+    fail_rate: 0.07
+    instrument_mix: {card_credit: 0.34, upi: 0.24, card_debit: 0.12, netbanking: 0.06, emi: 0.05, intl_card: 0.18, wallet: 0.01}
+    hour_weights: [0.7,0.5,0.4,0.3,0.3,0.5,0.9,1.4,2.0,2.5,2.7,2.7,2.4,2.2,2.3,2.5,2.7,2.9,3.1,3.2,2.9,2.2,1.6,1.0]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Risk typologies R1-R9. `mix` values must sum to 1.0 and weight the easy typologies
+# down, so the positive class is not dominated by the easiest case (spec §3).
+# Day indices are simulation days; onset is drawn uniformly in [onset_day_min, max].
+# ─────────────────────────────────────────────────────────────────────────────
+typologies:
+
+  R1:   # Classic bust-out. Convex ramp, payout urgency, then vanish. Easy.
+    mix: 0.20
+    onset_day_min: 40
+    onset_day_max: 130
+    ramp_days_min: 14
+    ramp_days_max: 21
+    intensity_multiple: 14.0
+    convexity: 5.0              # strongly convex — this is what L3's linear ramp is not.
+                                # Calibrated: a linear fit to the cohort-mean R1 ramp must
+                                # land under R^2 0.7 while L3's lands over 0.9 (T-112).
+    vanish_after_ramp: true
+    vanish_intensity: 0.02        # the bust: 2% of base once the ramp completes
+    amount_mu_shift: 0.45
+    amount_sigma_shift: 0.20
+    fail_rate_add: 0.03
+    intl_share_add: 0.04
+    cnp_share_add: 0.08
+    refund_rate_add: 0.0
+    micro_share: 0.0
+    round_amount_share: 0.10
+    payer_concentration: 0.35   # a fabricated payer base repeats more than a real one
+    new_payer_rate_add: 0.20
+    bin_pool: 120
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 3.5
+    ring: false
+    loss_fraction: 0.75
+
+  R2:   # SLOW-RAMP bust-out. 60-90 day ramp; each week's change < 1 sigma of its own
+        # baseline. This is the one v1 failed on, and it stays in the population so the
+        # failure is visible and attributed rather than averaged away.
+    mix: 0.20
+    onset_day_min: 20
+    onset_day_max: 90
+    ramp_days_min: 60
+    ramp_days_max: 90
+    intensity_multiple: 3.2     # deliberately modest: a big multiple over 60 days is
+                                # still a large weekly step, and R2 must not have one
+    convexity: 1.15
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.30
+    amount_sigma_shift: 0.10
+    fail_rate_add: 0.01
+    intl_share_add: 0.02
+    cnp_share_add: 0.04
+    refund_rate_add: 0.0
+    micro_share: 0.0
+    round_amount_share: 0.04
+    payer_concentration: 0.20
+    new_payer_rate_add: 0.10
+    bin_pool: 200
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 1.8
+    ring: false
+    loss_fraction: 0.60
+
+  R3:   # Card-testing host. Micro-amount bursts, high auth-fail, concentrated BINs,
+        # Hawkes self-excitation. Without the excitation, f_retry_burst_rate is noise.
+    mix: 0.15
+    onset_day_min: 30
+    onset_day_max: 150
+    ramp_days_min: 2
+    ramp_days_max: 6
+    intensity_multiple: 22.0
+    convexity: 1.0
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: -3.6       # micro probes: exp(6.0-3.6) ~ Rs 11
+    amount_sigma_shift: -0.30
+    fail_rate_add: 0.55
+    intl_share_add: 0.25
+    cnp_share_add: 0.30
+    refund_rate_add: 0.0
+    micro_share: 0.70
+    round_amount_share: 0.25
+    payer_concentration: 0.0    # every probe is a "new" payer
+    new_payer_rate_add: 0.55
+    bin_pool: 8                 # concentrated stolen-card source -> high i_bin_hhi
+    hawkes: true
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 1.0
+    ring: false
+    loss_fraction: 0.35
+
+  R4:   # Transaction laundering. MCC-inconsistent basket, ticket shift, international up.
+    mix: 0.10
+    onset_day_min: 25
+    onset_day_max: 130
+    ramp_days_min: 10
+    ramp_days_max: 30
+    intensity_multiple: 3.0
+    convexity: 1.4
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.80
+    amount_sigma_shift: 0.35
+    fail_rate_add: 0.02
+    intl_share_add: 0.35
+    cnp_share_add: 0.15
+    refund_rate_add: 0.0
+    micro_share: 0.0
+    round_amount_share: 0.22
+    payer_concentration: 0.15
+    new_payer_rate_add: 0.25
+    bin_pool: 60
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.55             # the basket stops matching the declared MCC
+    payout_urgency: 1.6
+    ring: false
+    loss_fraction: 0.55
+
+  R5:   # Collusive refund fraud. Capture then rapid refund to a small repeat payer set.
+    mix: 0.10
+    onset_day_min: 25
+    onset_day_max: 140
+    ramp_days_min: 5
+    ramp_days_max: 15
+    intensity_multiple: 2.2
+    convexity: 1.2
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.55
+    amount_sigma_shift: 0.10
+    fail_rate_add: 0.0
+    intl_share_add: 0.0
+    cnp_share_add: 0.05
+    refund_rate_add: 0.45       # the signature
+    micro_share: 0.0
+    round_amount_share: 0.05
+    payer_concentration: 0.90   # a handful of colluding buyers
+    new_payer_rate_add: -0.15
+    bin_pool: 25
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 2.2
+    ring: false
+    loss_fraction: 0.70
+
+  R6:   # Merchant account takeover. ABRUPT change on a long clean history; instrument mix
+        # and hour-of-day flip overnight. ramp_days=1 is the whole point.
+    mix: 0.08
+    onset_day_min: 60
+    onset_day_max: 165
+    ramp_days_min: 1
+    ramp_days_max: 1
+    intensity_multiple: 6.5
+    convexity: 1.0
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.90
+    amount_sigma_shift: 0.25
+    fail_rate_add: 0.12
+    intl_share_add: 0.30
+    cnp_share_add: 0.35
+    refund_rate_add: 0.0
+    micro_share: 0.05
+    round_amount_share: 0.15
+    payer_concentration: 0.30
+    new_payer_rate_add: 0.45
+    bin_pool: 40
+    hawkes: false
+    hour_flip: true             # the operator changed; so did the clock they work on
+    mcc_drift: 0.0
+    payout_urgency: 3.0
+    ring: false
+    loss_fraction: 0.80
+
+  R7:   # Mule-ring participant. Shares payers and devices with other ring members and is
+        # individually unremarkable — which is why it needs T3 features to catch and why
+        # its per-typology recall is expected to be poor. That is a reported finding.
+    mix: 0.07
+    onset_day_min: 20
+    onset_day_max: 150
+    ramp_days_min: 10
+    ramp_days_max: 40
+    intensity_multiple: 1.5
+    convexity: 1.0
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.20
+    amount_sigma_shift: 0.05
+    fail_rate_add: 0.01
+    intl_share_add: 0.05
+    cnp_share_add: 0.05
+    refund_rate_add: 0.0
+    micro_share: 0.0
+    round_amount_share: 0.06
+    payer_concentration: 0.0
+    new_payer_rate_add: 0.05
+    bin_pool: 150
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 1.3
+    ring: true
+    loss_fraction: 0.45
+
+  R8:   # Promo / coupon abuse. Concentrated payers, elevated refund value, low ticket.
+    mix: 0.05
+    onset_day_min: 25
+    onset_day_max: 150
+    ramp_days_min: 4
+    ramp_days_max: 12
+    intensity_multiple: 4.5
+    convexity: 1.3
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: -0.70
+    amount_sigma_shift: -0.20
+    fail_rate_add: 0.02
+    intl_share_add: 0.0
+    cnp_share_add: 0.10
+    refund_rate_add: 0.28
+    micro_share: 0.10
+    round_amount_share: 0.30
+    payer_concentration: 0.80
+    new_payer_rate_add: -0.10
+    bin_pool: 35
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.0
+    payout_urgency: 1.4
+    ring: false
+    loss_fraction: 0.50
+
+  R9:   # Prohibited-category drift. Gradual basket shift away from the declared MCC.
+    mix: 0.05
+    onset_day_min: 20
+    onset_day_max: 110
+    ramp_days_min: 40
+    ramp_days_max: 70
+    intensity_multiple: 1.9
+    convexity: 1.1
+    vanish_after_ramp: false
+    vanish_intensity: 1.0         # ignored (vanish_after_ramp is false); stated so it is auditable
+    amount_mu_shift: 0.40
+    amount_sigma_shift: 0.20
+    fail_rate_add: 0.01
+    intl_share_add: 0.08
+    cnp_share_add: 0.12
+    refund_rate_add: 0.02
+    micro_share: 0.0
+    round_amount_share: 0.08
+    payer_concentration: 0.10
+    new_payer_rate_add: 0.12
+    bin_pool: 120
+    hawkes: false
+    hour_flip: false
+    mcc_drift: 0.80             # the strongest MCC drift of any typology
+    payout_urgency: 1.2
+    ring: false
+    loss_fraction: 0.55
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Platform confounders P1-P6 — the v2 contribution (spec §4).
+#
+# MAGNITUDES ARE IN SIGMA UNITS. The spec's own table states effects as "up 2-4σ", and
+# T-114's Done-when asks for population mean |z| > 1.0 inside every window. A relative
+# multiplier cannot satisfy that at Fano 12.25: a merchant's own daily-count sd is
+# sqrt(fano * lambda), so +15% on lambda=22 is |z| ~ 0.2. Each magnitude below is
+# therefore converted per merchant to 1 + magnitude_sigma * sqrt(target_fano / lambda).
+# ─────────────────────────────────────────────────────────────────────────────
+confounders:
+  enabled: true
+
+  # P1 must hit L2 (seasonal D2C) harder than L4 (lumpy B2B), or the cohort residual has
+  # an unfairly easy job and G5 passes for the wrong reason (spec §4).
+  persona_sensitivity:
+    L1: 1.00
+    L2: 1.70
+    L3: 1.25
+    L4: 0.45
+    L5: 0.55                    # subscriptions do not care that it is Diwali
+    L6: 1.35
+    L7: 0.85
+    L8: 1.55
+
+  P1_festival:                  # 5-day bump on volume for everyone
+    count: 2
+    magnitude_sigma: 3.5        # spec band is 2-4 sigma; 3.0 left the second window at
+                                # |z| = 1.02 against a gate floor of 1.0, which is a pass
+                                # that would flip on the next seed
+    duration_days: 5
+    days: [46, 152]
+
+  P2_outage:                    # auth failures up, count down, for a few hours
+    count: 3
+    magnitude_sigma: 4.0
+    duration_hours: 6
+    intensity_multiple: 0.35    # volume that does not arrive during an outage
+    days: [28, 97, 143]
+
+  P3_fee_change:                # permanent step toward the cheaper rail
+    day: 60
+    magnitude_sigma: 2.5
+    target_instrument: upi
+    window_days: 14             # long enough for the 7d rolling mix feature to register
+
+  P4_new_method:                # a new instrument gains share on an S-curve
+    day: 90
+    ramp_days: 30
+    magnitude_sigma: 3.0
+    target_instrument: wallet
+
+  P5_regulatory:                # tokenisation: CNP/BIN step + a transient failure bump
+    day: 120
+    transient_days: 10
+    magnitude_sigma: 3.0
+
+  P6_macro:                     # always-on sinusoid
+    amplitude_sigma: 1.2
+    period_days: 90
+    peak_window_divisor: 8.0    # gate window is peak +/- period/8 days
+
+# ─────────────────────────────────────────────────────────────────────────────
+labels:
+  dispute_delay_days: [45.0, 120.0]   # Uniform, label_event_at -> label_available_at
+  fraud_to_dispute_mean_days: 21.0    # Exponential, drift_onset_at -> label_event_at
+  unreported_rate: 0.15               # fraud that is never disputed: label=0, not censored
+  spurious_chargeback_rate: 0.003     # label=1 on a merchant that did nothing wrong
+
+settlement:
+  cycle_days: 2                 # T+2
+  min_payout_inr: 500.0         # below this a merchant does not bother
+  accelerated_prob_per_urgency: 0.30
+
+capacity:
+  analyst_reviews_per_day: 50   # K. Charter §10.4 — load-bearing.
+  per_n_merchants: 10000
+
+costs:
+  # v1 measured this asymmetry at 47.5 / 13.1 / 61368 against a literature band of
+  # 400-600 — three orders of magnitude. Treat these as SWEPT, not as constants.
+  fraud_loss_multiplier: 1.0
+  false_hold_cost_inr: 8000.0
+  review_cost_inr: 250.0
+  min_true_loss_inr: 1.0        # floor; GroundTruth requires a strictly positive loss
+
+# Per-transaction mark constants. Trivia until one of them is wrong: a single-entry
+# decline_codes list makes f_decline_entropy identically zero for the whole population
+# and nothing fails.
+marks:
+  round_amount_values: [100.0, 500.0, 1000.0, 5000.0]   # t_round_amount_share reads these
+  micro_amount_max: 10.0        # t_micro_share is defined as the share of txns <= Rs 10
+  bin_pool_global: 3000         # issuer BINs a legitimate card book spreads over
+  device_pool_per_merchant: 900
+  ip_pool_per_merchant: 1400
+  decline_codes: ["do_not_honour", "insufficient_funds", "invalid_cvv", "expired_card",
+                  "issuer_unavailable", "risk_declined", "invalid_card", "limit_exceeded"]
+  pending_rate: 0.006
+  refund_min_fraction: 0.5      # a refund is Uniform(0.5, 1.0) x the original, never more
+  payer_id_space: 2000000000    # ids above this are freshly minted payers
+  ring_count: 6                 # R7 mule rings
+  ring_payer_pool: 900          # shared across a ring: individually unremarkable,
+  ring_device_pool: 220         # jointly the only thing that makes R7 detectable
+  regular_jitter_seconds: 150.0 # jitter on L5's evenly spaced arrivals
+
+# MCC codes per group. A merchant's declared MCC is drawn from its group; R4 and R9
+# drift the per-transaction MCC out of the group, which is what f_mcc features see.
+mcc_groups:
+  retail:       ["5411", "5499", "5912", "5921"]
+  electronics:  ["5732", "5734", "5722"]
+  apparel:      ["5651", "5691", "5661"]
+  services:     ["7299", "7392", "7399"]
+  travel:       ["4722", "4511", "7011"]
+  b2b:          ["5045", "5085", "5065"]
+  digital:      ["5815", "5817", "5818"]
+  restricted:   ["7995", "6051", "5967", "5122"]   # the categories R9 drifts toward
+
+# The group no merchant may declare, and the one R4/R9 drift into. Named explicitly so
+# that renaming a group cannot silently make it declarable.
+mcc_drift_group: restricted

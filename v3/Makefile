@@ -43,11 +43,16 @@ lint:
 	uv run ruff check src tests
 	uv run mypy src
 
-# The pipeline grows a stage as each lane lands, so a clean-clone CI run is always
-# testing everything that currently exists and never a stale subset:
-#   T-116 appends `gates`, T-120 appends `features parity`, T-150 appends `perf`,
-#   T-110 appends `gen`. Add your stage in your ticket; do not leave it to T-152.
-all: lint test
+# The pipeline grows a stage as each lane lands, so a clean-clone CI run is always testing
+# everything that currently exists and never a stale subset.
+#
+# `parity` sits before `gates` because it is fast and needs no dataset, so a broken feature
+# runner fails in seconds rather than after `gen` has spent a minute writing 366 MB.
+# `gates` depends on `gen` — G1 and G3 read the real dataset, not a fixture.
+#
+# Still to be appended: `features` (needs a cli `features` subcommand — only `gen` exists
+# today, so putting it here would break the clean-clone job) and `perf` at T-150.
+all: lint parity gen gates test
 
 clean:
 	rm -rf data/v2 .pytest_cache .mypy_cache .ruff_cache
