@@ -1,0 +1,1909 @@
+{
+  "provenance": {
+    "produced_by": "python -m rakshak.explain.reasons --seed 42",
+    "seed": 42,
+    "split": "test",
+    "split_days": [
+      210,
+      269
+    ],
+    "model": "hmm",
+    "requirement": "FR-014",
+    "generator_start_date": "2026-01-01",
+    "flag_threshold": 0.5,
+    "contribution_units": "nats",
+    "level_units": "standard deviations of the merchant's own baseline",
+    "day_convention": "window-END: the last day of the window whose evidence raised the flag",
+    "transition_day_note": "transition_day may precede the reported split window. It is the window in which the MAP path left HEALTHY, decoded over the merchant's own prior history, which the model legitimately observes when filtering. It is a DECODE, not a detection: the detection is flag_day. The gap between them is not evidence of early warning and must not be quoted as detection lag - see results/lag_probe.md for the measured lag."
+  },
+  "counts": {
+    "merchants_in_split": 100,
+    "merchants_truly_bad": 20,
+    "merchants_flagged": 56,
+    "flagged_and_truly_bad": 15,
+    "flagged_and_healthy": 41,
+    "viterbi_disagreed_with_flag": 3
+  },
+  "reasons": [
+    {
+      "merchant_id": "M00015",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": false,
+      "bad_probability": 0.747333,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.706003,
+          "contribution": 4.88203
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.906495,
+          "contribution": 0.18607
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 2.074201,
+          "contribution": 0.096701
+        }
+      ],
+      "text": "On 26 August 2026 our confidence that this account had left normal operation passed the review threshold, with rapid-volume-escalation the most likely explanation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.71 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.91 SD); mix of payment methods ran well above this account's own baseline (+2.07 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00026",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 118,
+      "transition_date": "29 April 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.996817,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 1.5009,
+          "contribution": 0.138517
+        }
+      ],
+      "text": "On 29 April 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); transaction volume ran well above this account's own baseline (+1.50 SD). By 5 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00031",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.742933,
+      "top_features": [
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 5.676904,
+          "contribution": 8.595049
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 1.150577,
+          "contribution": 0.242377
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -0.204752,
+          "contribution": 0.153289
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of ticket sizes ran far above this account's own baseline (+5.68 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+1.15 SD); share of repeat payers ran somewhat below this account's own baseline (-0.20 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00065",
+      "flag_day": 265,
+      "flag_date": "23 September 2026",
+      "transition_day": 265,
+      "transition_date": "23 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.742136,
+      "top_features": [
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 4.846633,
+          "contribution": 6.143891
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 2.132116,
+          "contribution": 0.873527
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.022472,
+          "contribution": 0.436881
+        }
+      ],
+      "text": "On 23 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of ticket sizes ran far above this account's own baseline (+4.85 SD); spread of payments across the payer base ran well above this account's own baseline (+2.13 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.02 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00070",
+      "flag_day": 230,
+      "flag_date": "19 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.897554,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.742925,
+          "contribution": 4.997909
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 3.606032,
+          "contribution": 3.133896
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 1.920665,
+          "contribution": 0.605858
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.74 SD); transaction volume ran far above this account's own baseline (+3.61 SD); spread of payments across the payer base ran well above this account's own baseline (+1.92 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00108",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999963,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 3.794572,
+          "contribution": 8.230217
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 3.385105,
+          "contribution": 2.716705
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 2.826913,
+          "contribution": 1.954658
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+3.79 SD); transaction volume ran far above this account's own baseline (+3.39 SD); spread of payments across the payer base ran well above this account's own baseline (+2.83 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00110",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 118,
+      "transition_date": "29 April 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999995,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 4.861929,
+          "contribution": 13.879125
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.148649,
+          "contribution": 0.370609
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": -1.840276,
+          "contribution": 0.042902
+        }
+      ],
+      "text": "On 29 April 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+4.86 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.15 SD); mix of payment methods ran well below this account's own baseline (-1.84 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00124",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 97,
+      "transition_date": "8 April 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.226709,
+          "contribution": 3.477888
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.317345,
+          "contribution": 0.209057
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 2.283431,
+          "contribution": 0.122705
+        }
+      ],
+      "text": "On 8 April 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.23 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.32 SD); mix of payment methods ran well above this account's own baseline (+2.28 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00131",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": 8.177766,
+          "contribution": 26.666691
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": 5.413917,
+          "contribution": 25.921318
+        },
+        {
+          "feature": "new_payer_ratio",
+          "phrase": "share of first-time payers",
+          "z": -6.842805,
+          "contribution": 21.355255
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: share of repeat payers ran far above this account's own baseline (+8.18 SD); overlap between this week's payers and last week's ran far above this account's own baseline (+5.41 SD); share of first-time payers ran far below this account's own baseline (-6.84 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00134",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 104,
+      "transition_date": "15 April 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 3.044495,
+          "contribution": 2.120682
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -2.54185,
+          "contribution": 1.161141
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 1.550763,
+          "contribution": 0.851206
+        }
+      ],
+      "text": "On 15 April 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: transaction volume ran far above this account's own baseline (+3.04 SD); average ticket size ran well below this account's own baseline (-2.54 SD); chargeback rate ran well above this account's own baseline (+1.55 SD). By 5 August 2026 the pattern had changed to sustained-abnormal-activity. What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00142",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 9.757471,
+          "contribution": 72.26106
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 1.341492,
+          "contribution": 0.048288
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.544202,
+          "contribution": 0.030633
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+9.76 SD); mix of payment methods ran somewhat above this account's own baseline (+1.34 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.54 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00156",
+      "flag_day": 230,
+      "flag_date": "19 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.983084,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -4.823346,
+          "contribution": 7.676117
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 2.665057,
+          "contribution": 2.292415
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -0.885367,
+          "contribution": 0.369531
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far below this account's own baseline (-4.82 SD); concentration of payment value in a few payers ran well above this account's own baseline (+2.67 SD); share of repeat payers ran somewhat below this account's own baseline (-0.89 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00178",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 97,
+      "transition_date": "8 April 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.801483,
+          "contribution": 5.183952
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.171285,
+          "contribution": 0.355282
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.82225,
+          "contribution": 0.166839
+        }
+      ],
+      "text": "On 8 April 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.80 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.17 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.82 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00186",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.974435,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 4.289721,
+          "contribution": 10.679292
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.505697,
+          "contribution": 0.369242
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -0.814866,
+          "contribution": 0.348386
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+4.29 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.51 SD); share of repeat payers ran somewhat below this account's own baseline (-0.81 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00192",
+      "flag_day": 230,
+      "flag_date": "19 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 2.430925,
+          "contribution": 1.344259
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 1.830409,
+          "contribution": 1.236999
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); transaction volume ran well above this account's own baseline (+2.43 SD); chargeback rate ran well above this account's own baseline (+1.83 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00199",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 174,
+      "transition_date": "24 June 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.598026,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 2.138295,
+          "contribution": 2.197949
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 2.490763,
+          "contribution": 1.447293
+        }
+      ],
+      "text": "On 24 June 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran well above this account's own baseline (+2.14 SD); average ticket size ran well above this account's own baseline (+2.49 SD). By 5 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00213",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 139,
+      "transition_date": "20 May 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 2.209745,
+          "contribution": 2.38632
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 2.911604,
+          "contribution": 1.903658
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 1.76102,
+          "contribution": 0.422738
+        }
+      ],
+      "text": "On 20 May 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran well above this account's own baseline (+2.21 SD); transaction volume ran well above this account's own baseline (+2.91 SD); spread of payments across the payer base ran well above this account's own baseline (+1.76 SD). By 5 August 2026 the pattern had changed to sustained-abnormal-activity. What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00215",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999998,
+      "top_features": [
+        {
+          "feature": "sparse",
+          "phrase": "days with no transactions at all",
+          "z": 6.114855,
+          "contribution": 21.262433
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.919999,
+          "contribution": 0.466793
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.636345,
+          "contribution": 0.124769
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: days with no transactions at all ran far above this account's own baseline (+6.11 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.92 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.64 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00217",
+      "flag_day": 258,
+      "flag_date": "16 September 2026",
+      "transition_day": 258,
+      "transition_date": "16 September 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": false,
+      "bad_probability": 0.541587,
+      "top_features": [
+        {
+          "feature": "new_payer_ratio",
+          "phrase": "share of first-time payers",
+          "z": 2.606503,
+          "contribution": 2.627768
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -2.550128,
+          "contribution": 2.206356
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 2.415553,
+          "contribution": 1.282148
+        }
+      ],
+      "text": "On 16 September 2026 our confidence that this account had left normal operation passed the review threshold, with sustained-abnormal-activity the most likely explanation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: share of first-time payers ran well above this account's own baseline (+2.61 SD); share of repeat payers ran well below this account's own baseline (-2.55 SD); average ticket size ran well above this account's own baseline (+2.42 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00221",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.575464,
+      "top_features": [
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 3.740106,
+          "contribution": 4.626851
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": -2.732132,
+          "contribution": 1.962692
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": -2.766168,
+          "contribution": 0.768145
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: concentration of payment value in a few payers ran far above this account's own baseline (+3.74 SD); spread of payments across the payer base ran well below this account's own baseline (-2.73 SD); transaction volume ran well below this account's own baseline (-2.77 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00222",
+      "flag_day": 251,
+      "flag_date": "9 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.968038,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.589198,
+          "contribution": 4.522704
+        },
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": -2.920892,
+          "contribution": 1.457845
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.710726,
+          "contribution": 0.461304
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.59 SD); spread of ticket sizes ran well below this account's own baseline (-2.92 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.71 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00225",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 9.053103,
+          "contribution": 62.051634
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 10.0,
+          "contribution": 42.310506
+        },
+        {
+          "feature": "refund_ratio",
+          "phrase": "refund rate",
+          "z": 10.0,
+          "contribution": 30.453178
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+9.05 SD); average ticket size ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); refund rate ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00228",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 125,
+      "transition_date": "6 May 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 5.045707,
+          "contribution": 9.792848
+        },
+        {
+          "feature": "refund_ratio",
+          "phrase": "refund rate",
+          "z": 5.349593,
+          "contribution": 2.441295
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.216283,
+          "contribution": 0.321709
+        }
+      ],
+      "text": "On 6 May 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+5.05 SD); refund rate ran far above this account's own baseline (+5.35 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.22 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00232",
+      "flag_day": 265,
+      "flag_date": "23 September 2026",
+      "transition_day": 251,
+      "transition_date": "9 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.883821,
+      "top_features": [
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 2.254357,
+          "contribution": 1.041328
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 2.100126,
+          "contribution": 0.767441
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 1.94025,
+          "contribution": 0.62819
+        }
+      ],
+      "text": "On 9 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of payments across the payer base ran well above this account's own baseline (+2.25 SD); transaction volume ran well above this account's own baseline (+2.10 SD); average ticket size ran well above this account's own baseline (+1.94 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00241",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 104,
+      "transition_date": "15 April 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.65584,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 2.409819,
+          "contribution": 3.165961
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 2.355498,
+          "contribution": 1.229606
+        }
+      ],
+      "text": "On 15 April 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran well above this account's own baseline (+2.41 SD); transaction volume ran well above this account's own baseline (+2.36 SD). By 12 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00247",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 216,
+      "transition_date": "5 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 9.119777,
+          "contribution": 62.985456
+        },
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 0.247902,
+          "contribution": 0.115018
+        }
+      ],
+      "text": "On 5 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+9.12 SD); spread of ticket sizes ran somewhat above this account's own baseline (+0.25 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00255",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 153,
+      "transition_date": "3 June 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.934546,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 3.998153,
+          "contribution": 11.092269
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": -3.28907,
+          "contribution": 1.097067
+        }
+      ],
+      "text": "On 3 June 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran far above this account's own baseline (+4.00 SD); transaction volume ran far below this account's own baseline (-3.29 SD). By 5 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00283",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999616,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 4.974424,
+          "contribution": 14.554815
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 1.895982,
+          "contribution": 0.532738
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.21021,
+          "contribution": 0.085638
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran far above this account's own baseline (+4.97 SD); transaction volume ran well above this account's own baseline (+1.90 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.21 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00288",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.963423,
+      "top_features": [
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 3.69061,
+          "contribution": 4.503241
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": -3.038281,
+          "contribution": 2.538077
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": -3.193433,
+          "contribution": 1.326028
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: concentration of payment value in a few payers ran far above this account's own baseline (+3.69 SD); spread of payments across the payer base ran far below this account's own baseline (-3.04 SD); transaction volume ran far below this account's own baseline (-3.19 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00301",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 195,
+      "transition_date": "15 July 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.98886,
+      "top_features": [
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 3.693758,
+          "contribution": 3.306235
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 2.288728,
+          "contribution": 1.090233
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.672543,
+          "contribution": 0.45066
+        }
+      ],
+      "text": "On 15 July 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: transaction volume ran far above this account's own baseline (+3.69 SD); spread of payments across the payer base ran well above this account's own baseline (+2.29 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.67 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00309",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 216,
+      "transition_date": "5 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 2.017634,
+          "contribution": 1.80404
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 0.883967,
+          "contribution": 0.142708
+        }
+      ],
+      "text": "On 5 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran well above this account's own baseline (+2.02 SD); mix of payment methods ran somewhat above this account's own baseline (+0.88 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00314",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 125,
+      "transition_date": "6 May 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.991725,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 2.050711,
+          "contribution": 0.796631
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -2.05656,
+          "contribution": 0.165623
+        }
+      ],
+      "text": "On 6 May 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); transaction volume ran well above this account's own baseline (+2.05 SD); average ticket size ran well below this account's own baseline (-2.06 SD). By 5 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00319",
+      "flag_day": 258,
+      "flag_date": "16 September 2026",
+      "transition_day": 258,
+      "transition_date": "16 September 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 3.012129,
+          "contribution": 2.327575
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 1.880963,
+          "contribution": 1.384815
+        }
+      ],
+      "text": "On 16 September 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); transaction volume ran far above this account's own baseline (+3.01 SD); chargeback rate ran well above this account's own baseline (+1.88 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00325",
+      "flag_day": 251,
+      "flag_date": "9 September 2026",
+      "transition_day": 251,
+      "transition_date": "9 September 2026",
+      "state": "DORMANT",
+      "pattern": "abrupt-stop-after-escalation",
+      "state_at_flag": "DORMANT",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "sparse",
+          "phrase": "days with no transactions at all",
+          "z": 9.000622,
+          "contribution": 99.63686
+        },
+        {
+          "feature": "refund_ratio",
+          "phrase": "refund rate",
+          "z": 0.0,
+          "contribution": 0.59713
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 0.837799,
+          "contribution": 0.509944
+        }
+      ],
+      "text": "On 9 September 2026 this account moved into a pattern we flag as abrupt-stop-after-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: days with no transactions at all ran far above this account's own baseline (+9.00 SD); refund rate ran somewhat above this account's own baseline (+0.00 SD); mix of payment methods ran somewhat above this account's own baseline (+0.84 SD). What would resolve this: confirmation of whether the account is still trading, and settlement instructions for the outstanding balance."
+    },
+    {
+      "merchant_id": "M00344",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 216,
+      "transition_date": "5 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.830491,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.211244,
+          "contribution": 3.435678
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 2.014857,
+          "contribution": 1.23703
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": -2.248571,
+          "contribution": 1.17615
+        }
+      ],
+      "text": "On 5 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.21 SD); concentration of payment value in a few payers ran well above this account's own baseline (+2.01 SD); spread of payments across the payer base ran well below this account's own baseline (-2.25 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00349",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 3.828182,
+          "contribution": 10.059319
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 0.298324,
+          "contribution": 0.174452
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran far above this account's own baseline (+3.83 SD); mix of payment methods ran somewhat above this account's own baseline (+0.30 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00351",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 3.983312,
+          "contribution": 11.000312
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 0.713965,
+          "contribution": 0.16223
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran far above this account's own baseline (+3.98 SD); mix of payment methods ran somewhat above this account's own baseline (+0.71 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00361",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 7.589144,
+          "contribution": 43.26485
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": 2.392189,
+          "contribution": 0.764558
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); chargeback rate ran far above this account's own baseline (+7.59 SD); share of repeat payers ran well above this account's own baseline (+2.39 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00364",
+      "flag_day": 244,
+      "flag_date": "2 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": false,
+      "bad_probability": 0.525707,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -4.600015,
+          "contribution": 6.852393
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.771197,
+          "contribution": 0.472072
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -0.702294,
+          "contribution": 0.314021
+        }
+      ],
+      "text": "On 2 September 2026 our confidence that this account had left normal operation passed the review threshold, with rapid-volume-escalation the most likely explanation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far below this account's own baseline (-4.60 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.77 SD); share of repeat payers ran somewhat below this account's own baseline (-0.70 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00367",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 202,
+      "transition_date": "22 July 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999995,
+      "top_features": [
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": 6.016084,
+          "contribution": 13.506576
+        },
+        {
+          "feature": "new_payer_ratio",
+          "phrase": "share of first-time payers",
+          "z": -2.31683,
+          "contribution": 1.082708
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 1.650181,
+          "contribution": 1.082047
+        }
+      ],
+      "text": "On 22 July 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: share of repeat payers ran far above this account's own baseline (+6.02 SD); share of first-time payers ran well below this account's own baseline (-2.32 SD); concentration of payment value in a few payers ran well above this account's own baseline (+1.65 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00368",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.800383,
+      "top_features": [
+        {
+          "feature": "refund_ratio",
+          "phrase": "refund rate",
+          "z": 7.023378,
+          "contribution": 14.613468
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 1.357454,
+          "contribution": 0.485256
+        },
+        {
+          "feature": "sparse",
+          "phrase": "days with no transactions at all",
+          "z": -0.765635,
+          "contribution": 0.232449
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: refund rate ran far above this account's own baseline (+7.02 SD); concentration of payment value in a few payers ran somewhat above this account's own baseline (+1.36 SD); days with no transactions at all ran somewhat below this account's own baseline (-0.77 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00386",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 125,
+      "transition_date": "6 May 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_velocity",
+          "phrase": "transaction volume",
+          "z": 4.81595,
+          "contribution": 5.845639
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 2.391928,
+          "contribution": 1.241617
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.941972,
+          "contribution": 0.462184
+        }
+      ],
+      "text": "On 6 May 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: transaction volume ran far above this account's own baseline (+4.82 SD); spread of payments across the payer base ran well above this account's own baseline (+2.39 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.94 SD). By 5 August 2026 the pattern had changed to sustained-abnormal-activity. What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00392",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 153,
+      "transition_date": "3 June 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -3.514942,
+          "contribution": 3.424718
+        },
+        {
+          "feature": "refund_ratio",
+          "phrase": "refund rate",
+          "z": 4.674942,
+          "contribution": 1.81924
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.43216,
+          "contribution": 0.103171
+        }
+      ],
+      "text": "On 3 June 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far below this account's own baseline (-3.51 SD); refund rate ran far above this account's own baseline (+4.67 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.43 SD). By 5 August 2026 the pattern had changed to sustained-abnormal-activity. What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00403",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 8.618578,
+          "contribution": 20.311009
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 3.334169,
+          "contribution": 3.659047
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.060624,
+          "contribution": 0.42027
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of ticket sizes ran far above this account's own baseline (+8.62 SD); concentration of payment value in a few payers ran far above this account's own baseline (+3.33 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.06 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00409",
+      "flag_day": 230,
+      "flag_date": "19 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999999,
+      "top_features": [
+        {
+          "feature": "sparse",
+          "phrase": "days with no transactions at all",
+          "z": 6.114855,
+          "contribution": 21.262433
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.512068,
+          "contribution": 0.373394
+        },
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": -0.672,
+          "contribution": 0.304647
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: days with no transactions at all ran far above this account's own baseline (+6.11 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.51 SD); share of repeat payers ran somewhat below this account's own baseline (-0.67 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00420",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 237,
+      "transition_date": "26 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.51301,
+      "top_features": [
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 4.831482,
+          "contribution": 6.102661
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 1.532561,
+          "contribution": 0.816265
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.589689,
+          "contribution": 0.41733
+        }
+      ],
+      "text": "On 26 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of ticket sizes ran far above this account's own baseline (+4.83 SD); chargeback rate ran well above this account's own baseline (+1.53 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.59 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00426",
+      "flag_day": 265,
+      "flag_date": "23 September 2026",
+      "transition_day": 265,
+      "transition_date": "23 September 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 10.0,
+          "contribution": 75.952368
+        },
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": -0.280437,
+          "contribution": 0.101559
+        }
+      ],
+      "text": "On 23 September 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: chargeback rate ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); spread of ticket sizes ran somewhat below this account's own baseline (-0.28 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00432",
+      "flag_day": 265,
+      "flag_date": "23 September 2026",
+      "transition_day": 265,
+      "transition_date": "23 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.994962,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": -5.785418,
+          "contribution": 11.686004
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.425754,
+          "contribution": 0.310098
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.551414,
+          "contribution": 0.105719
+        }
+      ],
+      "text": "On 23 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far below this account's own baseline (-5.79 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.43 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.55 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00443",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 202,
+      "transition_date": "22 July 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.999987,
+      "top_features": [
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 6.00294,
+          "contribution": 9.660583
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.929819,
+          "contribution": 0.191413
+        }
+      ],
+      "text": "On 22 July 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: spread of ticket sizes ran far above this account's own baseline (+6.00 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.93 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00450",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 1.0,
+      "top_features": [
+        {
+          "feature": "repeat_payer_ratio",
+          "phrase": "share of repeat payers",
+          "z": 5.043697,
+          "contribution": 8.941457
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": -4.123362,
+          "contribution": 8.163798
+        },
+        {
+          "feature": "new_payer_ratio",
+          "phrase": "share of first-time payers",
+          "z": -4.468917,
+          "contribution": 8.130893
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: share of repeat payers ran far above this account's own baseline (+5.04 SD); spread of payments across the payer base ran far below this account's own baseline (-4.12 SD); share of first-time payers ran far below this account's own baseline (-4.47 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00458",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 181,
+      "transition_date": "1 July 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.819058,
+      "top_features": [
+        {
+          "feature": "chargeback_lag_days",
+          "phrase": "time from a payer's first payment to their chargeback",
+          "z": 10.0,
+          "contribution": 60.526528
+        },
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.460688,
+          "contribution": 4.010883
+        },
+        {
+          "feature": "chargeback_ratio",
+          "phrase": "chargeback rate",
+          "z": 1.764922,
+          "contribution": 1.051344
+        }
+      ],
+      "text": "On 1 July 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: time from a payer's first payment to their chargeback ran beyond the range we can measure against this account's own baseline (at or above +10.00 SD, where the scale is capped); average ticket size ran far above this account's own baseline (+3.46 SD); chargeback rate ran well above this account's own baseline (+1.76 SD). By 5 August 2026 the pattern had changed to rapid-volume-escalation. What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00474",
+      "flag_day": 237,
+      "flag_date": "26 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.962561,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 2.23915,
+          "contribution": 1.170863
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -0.413168,
+          "contribution": 0.299598
+        },
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": -1.967576,
+          "contribution": 0.258208
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran well above this account's own baseline (+2.24 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-0.41 SD); spread of ticket sizes ran well below this account's own baseline (-1.97 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00476",
+      "flag_day": 216,
+      "flag_date": "5 August 2026",
+      "transition_day": 209,
+      "transition_date": "29 July 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.907312,
+      "top_features": [
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": 3.305988,
+          "contribution": 3.595748
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": -2.322299,
+          "contribution": 1.286398
+        },
+        {
+          "feature": "log_amount_var",
+          "phrase": "spread of ticket sizes",
+          "z": 2.065578,
+          "contribution": 0.677418
+        }
+      ],
+      "text": "On 29 July 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: concentration of payment value in a few payers ran far above this account's own baseline (+3.31 SD); spread of payments across the payer base ran well below this account's own baseline (-2.32 SD); spread of ticket sizes ran well above this account's own baseline (+2.07 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00489",
+      "flag_day": 223,
+      "flag_date": "12 August 2026",
+      "transition_day": 223,
+      "transition_date": "12 August 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.920557,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 4.517577,
+          "contribution": 7.683509
+        },
+        {
+          "feature": "payer_herfindahl",
+          "phrase": "concentration of payment value in a few payers",
+          "z": -1.746682,
+          "contribution": 0.405481
+        },
+        {
+          "feature": "payer_entropy",
+          "phrase": "spread of payments across the payer base",
+          "z": 1.677899,
+          "contribution": 0.333856
+        }
+      ],
+      "text": "On 12 August 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+4.52 SD); concentration of payment value in a few payers ran well below this account's own baseline (-1.75 SD); spread of payments across the payer base ran well above this account's own baseline (+1.68 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    },
+    {
+      "merchant_id": "M00494",
+      "flag_day": 230,
+      "flag_date": "19 August 2026",
+      "transition_day": 230,
+      "transition_date": "19 August 2026",
+      "state": "FRAUD",
+      "pattern": "sustained-abnormal-activity",
+      "state_at_flag": "FRAUD",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.876614,
+      "top_features": [
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": 4.259797,
+          "contribution": 16.152482
+        },
+        {
+          "feature": "method_entropy",
+          "phrase": "mix of payment methods",
+          "z": 0.539871,
+          "contribution": 0.173483
+        }
+      ],
+      "text": "On 19 August 2026 this account moved into a pattern we flag as sustained-abnormal-activity. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: overlap between this week's payers and last week's ran far above this account's own baseline (+4.26 SD); mix of payment methods ran somewhat above this account's own baseline (+0.54 SD). What would resolve this: settlement-level invoices for the flagged period, and contact details for the payers behind the largest transactions."
+    },
+    {
+      "merchant_id": "M00496",
+      "flag_day": 265,
+      "flag_date": "23 September 2026",
+      "transition_day": 244,
+      "transition_date": "2 September 2026",
+      "state": "RAMP",
+      "pattern": "rapid-volume-escalation",
+      "state_at_flag": "RAMP",
+      "previous_state": "HEALTHY",
+      "viterbi_agrees": true,
+      "bad_probability": 0.760984,
+      "top_features": [
+        {
+          "feature": "log_amount_mean",
+          "phrase": "average ticket size",
+          "z": 3.6924,
+          "contribution": 4.839615
+        },
+        {
+          "feature": "payer_jaccard_prev",
+          "phrase": "overlap between this week's payers and last week's",
+          "z": -1.175276,
+          "contribution": 0.352472
+        },
+        {
+          "feature": "hour_entropy",
+          "phrase": "spread of payments across the hours of the day",
+          "z": 0.734075,
+          "contribution": 0.146822
+        }
+      ],
+      "text": "On 2 September 2026 this account moved into a pattern we flag as rapid-volume-escalation. The measurements that moved it there, each compared against this account's own trading history rather than against other merchants: average ticket size ran far above this account's own baseline (+3.69 SD); overlap between this week's payers and last week's ran somewhat below this account's own baseline (-1.18 SD); spread of payments across the hours of the day ran somewhat above this account's own baseline (+0.73 SD). What would resolve this: recent invoices or purchase orders covering the increase, and the campaign or sales channel that drove it."
+    }
+  ]
+}
