@@ -50,9 +50,10 @@ lint:
 # runner fails in seconds rather than after `gen` has spent a minute writing 366 MB.
 # `gates` depends on `gen` — G1 and G3 read the real dataset, not a fixture.
 #
-# Still to be appended: `features` (needs a cli `features` subcommand — only `gen` exists
-# today, so putting it here would break the clean-clone job) and `perf` at T-150.
-all: lint parity gen gates test
+# `perf` is self-contained and needs no dataset, but sits after `gen` for ordering.
+# Still to be appended: `features` — it needs a cli `features` subcommand, and only `gen`
+# exists today, so putting it here would break the clean-clone job.
+all: lint parity gen gates perf test
 
 clean:
 	rm -rf data/v2 .pytest_cache .mypy_cache .ruff_cache

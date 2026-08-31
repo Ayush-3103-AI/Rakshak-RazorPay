@@ -17,8 +17,8 @@ from datetime import UTC, date, datetime, time
 import numpy as np
 import polars as pl
 import pytest
+from parity_harness import ParityFailure, assert_parity, synthetic_stream, to_frame
 
-from conftest import ParityFailure, assert_parity, synthetic_stream, to_frame
 from rakshak.features import registry
 from rakshak.features.spec import FeatureSpec
 from rakshak.features.state import STATE_BYTES_BUDGET, FeatureState, MerchantState

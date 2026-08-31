@@ -22,8 +22,8 @@ from typing import Any
 import numpy as np
 import polars as pl
 import pytest
+from parity_harness import assert_parity, end_of_day, synthetic_stream
 
-from conftest import assert_parity, end_of_day, synthetic_stream
 from rakshak.features import registry, tier1, tier2
 from rakshak.features.spec import PARITY_TOLERANCE, FeatureSpec
 from rakshak.features.state import STATE_BYTES_BUDGET, MerchantState

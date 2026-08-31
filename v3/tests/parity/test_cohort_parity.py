@@ -17,8 +17,8 @@ from __future__ import annotations
 import numpy as np
 import polars as pl
 import pytest
+from parity_harness import end_of_day, epochs_between, synthetic_stream, to_frame
 
-from conftest import end_of_day, epochs_between, synthetic_stream, to_frame
 from rakshak.features import cohort, registry, tier1
 from rakshak.features.spec import PARITY_TOLERANCE
 from rakshak.features.state import MerchantState
