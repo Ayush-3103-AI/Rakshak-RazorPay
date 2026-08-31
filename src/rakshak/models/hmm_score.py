@@ -136,6 +136,29 @@ def filtered_bad_probability(model: HMM, X: np.ndarray) -> np.ndarray:
     return np.clip(softmax(log_alpha, axis=1)[:, BAD_COLUMNS].sum(axis=1), 0.0, 1.0)
 
 
+def first_flag_index(probability: np.ndarray, eligible: np.ndarray) -> int | None:
+    """Index of the first eligible window at or above `FLAG_THRESHOLD`.
+
+    Split out of `first_flag_day` at T-0013 so that `explain/reasons.py` selects
+    the explaining window with the identical rule the flag itself used. Two
+    copies of this comparison would be free to drift, and a reason string
+    describing a different window from the one that raised the flag is worse than
+    no reason string.
+
+    Args:
+        probability: Filtered bad-state probability per window, shape (T,).
+        eligible: True where the window lies inside the split's decision window,
+            shape (T,).
+
+    Returns:
+        The window index, or None if the merchant was never flagged.
+    """
+    fired = eligible & (probability >= FLAG_THRESHOLD)
+    if not fired.any():
+        return None
+    return int(np.argmax(fired))
+
+
 def first_flag_day(
     probability: np.ndarray, eligible: np.ndarray, window_start_day: np.ndarray
 ) -> float:
@@ -159,10 +182,10 @@ def first_flag_day(
         The flag day in days since `GENERATOR_START_DATE`, or NaN if the merchant
         was never flagged. Depends only on windows at or before the returned day.
     """
-    fired = eligible & (probability >= FLAG_THRESHOLD)
-    if not fired.any():
+    index = first_flag_index(probability, eligible)
+    if index is None:
         return float("nan")
-    return float(window_start_day[int(np.argmax(fired))] + WINDOW_DAYS - 1)
+    return float(window_start_day[index] + WINDOW_DAYS - 1)
 
 
 def _panel(matrix: WindowMatrix) -> np.ndarray:

@@ -15,6 +15,7 @@ setup:
 #   verdict   -> verdict.md, sensitivity_test.csv, figures/sensitivity_test.png (test, K2)
 #   ablations -> ablations.md    (FR-018, 6 fits, the slowest step at ~70 s)
 #   lag_probe -> lag_probe.md    (T-0011 detection-lag attribution + leakage clearance)
+#   reasons   -> reasons.json    (FR-014, the merchant-facing strings; T-0014 renders it)
 # BAF is +16 s. The `-` lets a clean checkout without the git-ignored 558 MB
 # download still complete eval; baf.py prints the command that fetches it.
 eval:
@@ -22,6 +23,7 @@ eval:
 	$(PY) -m rakshak.eval.verdict --seed $(SEED)
 	$(PY) -m rakshak.eval.ablations --seed $(SEED)
 	$(PY) -m rakshak.eval.lag_probe --seed $(SEED)
+	$(PY) -m rakshak.explain.reasons --seed $(SEED)
 	-$(PY) -m rakshak.eval.baf --seed $(SEED)
 
 baf:

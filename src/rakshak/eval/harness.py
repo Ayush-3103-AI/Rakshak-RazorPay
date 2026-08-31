@@ -149,7 +149,11 @@ def evaluate_model(name: str, split: Split, seed: int, k: int) -> dict[str, obje
 
     Returns:
         The summary row, plus a `posterior` entry holding the clipped scores so
-        the FR-020 sweep can re-score without re-fitting.
+        the FR-020 sweep can re-score without re-fitting, and an `actions` entry
+        holding the per-merchant action so `eval/typology.py` can break recall
+        down by injected typology without re-implementing the scoring -> BMR
+        chain. Both are extra keys on the same row; every renderer reads this
+        dict by explicit key, so neither reaches a table.
     """
     frame = _normalise(MODEL_REGISTRY[name](split, _model_rng(seed, name)), split)
     y = split.labels.to_numpy(dtype=float)
@@ -179,6 +183,7 @@ def evaluate_model(name: str, split: Split, seed: int, k: int) -> dict[str, obje
         "binding_constraint": result.binding_constraint,
         "unconstrained_n_reviewed": result.unconstrained_n_reviewed,
         "posterior": posterior,
+        "actions": result.actions,
     }
 
 
