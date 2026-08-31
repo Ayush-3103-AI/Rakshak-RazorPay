@@ -2,12 +2,22 @@
 # On Windows without GNU make, use ./make.ps1 <target> — same commands.
 
 SEED ?= 42
-PY   ?= python
+# T-0021: a stock Linux box (this Makefile's actual target — GNU make isn't
+# even installed on the Windows dev machine) has no `python` on PATH, only
+# `python3` — `make setup` failed at word one on a clean checkout. Override
+# with `make PY=python ...` on a system where only `python` exists.
+PY   ?= python3
 
 .PHONY: setup eval baf figures test lint
 
 setup:
-	$(PY) -m pip install -e ".[dev]"
+	# T-0021: Debian/Ubuntu's system pip refuses a bare install with
+	# "externally-managed-environment" (PEP 668) on a clean box with no venv
+	# active. --break-system-packages is a pip>=23 flag that is a no-op on any
+	# environment without that marker (venv, conda, non-Debian Python), so it
+	# is safe everywhere this project's pyproject.toml (python>=3.11) runs. If
+	# your pip predates 23.0 and rejects the flag, activate a venv first.
+	$(PY) -m pip install -e ".[dev]" --break-system-packages
 
 # CLAUDE.md: every number in the README must be regenerable by `make eval`.
 # Order matters only for readability; each target writes its own file.
