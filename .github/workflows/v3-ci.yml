@@ -1,0 +1,47 @@
+# Rakshak v2 (ver-2/v3) CI.
+#
+# The `clean-clone` job is the point of this file. v1's single highest-scoring
+# disqualification risk was `make eval` not reproducing on a fresh checkout, and charter
+# K-5 makes that a stop-work condition for v2. So CI does not test the working directory
+# it was handed — it clones the repo into a scratch path and builds from nothing.
+name: v3-ci
+
+on:
+  push:
+    paths: ["v3/**", ".github/workflows/v3-ci.yml"]
+  pull_request:
+    paths: ["v3/**", ".github/workflows/v3-ci.yml"]
+
+defaults:
+  run:
+    working-directory: v3
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run ruff check src tests
+      - run: uv run mypy src
+      - run: uv run pytest
+
+  clean-clone:
+    # Charter K-5. If this goes red the sprint stops until it is green again; do not
+    # merge past it and do not weaken `make all` to make it pass.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - name: Clone into a scratch path and build from nothing
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone . /tmp/rakshak-clean
+          cd /tmp/rakshak-clean/v3
+          uv sync --extra dev
+          make all

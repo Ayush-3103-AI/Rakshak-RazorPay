@@ -1,0 +1,76 @@
+[project]
+name = "rakshak-v2"
+version = "2.0.0"
+description = "Rakshak v2 — post-onboarding merchant risk sentinel. Generator and harness first, models second."
+requires-python = ">=3.11,<3.12"
+license = { text = "MIT" }
+
+# Every pin here is justified in CLAUDE.md §Tech Stack. CPU-only, no GPU, no cloud.
+# Explicitly rejected and not to be added without a LOGBOOK line: torch, transformers,
+# any GNN library, hmmlearn, TabPFN, river, pandas, any cloud SDK.
+dependencies = [
+    "polars>=1.0,<2", # offline dataframes. pandas is NOT used.
+    "numpy>=2.0,<3", # online state: plain arrays, no DataFrame in the hot path
+    "duckdb>=1.0", # event store: parquet-native, point-in-time SQL
+    "pyarrow>=15", # parquet interchange between polars and duckdb
+    "lightgbm>=4.3,<5", # won the v1 ablation; native pred_contrib for reason codes
+    "scipy>=1.11", # KS / Wasserstein for the divergence features
+    "scikit-learn>=1.4", # PR-AUC, calibration
+    "pyyaml>=6", # configs/*.yaml scenario manifests
+    "typer>=0.12", # cli.py; every make target calls through it
+    # Windows ships no system tz database, so zoneinfo cannot resolve even "UTC" and
+    # every tz-aware polars Datetime raises ZoneInfoNotFoundError. Linux CI has the
+    # system tzdb and would never have caught this. Pinned so the tz-aware-UTC contract
+    # in 09-interfaces.md holds on both, rather than on whichever OS ran it last.
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6",        # generator invariants are property-tested, not example-tested
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.scripts]
+rakshak = "rakshak.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rakshak"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "NPY"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Prime Directive 3: ground-truth fields are radioactive. This is the cheap import-time
+# half of the guard; tests/gates/test_no_ground_truth_import.py is the AST-scan half that
+# also catches attribute access. Both exist on purpose — neither alone is enough.
+ban-relative-imports = "all"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+# polars/duckdb/lightgbm ship partial stubs; we type our own boundary, not theirs.
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+markers = [
+    "slow: full-population runs; excluded from the fast loop with -m 'not slow'",
+]
+
+[tool.coverage.run]
+source = ["src/rakshak"]

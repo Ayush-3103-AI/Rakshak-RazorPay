@@ -1,0 +1,13 @@
+# Regenerable from seed + config. Never commit it — reproducibility is the claim.
+data/
+*.parquet
+!docs/results_v2.parquet
+
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+uv.lock.bak
