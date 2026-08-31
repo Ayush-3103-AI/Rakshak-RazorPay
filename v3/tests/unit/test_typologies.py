@@ -365,20 +365,21 @@ def test_prevalence_zero_produces_no_fraud(rng: np.random.Generator) -> None:
     config = load_scenario(CONFIG_PATH)
     assignment = assign_typologies(rng, 5_000, 0.0, config.typologies)
     assert assignment.n_fraud == 0
-    assert float(ramp_progress(assignment, 180).max()) == 0.0
+    assert float(ramp_progress(assignment, config.population.n_days).max()) == 0.0
 
 
 def test_progress_is_zero_before_onset_and_one_after_the_ramp(
     rng: np.random.Generator,
 ) -> None:
     config = load_scenario(CONFIG_PATH)
+    n_days = config.population.n_days
     assignment = assign_typologies(rng, 2_000, 0.5, config.typologies)
-    progress = ramp_progress(assignment, 180)
+    progress = ramp_progress(assignment, n_days)
     fraud = np.flatnonzero(assignment.is_fraud)
     for m in fraud[:50]:
         onset, ramp = int(assignment.onset_day[m]), int(assignment.ramp_days[m])
         assert progress[m, :onset].max(initial=0.0) == 0.0
         assert progress[m, onset] == pytest.approx(0.0)
-        if onset + ramp < 180:
+        if onset + ramp < n_days:
             assert progress[m, onset + ramp] == pytest.approx(1.0)
     assert progress[~assignment.is_fraud].max() == 0.0

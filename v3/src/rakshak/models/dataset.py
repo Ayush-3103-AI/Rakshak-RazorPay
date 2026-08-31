@@ -216,6 +216,7 @@ def materialise(
     out: Path = DEFAULT_PANEL,
     *,
     boundaries: SplitBoundaries = DEFAULT_BOUNDARIES,
+    fold_fn: Callable[[str], Split] | None = None,
     last_day: int | None = None,
     echo: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
@@ -223,6 +224,14 @@ def materialise(
 
     ``last_day`` defaults to the final **validation** day. Nothing after it is read, so
     the test split is not merely skipped - it is never touched by this process.
+
+    ``fold_fn`` overrides which fold a merchant belongs to. Defaults to ``None``, which
+    uses ``eval.splits.merchant_fold(m, boundaries)`` exactly as before — zero behaviour
+    change for every existing caller. T-0101 (GitHub #34) passes a merchant fold ratio
+    independent of ``boundaries``' day-span proportions (60/15/25 vs 65.75/16.44/17.81),
+    which ``merchant_fold()`` cannot express since it derives its shares from
+    ``boundaries`` itself; ``cli.py`` supplies a sibling function instead of this module
+    editing ``eval/splits.py`` to add a second ratio to it.
     """
     horizon = boundaries.val[1] if last_day is None else last_day
     if horizon >= boundaries.test[0]:
@@ -303,7 +312,8 @@ def materialise(
 
     # Keep only rows where the merchant's fold and the day's span agree - the strict
     # reading of "both split constraints simultaneously" that splits.assign_rows applies.
-    fold = np.array([merchant_fold(m, boundaries) for m in merchants])
+    fold_of = fold_fn if fold_fn is not None else (lambda m: merchant_fold(m, boundaries))
+    fold = np.array([fold_of(m) for m in merchants])
     day_split = np.array([split_of_day(d, boundaries) or "" for d in days])
     keep_rows, keep_cols = np.nonzero(fold[:, None] == day_split[None, :])
 

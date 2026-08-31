@@ -1,0 +1,97 @@
+{
+  "cycle": 2,
+  "supersedes": "EVAL-LOCK.json",
+  "pre_registration": "docs/RE-FREEZE-2026-08-31.md",
+  "t0101_correction": "T-0101 (GitHub #34), pre-registered in docs/RE-FREEZE-2026-08-31.md Amendment 4 BEFORE the scenario config or cli.py were edited. Geometry: 20,000 merchants over 365 days, drift onsets confined to days 30-240 for every typology, split day boundaries 0-239 / 240-299 / 300-364, and an INDEPENDENT merchant-fold ratio of 60% / 15% / 25% (decoupled from the day-span proportions, which are 65.75% / 16.44% / 17.81% of 365 days). eval_module_sha256 below is byte-identical to EVAL-LOCK.json's: eval/splits.py is not edited. The independent merchant fold is assigned by a sibling function in cli.py (_merchant_fold_t0101, own salt), threaded into models/dataset.py's materialise() as an optional fold_fn parameter that defaults to None (= the old, unmodified eval.splits.merchant_fold behaviour). schemas.py is also untouched: the two additional results-row denominators (n_labelled_merchants, n_censored_merchants) required by T-0101 are sidecar JSON keys cli.py writes beside every EvalResult row, not new EvalResult fields. tests/unit/test_config.py::test_test_split_has_enough_labelled_positives_per_seed measures 59-86 labelled positives per seed at this geometry, against a >=50 floor; the same counting logic against the previous 10,000 x 360 draft (day-proportional, not independent, merchant fold) measures 16-29 per seed - RED.",
+  "unchanged_from_lock_1": "The declared adoption margins (>=10% relative PR-AUC or >=3 days median TTD) and the five seeds (42-46) are carried across unchanged from EVAL-LOCK.json - not renegotiated because cycle 1 failed to meet them. Prevalence stays at the realistic ~1.5%. capacity_k and capacity_per_n_merchants (the K=50-per-10,000-merchants RATE) are unchanged; ScenarioConfig.analyst_capacity scales with the corrected population.",
+  "created_at": "2026-08-31T19:00:00.000000Z",
+  "eval_module_sha256": "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b",
+  "generator_module_sha256": "00247f229a3f7f75a512b53467997a15985db5afa5fc3ff804481b3aa8ca6cd0",
+  "scenario_config_sha256": "d64a5098a40d5a4d0529e430decba0395a40e3d6b9cdae37babb90ad2b030259",
+  "eval_modules": [
+    "src/rakshak/eval/splits.py",
+    "src/rakshak/eval/metrics.py",
+    "src/rakshak/eval/oracle.py",
+    "src/rakshak/eval/capacity.py",
+    "src/rakshak/eval/lock.py"
+  ],
+  "generator_glob": "src/rakshak/generator/*.py",
+  "scenario_config": "configs/scenario_v2.yaml",
+  "enforced": [
+    "eval_module_sha256"
+  ],
+  "enforcement_note": "Only eval_module_sha256 is a hard fail. The generator and scenario-config hashes are recorded as provenance and reported as drift, not enforced. verify_lock(strict=True) enforces all three once the generator is itself frozen (T-116).",
+  "population_n_merchants": 20000,
+  "population_n_days": 365,
+  "onset_window": {
+    "min_day": 30,
+    "max_day": 240
+  },
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "split_boundaries": {
+    "train": [
+      0,
+      239
+    ],
+    "val": [
+      240,
+      299
+    ],
+    "test": [
+      300,
+      364
+    ]
+  },
+  "merchant_fold_shares": [
+    0.6,
+    0.15,
+    0.25
+  ],
+  "split_origin": "2026-01-01",
+  "capacity_k": 50,
+  "capacity_per_n_merchants": 10000,
+  "metrics": [
+    "pr_auc",
+    "roc_auc",
+    "ece",
+    "savings",
+    "savings_floor_random",
+    "savings_floor_all_pass",
+    "savings_floor_all_hold",
+    "savings_floor_volume_rank",
+    "precision_at_k",
+    "recall_at_k",
+    "alerts_per_day",
+    "ttd_median_days",
+    "detection_rate_d7",
+    "detection_rate_d14",
+    "detection_rate_d30",
+    "gap_to_oracle",
+    "alert_jaccard_wow",
+    "recall_by_typology",
+    "p99_latency_ms",
+    "state_bytes_p99",
+    "model_size_mb"
+  ],
+  "cost_asymmetry_ratios": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "declared_adoption_margins": {
+    "relative_pr_auc": 0.1,
+    "ttd_days": 3.0,
+    "note": "from 00-charter-v2.md §2, declared before any v2 model existed. A rung is adopted only if it beats the previous rung by >=10% relative PR-AUC OR reduces median TTD by >=3 days at equal alerts-per-analyst-day, while holding p99 scoring latency <=10 ms per merchant on one CPU core."
+  },
+  "frozen_at_git_sha": "f5a251521e8cf593ee75d9f0b06a2b703ffc35f2",
+  "open_count": 0,
+  "open_log": []
+}

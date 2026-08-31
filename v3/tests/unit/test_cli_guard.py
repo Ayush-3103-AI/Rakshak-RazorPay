@@ -83,8 +83,8 @@ def test_train_goes_through_the_same_door(monkeypatch: pytest.MonkeyPatch, tmp_p
     literal ``<absent>`` marker rather than being skipped - "the file that computed savings
     is gone" must not verify clean.
     """
-    lock = json.loads((cli.ROOT / "EVAL-LOCK.json").read_text(encoding="utf-8"))
-    (tmp_path / "EVAL-LOCK.json").write_text(json.dumps(lock), encoding="utf-8")
+    lock = json.loads((cli.ROOT / cli.LOCK_PATH).read_text(encoding="utf-8"))
+    (tmp_path / cli.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8")
     monkeypatch.setattr(cli, "ROOT", tmp_path)
     result = runner.invoke(cli.app, ["train", "--rung", "2"], env=_without_unlock())
     assert result.exit_code != 0
@@ -96,8 +96,8 @@ def test_eval_hard_fails_on_a_changed_harness_even_on_the_validation_split(
 ) -> None:
     """The lock is not only a test-split thing. Results computed against different eval
     code are not comparable to results computed against this one, on any split."""
-    lock = json.loads((cli.ROOT / "EVAL-LOCK.json").read_text(encoding="utf-8"))
-    (tmp_path / "EVAL-LOCK.json").write_text(json.dumps(lock), encoding="utf-8")
+    lock = json.loads((cli.ROOT / cli.LOCK_PATH).read_text(encoding="utf-8"))
+    (tmp_path / cli.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8")
     monkeypatch.setattr(cli, "ROOT", tmp_path)
     result = runner.invoke(cli.app, ["eval", "--rung", "1"], env=_without_unlock())
     assert result.exit_code != 0

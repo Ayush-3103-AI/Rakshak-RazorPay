@@ -45,6 +45,7 @@ __all__ = [
     "PopulationConfig",
     "ScenarioConfig",
     "SettlementConfig",
+    "SplitsConfig",
     "TypologyParams",
     "load_scenario",
 ]
@@ -73,6 +74,12 @@ class ConfigError(ValueError):
 class PopulationConfig:
     n_merchants: int
     n_days: int
+    #: T-0101 corrected geometry (GitHub #34, docs/RE-FREEZE-2026-08-31.md Amendment 4):
+    #: every typology's onset_day_min/max must fall inside
+    #: [onset_window_min_day, onset_window_max_day] — enforced in
+    #: ScenarioConfig.__post_init__.
+    onset_window_min_day: int
+    onset_window_max_day: int
     #: Merchant-level positive rate. BAF-native 1.47%. AP-06: NEVER evaluate at 0.20.
     prevalence: float
     #: Simulation day 0, ISO date. Parsed as UTC midnight — 09-interfaces.md conventions.
@@ -87,6 +94,25 @@ class PopulationConfig:
     declaration_error_sigma: float
     #: Business age at onboarding is drawn uniformly on [0, this).
     max_vintage_months: int
+
+
+@dataclass(frozen=True, slots=True)
+class SplitsConfig:
+    """T-0101 corrected split geometry (GitHub #34, RE-FREEZE-2026-08-31.md Amendment 4).
+
+    Two independent facts: the DAY boundaries a merchant-day row is scored under, and the
+    MERCHANT-level fold split (60/15/25 vs the day spans' 65.75/16.44/17.81). Deciding
+    fold membership is done by a sibling function in ``cli.py``, not by editing
+    ``eval.splits.merchant_fold()`` — so ``eval_module_sha256`` stays byte-identical.
+    """
+
+    train_end_day: int
+    val_end_day: int
+    #: Redundant with ``population.n_days - 1``; asserted equal in __post_init__.
+    test_end_day: int
+    merchant_fold_train: float
+    merchant_fold_val: float
+    merchant_fold_test: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -414,6 +440,7 @@ class MarksConfig:
 class ScenarioConfig:
     seed: int
     population: PopulationConfig
+    splits: SplitsConfig
     arrivals: ArrivalsConfig
     personas: dict[PersonaId, PersonaParams]
     typologies: dict[TypologyId, TypologyParams]
@@ -530,6 +557,45 @@ class ScenarioConfig:
                 "f_decline_entropy measures, and an empty one makes that feature "
                 "identically zero for the whole population"
             )
+        # T-0101 (GitHub #34): geometry checks, so a config edit that breaks the
+        # corrected geometry fails at load rather than showing up as a starved test
+        # split three commands later.
+        pop = self.population
+        if pop.onset_window_min_day > pop.onset_window_max_day:
+            raise ConfigError(
+                f"population.onset_window_min_day ({pop.onset_window_min_day}) must be "
+                f"<= population.onset_window_max_day ({pop.onset_window_max_day})"
+            )
+        for tid, t in self.typologies.items():
+            if not (pop.onset_window_min_day <= t.onset_day_min <= t.onset_day_max
+                    <= pop.onset_window_max_day):
+                raise ConfigError(
+                    f"typologies.{tid.value} onset window [{t.onset_day_min}, "
+                    f"{t.onset_day_max}] must fall inside population's declared "
+                    f"[{pop.onset_window_min_day}, {pop.onset_window_max_day}] — onsets are "
+                    "confined to that window by contract (T-0101 / GitHub #34)"
+                )
+        s = self.splits
+        if not (0 <= s.train_end_day < s.val_end_day < s.test_end_day):
+            raise ConfigError(
+                f"splits day boundaries must be increasing and non-negative; got "
+                f"train_end_day={s.train_end_day}, val_end_day={s.val_end_day}, "
+                f"test_end_day={s.test_end_day}"
+            )
+        if s.test_end_day != pop.n_days - 1:
+            raise ConfigError(
+                f"splits.test_end_day ({s.test_end_day}) must equal population.n_days - 1 "
+                f"({pop.n_days - 1})"
+            )
+        _check_shares(
+            {
+                "train": s.merchant_fold_train,
+                "val": s.merchant_fold_val,
+                "test": s.merchant_fold_test,
+            },
+            "splits",
+            "merchant_fold_*",
+        )
 
     @property
     def analyst_capacity(self) -> int:

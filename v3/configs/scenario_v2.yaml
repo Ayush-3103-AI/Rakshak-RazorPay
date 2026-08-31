@@ -13,8 +13,21 @@
 seed: 42
 
 population:
-  n_merchants: 10000
-  n_days: 180
+  # T-0101 corrected geometry (GitHub #34), pre-registered in
+  # docs/RE-FREEZE-2026-08-31.md Amendment 4 BEFORE this file was edited. 20,000
+  # merchants over 365 days, onsets confined to days 30-240, is what
+  # tests/unit/test_config.py::test_test_split_has_enough_labelled_positives_per_seed
+  # measures as sufficient (59-86 labelled positives per seed in the test split,
+  # against a >=50 floor) — a 10,000 x 360 draft measures 16-29 per seed, RED.
+  n_merchants: 20000
+  n_days: 365
+  # Drift onsets are confined to this window for EVERY typology. Each typology's
+  # onset_day_min/max below is scaled into [onset_window_min_day, onset_window_max_day]
+  # preserving its ORIGINAL relative position and spread, so none is made easier or
+  # harder relative to another. R2/R7/R9 anchor the lower edge (30); R6 anchors the
+  # upper edge (240). Enforced in generator/config.py::ScenarioConfig.__post_init__.
+  onset_window_min_day: 30
+  onset_window_max_day: 240
   prevalence: 0.0147            # BAF-native. AP-06: NEVER evaluate at 0.20.
   start_date: "2026-01-01"      # simulation day 0, UTC midnight
   onboarding_spread_days: 120   # merchants onboarded 0-120 days before day 0
@@ -22,6 +35,21 @@ population:
                                 # At 0, v_declared_ratio is a constant and F1 loses a
                                 # feature; the gap is the whole point of the signal.
   max_vintage_months: 96        # business age at onboarding, uniform on [0, 96)
+
+# T-0101 corrected split geometry (GitHub #34), pre-registered in
+# docs/RE-FREEZE-2026-08-31.md Amendment 4. Two INDEPENDENT facts:
+#   - DAY boundaries (240/60/65 days -- 65.75%/16.44%/17.81% of the horizon), read by
+#     cli.py and passed to the UNMODIFIED eval.splits.SplitBoundaries constructor.
+#   - the MERCHANT-level fold split (60%/15%/25%), assigned by a new, sibling
+#     function in cli.py -- NOT eval.splits.merchant_fold(), which stays untouched so
+#     eval_module_sha256 stays byte-identical (RE-FREEZE.md Amendment 4).
+splits:
+  train_end_day: 239             # days 0-239
+  val_end_day: 299                # days 240-299
+  test_end_day: 364               # days 300-364 == population.n_days - 1
+  merchant_fold_train: 0.60
+  merchant_fold_val: 0.15
+  merchant_fold_test: 0.25
 
 arrivals:
   target_fano: 12.25            # measured in v1; Poisson is 1.0. G1 calibrates on this.
@@ -227,8 +255,8 @@ typologies:
 
   R1:   # Classic bust-out. Convex ramp, payout urgency, then vanish. Easy.
     mix: 0.20
-    onset_day_min: 40
-    onset_day_max: 130
+    onset_day_min: 59
+    onset_day_max: 189
     ramp_days_min: 14
     ramp_days_max: 21
     intensity_multiple: 14.0
@@ -259,8 +287,8 @@ typologies:
         # baseline. This is the one v1 failed on, and it stays in the population so the
         # failure is visible and attributed rather than averaged away.
     mix: 0.20
-    onset_day_min: 20
-    onset_day_max: 90
+    onset_day_min: 30
+    onset_day_max: 131
     ramp_days_min: 60
     ramp_days_max: 90
     intensity_multiple: 3.2     # deliberately modest: a big multiple over 60 days is
@@ -289,8 +317,8 @@ typologies:
   R3:   # Card-testing host. Micro-amount bursts, high auth-fail, concentrated BINs,
         # Hawkes self-excitation. Without the excitation, f_retry_burst_rate is noise.
     mix: 0.15
-    onset_day_min: 30
-    onset_day_max: 150
+    onset_day_min: 44
+    onset_day_max: 218
     ramp_days_min: 2
     ramp_days_max: 6
     intensity_multiple: 22.0
@@ -317,8 +345,8 @@ typologies:
 
   R4:   # Transaction laundering. MCC-inconsistent basket, ticket shift, international up.
     mix: 0.10
-    onset_day_min: 25
-    onset_day_max: 130
+    onset_day_min: 37
+    onset_day_max: 189
     ramp_days_min: 10
     ramp_days_max: 30
     intensity_multiple: 3.0
@@ -345,8 +373,8 @@ typologies:
 
   R5:   # Collusive refund fraud. Capture then rapid refund to a small repeat payer set.
     mix: 0.10
-    onset_day_min: 25
-    onset_day_max: 140
+    onset_day_min: 37
+    onset_day_max: 204
     ramp_days_min: 5
     ramp_days_max: 15
     intensity_multiple: 2.2
@@ -374,8 +402,8 @@ typologies:
   R6:   # Merchant account takeover. ABRUPT change on a long clean history; instrument mix
         # and hour-of-day flip overnight. ramp_days=1 is the whole point.
     mix: 0.08
-    onset_day_min: 60
-    onset_day_max: 165
+    onset_day_min: 88
+    onset_day_max: 240
     ramp_days_min: 1
     ramp_days_max: 1
     intensity_multiple: 6.5
@@ -404,8 +432,8 @@ typologies:
         # individually unremarkable — which is why it needs T3 features to catch and why
         # its per-typology recall is expected to be poor. That is a reported finding.
     mix: 0.07
-    onset_day_min: 20
-    onset_day_max: 150
+    onset_day_min: 30
+    onset_day_max: 218
     ramp_days_min: 10
     ramp_days_max: 40
     intensity_multiple: 1.5
@@ -432,8 +460,8 @@ typologies:
 
   R8:   # Promo / coupon abuse. Concentrated payers, elevated refund value, low ticket.
     mix: 0.05
-    onset_day_min: 25
-    onset_day_max: 150
+    onset_day_min: 37
+    onset_day_max: 218
     ramp_days_min: 4
     ramp_days_max: 12
     intensity_multiple: 4.5
@@ -460,8 +488,8 @@ typologies:
 
   R9:   # Prohibited-category drift. Gradual basket shift away from the declared MCC.
     mix: 0.05
-    onset_day_min: 20
-    onset_day_max: 110
+    onset_day_min: 30
+    onset_day_max: 160
     ramp_days_min: 40
     ramp_days_max: 70
     intensity_multiple: 1.9
@@ -515,31 +543,33 @@ confounders:
     magnitude_sigma: 3.5        # spec band is 2-4 sigma; 3.0 left the second window at
                                 # |z| = 1.02 against a gate floor of 1.0, which is a pass
                                 # that would flip on the next seed
-    duration_days: 5
-    days: [46, 152]
+    duration_days: 5            # a DURATION — does not scale with the window (amendment 2)
+    days: [93, 308]              # T-0101: day INDICES rescaled x365/180 from [46,152] —
+                                # amendment 2's rule. 93 lands in train, 308 in test.
 
   P2_outage:                    # auth failures up, count down, for a few hours
     count: 3
     magnitude_sigma: 4.0
-    duration_hours: 6
+    duration_hours: 6           # a DURATION — does not scale
     intensity_multiple: 0.35    # volume that does not arrive during an outage
-    days: [28, 97, 143]
+    days: [57, 197, 290]         # T-0101: rescaled x365/180 from [28,97,143]. 57,197
+                                # land in train, 290 in val.
 
   P3_fee_change:                # permanent step toward the cheaper rail
-    day: 60
+    day: 122                    # T-0101: rescaled x365/180 from 60. Lands in train.
     magnitude_sigma: 2.5
     target_instrument: upi
     window_days: 14             # long enough for the 7d rolling mix feature to register
 
   P4_new_method:                # a new instrument gains share on an S-curve
-    day: 90
-    ramp_days: 30
+    day: 182                    # T-0101: rescaled x365/180 from 90. Lands in train.
+    ramp_days: 30                # a DURATION — does not scale
     magnitude_sigma: 3.0
     target_instrument: wallet
 
   P5_regulatory:                # tokenisation: CNP/BIN step + a transient failure bump
-    day: 120
-    transient_days: 10
+    day: 243                    # T-0101: rescaled x365/180 from 120. Lands in val.
+    transient_days: 10           # a DURATION — does not scale
     magnitude_sigma: 3.0
 
   P6_macro:                     # always-on sinusoid

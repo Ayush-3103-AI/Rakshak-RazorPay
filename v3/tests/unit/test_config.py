@@ -9,21 +9,31 @@ testing hardest — a loader that raises `KeyError: 'share'` against a file with
 from __future__ import annotations
 
 import copy
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 import yaml
 
+from rakshak.cli import _merchant_fold_t0101
+from rakshak.eval.splits import SplitBoundaries, split_of_day
 from rakshak.generator.config import (
     SHARE_TOLERANCE,
     ConfigError,
     ScenarioConfig,
     load_scenario,
 )
+from rakshak.generator.labels import NO_TIME, emit_labels
+from rakshak.generator.typologies import assign_typologies
 from rakshak.schemas import Instrument, PersonaId, TypologyId
 
 CONFIG_PATH = Path(__file__).resolve().parents[2] / "configs" / "scenario_v2.yaml"
+_NS_PER_DAY = 86_400_000_000_000
+
+#: T-0101 (GitHub #34): the five seeds EVAL-LOCK-CYCLE2.json declares.
+CYCLE2_SEEDS = (42, 43, 44, 45, 46)
 
 
 @pytest.fixture(scope="module")
@@ -56,15 +66,145 @@ def test_ships_config_loads(scenario: ScenarioConfig) -> None:
 
 
 def test_charter_section_10_parameters(scenario: ScenarioConfig) -> None:
-    """Charter §10, settled 2026-08-31. A silent drift in any of these invalidates
+    """Charter §10, settled 2026-08-31, population corrected by T-0101 (GitHub #34,
+    docs/RE-FREEZE-2026-08-31.md Amendment 4). A silent drift in any of these invalidates
     every downstream number, so they are asserted rather than trusted."""
-    assert scenario.population.n_merchants == 10_000
-    assert scenario.population.n_days == 180
+    assert scenario.population.n_merchants == 20_000
+    assert scenario.population.n_days == 365
+    assert scenario.population.onset_window_min_day == 30
+    assert scenario.population.onset_window_max_day == 240
     assert scenario.population.prevalence == pytest.approx(0.0147)
     assert scenario.capacity.analyst_reviews_per_day == 50
     assert scenario.capacity.per_n_merchants == 10_000
-    assert scenario.analyst_capacity == 50
+    assert scenario.analyst_capacity == 100
     assert scenario.arrivals.target_fano == pytest.approx(12.25)
+
+
+def test_the_horizon_leaves_room_for_the_label_pipeline(scenario: ScenarioConfig) -> None:
+    """`n_days` and the onset window are not pinned to constants here for their own sake.
+
+    Cycle 1 pinned 180 and that is the number that was wrong: a mean label lag of 103.5
+    days against a train split ending on day 119 left 8 trainable positive merchants
+    (LIMITATIONS.md §8.1). What is asserted instead is the property that violation had
+    and that is checkable with arithmetic before any model runs: the train boundary must
+    sit at least a mean label lag past the EARLIEST onset any typology can draw.
+    """
+    labels = scenario.labels
+    lag = labels.fraud_to_dispute_mean_days + sum(labels.dispute_delay_days) / 2.0
+    train_end = scenario.splits.train_end_day
+    earliest_onset = min(t.onset_day_min for t in scenario.typologies.values())
+    assert train_end - lag >= earliest_onset, (
+        f"train ends on day {train_end}; the mean label lag is {lag:.1f} days, so a "
+        f"merchant is trainable only if it turned by day {train_end - lag:.1f}. The "
+        f"earliest onset any typology can draw is day {earliest_onset}."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# T-0101 (GitHub #34) — the corrected-geometry guard
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _boundaries_of(scenario: ScenarioConfig) -> SplitBoundaries:
+    s = scenario.splits
+    return SplitBoundaries(
+        origin=datetime.fromisoformat(scenario.population.start_date).date(),
+        train=(0, s.train_end_day),
+        val=(s.train_end_day + 1, s.val_end_day),
+        test=(s.val_end_day + 1, s.test_end_day),
+    )
+
+
+def _test_fold_mask(n_merchants: int, shares: tuple[float, float, float]) -> np.ndarray:
+    """Which merchant indices land in the TEST fold, at T-0101's independent ratio.
+
+    Merchant ids are ``"M"`` plus a zero-padded index (``engine._merchant_id_series``) —
+    no randomness in them at all, so fold membership is identical for every seed. Uses
+    the real ``cli._merchant_fold_t0101`` rather than a re-derivation of its algorithm.
+    """
+    ids = [f"M{i:06d}" for i in range(n_merchants)]
+    return np.array([_merchant_fold_t0101(m, shares) == "test" for m in ids])
+
+
+def _labelled_positives_in_test_fold(
+    scenario: ScenarioConfig, test_mask: np.ndarray, seed: int
+) -> int:
+    """How many TEST-fold merchants have a resolved (non-censored) label==1, at ``seed``.
+
+    Deliberately does NOT run the full transaction generator — that cost is already
+    owned, once, by ``tests/perf/test_gen_budget.py`` under NFR-10. Which merchants turn
+    fraudulent, when, and whether their label resolves inside the horizon is decided
+    ENTIRELY by ``assign_typologies`` and ``emit_labels`` — real production code — and
+    neither one reads a single transaction.
+
+    Does not reproduce ``engine.generate``'s RNG stream bit-for-bit (the persona/MCC/GMV
+    draws that precede ``assign_typologies`` in the real pipeline are skipped), so this
+    is not a claim of matching the shipped dataset byte for byte — it is the narrower,
+    checkable claim the acceptance criterion asks for: at each of the five locked seeds,
+    this configuration puts at least 50 labelled positives in the test fold.
+    """
+    rng = np.random.default_rng(seed)
+    n = scenario.population.n_merchants
+    assignment = assign_typologies(rng, n, scenario.population.prevalence, scenario.typologies)
+    start = datetime.fromisoformat(scenario.population.start_date).replace(tzinfo=UTC)
+    start_ns = int(start.timestamp()) * 1_000_000_000
+    end_ns = start_ns + scenario.population.n_days * _NS_PER_DAY
+    onset_ns = np.where(
+        assignment.is_fraud,
+        start_ns + assignment.onset_day.astype(np.int64) * _NS_PER_DAY,
+        NO_TIME,
+    )
+    draw = emit_labels(
+        rng, scenario.labels, drift_onset_ns=onset_ns, sim_start_ns=start_ns, sim_end_ns=end_ns
+    )
+    return int(np.sum((draw.label == 1.0) & test_mask))
+
+
+def test_test_split_has_enough_labelled_positives_per_seed(scenario: ScenarioConfig) -> None:
+    """T-0101 (GitHub #34)'s guard: the corrected geometry — 20,000 merchants, 365 days,
+    drift onsets confined to [30, 240], an independent 60/15/25 merchant fold — must put
+    at least 50 labelled positives in the TEST split for EVERY one of the five locked
+    seeds (EVAL-LOCK-CYCLE2.json), not in expectation across seeds.
+
+    This is what makes it a guard rather than a decoration: pointed at the previous
+    (drafted) 10,000 x 360-day geometry with a day-proportional (not independent)
+    merchant fold, the same counting logic returns 16-29 labelled positives per seed,
+    RED against the >=50 floor. Verified by hand while writing this test; not left in
+    the suite as a second, permanent test.
+    """
+    shares = (
+        scenario.splits.merchant_fold_train,
+        scenario.splits.merchant_fold_val,
+        scenario.splits.merchant_fold_test,
+    )
+    test_mask = _test_fold_mask(scenario.population.n_merchants, shares)
+    assert int(test_mask.sum()) > 0, "no merchant hashed into the test fold at all"
+    for seed in CYCLE2_SEEDS:
+        n = _labelled_positives_in_test_fold(scenario, test_mask, seed)
+        assert n >= 50, (
+            f"seed {seed}: only {n} labelled positives landed in the test split "
+            f"({int(test_mask.sum())} merchants in the test fold); T-0101 requires >= 50 "
+            "per seed"
+        )
+
+
+def test_every_split_carries_at_least_one_discrete_confounder(scenario: ScenarioConfig) -> None:
+    """Amendment 2's property, re-verified for T-0101's window rather than assumed to
+    still hold after the horizon moved again (180 -> 365)."""
+    boundaries = _boundaries_of(scenario)
+    c = scenario.confounders
+    discrete_days = [
+        *c.P1_festival.days,
+        *c.P2_outage.days,
+        c.P3_fee_change.day,
+        c.P4_new_method.day,
+        c.P5_regulatory.day,
+    ]
+    covered = {split_of_day(d, boundaries) for d in discrete_days}
+    assert covered >= {"train", "val", "test"}, (
+        f"discrete confounder days {discrete_days} land in splits {covered}, missing "
+        f"{({'train', 'val', 'test'} - covered)}"
+    )
 
 
 def test_analyst_capacity_scales_with_population(scenario: ScenarioConfig) -> None:

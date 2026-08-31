@@ -25,6 +25,7 @@ import dataclasses
 import json
 import time as _time
 from datetime import UTC, datetime, time, timedelta
+from hashlib import blake2b
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,6 @@ import typer
 
 from rakshak.eval.capacity import DEFAULT_POLICY, ActionPolicy, select_actions
 from rakshak.eval.lock import (
-    LOCK_PATH,
     load_lock,
     read_open_count,
     record_open,
@@ -44,7 +44,12 @@ from rakshak.eval.lock import (
 from rakshak.eval.metrics import CostParams, PerfBudget, RungOutput, Truth, build_eval_result
 from rakshak.eval.metrics import day_labels as _day_labels
 from rakshak.eval.oracle import oracle_savings
-from rakshak.eval.splits import DEFAULT_BOUNDARIES, available_labels, label_coverage
+from rakshak.eval.splits import (
+    DEFAULT_BOUNDARIES,
+    SplitBoundaries,
+    available_labels,
+    label_coverage,
+)
 from rakshak.generator.config import ScenarioConfig, load_scenario
 from rakshak.generator.engine import generate
 from rakshak.models import dataset, rung0_floors, rung1_rules, rung2_lgbm, rung3_cohort, rung4_cost
@@ -61,6 +66,83 @@ ROOT = Path(__file__).resolve().parents[2]
 #: regenerable from seed + config; nothing here is an input to anything.
 MODEL_DIR = Path("data/v2/models")
 RESULT_DIR = Path("data/v2/eval")
+
+#: **The cycle-2 lock.** `EVAL-LOCK.json` pins `split_boundaries` to the 180-day geometry,
+#: so the T-0101-corrected 20,000 x 365-day window (docs/RE-FREEZE-2026-08-31.md
+#: Amendment 4) needs its own lock. Lock 1 stays committed, untouched, `open_count: 0`
+#: intact. `eval_module_sha256` is byte-identical across the two — verified in
+#: tests/unit/test_lock.py — because the harness did not change, only the window and the
+#: population it is pointed at.
+LOCK_PATH = Path("EVAL-LOCK-CYCLE2.json")
+
+#: Default scenario manifest. Named once; commands below default to it.
+DEFAULT_CONFIG = Path("configs/scenario_v2.yaml")
+
+
+def _boundaries(config: Path, *, root: Path = ROOT) -> SplitBoundaries:
+    """The split geometry, READ from ``scenario.splits`` (T-0101, GitHub #34).
+
+    Day boundaries and the merchant fold are independent facts about this geometry: day
+    spans are 65.75% / 16.44% / 17.81% of the 365-day horizon, the merchant fold is the
+    declared 60% / 15% / 25%. Both are named fields on ``ScenarioConfig.splits``
+    (``generator/config.py::SplitsConfig``). ``eval/splits.py`` is NOT edited:
+    ``SplitBoundaries`` is used only through its existing constructor (arbitrary day
+    tuples were always legal), and the merchant fold is assigned by
+    ``_merchant_fold_t0101`` below — a sibling function, not an edit to
+    ``eval.splits.merchant_fold``.
+
+    Cross-checked against the lock on every call, so a scenario file edited after the
+    freeze cannot quietly move the scored days.
+    """
+    scenario = load_scenario(config)
+    s = scenario.splits
+    boundaries = SplitBoundaries(
+        origin=DEFAULT_BOUNDARIES.origin,
+        train=(0, s.train_end_day),
+        val=(s.train_end_day + 1, s.val_end_day),
+        test=(s.val_end_day + 1, s.test_end_day),
+    )
+    locked = load_lock(root, lock_path=root / LOCK_PATH)["split_boundaries"]
+    derived = {"train": list(boundaries.train), "val": list(boundaries.val),
+               "test": list(boundaries.test)}
+    if derived != locked:
+        raise typer.BadParameter(
+            f"{config} implies split boundaries {derived}, but {LOCK_PATH} froze {locked}. "
+            "The window and the splitter are the same fact stated twice and they disagree; "
+            "results scored across that gap are not comparable to anything."
+        )
+    return boundaries
+
+
+#: T-0101 (GitHub #34): the merchant fold, INDEPENDENT of the day-span proportions
+#: ``eval.splits.merchant_fold()`` derives its shares from. A NEW, own-salted function —
+#: a sibling of the locked one, not an edit to it, so ``eval_module_sha256`` stays
+#: byte-identical.
+_T0101_FOLD_SALT = b"rakshak-t0101-merchant-fold"
+
+
+def _merchant_fold_t0101(merchant_id: str, shares: tuple[float, float, float]) -> Split:
+    """Deterministic merchant -> fold at the declared (train, val, test) shares.
+
+    Identical algorithm to ``eval.splits.merchant_fold()`` — hash the id to a stable
+    uniform variate, walk the cumulative shares — with a different salt and a
+    caller-supplied ratio, because the day-span ratio and the merchant-fold ratio are
+    independent facts about this geometry.
+    """
+    digest = blake2b(merchant_id.encode(), key=_T0101_FOLD_SALT, digest_size=8).digest()
+    u = int.from_bytes(digest, "big") / 2**64
+    cumulative = 0.0
+    names: tuple[Split, ...] = ("train", "val", "test")
+    for name, share in zip(names, shares, strict=True):
+        cumulative += share
+        if u < cumulative:
+            return name
+    return "test"
+
+
+def _fold_shares(config: Path) -> tuple[float, float, float]:
+    s = load_scenario(config).splits
+    return (s.merchant_fold_train, s.merchant_fold_val, s.merchant_fold_test)
 
 
 @app.callback()
@@ -169,11 +251,14 @@ def _guard(split: Split, *, root: Path = ROOT) -> list[str]:
     a recorded hash that no longer matches is provenance the reader is entitled to see.
     """
     require_unlocked_or_refuse(split)
-    return [f"{d.key}: recorded {d.expected[:12]}… now {d.actual[:12]}…" for d in verify_lock(root)]
+    return [
+        f"{d.key}: recorded {d.expected[:12]}… now {d.actual[:12]}…"
+        for d in verify_lock(root, lock_path=root / LOCK_PATH)
+    ]
 
 
-def _epoch_end(day: int) -> datetime:
-    return datetime.combine(DEFAULT_BOUNDARIES.origin + timedelta(days=day), time.max, tzinfo=UTC)
+def _epoch_end(day: int, boundaries: SplitBoundaries) -> datetime:
+    return datetime.combine(boundaries.origin + timedelta(days=day), time.max, tzinfo=UTC)
 
 
 #: An as_of past every ``label_available_at`` the generator can emit. Used for **one**
@@ -193,7 +278,9 @@ def _label_path(root: Path) -> Path:
     return root / DEFAULT_LABEL_PATH.name
 
 
-def _observed_volume(root: Path, merchants: list[str], cutoff_day: int) -> np.ndarray:
+def _observed_volume(
+    root: Path, merchants: list[str], cutoff_day: int, boundaries: SplitBoundaries
+) -> np.ndarray:
     """Captured, non-refunded GMV per merchant up to ``cutoff_day``. The volume the
     ``volume_rank`` floor ranks on, and ``Truth.volume``.
 
@@ -203,7 +290,7 @@ def _observed_volume(root: Path, merchants: list[str], cutoff_day: int) -> np.nd
     frame = (
         pl.scan_parquet(root / "transactions.parquet")
         .filter(
-            (pl.col("event_date") <= _epoch_end(max(cutoff_day, 0)).date())
+            (pl.col("event_date") <= _epoch_end(max(cutoff_day, 0), boundaries).date())
             & (pl.col("status") == "captured")
             & ~pl.col("is_refund")
         )
@@ -215,7 +302,9 @@ def _observed_volume(root: Path, merchants: list[str], cutoff_day: int) -> np.nd
     return np.array([float(lookup.get(m, 0.0)) for m in merchants], dtype=np.float64)
 
 
-def _build_truth(root: Path, merchants: list[str], cutoff_day: int) -> Truth:
+def _build_truth(
+    root: Path, merchants: list[str], cutoff_day: int, boundaries: SplitBoundaries
+) -> Truth:
     """One row per scored merchant, from the generator's truth table.
 
     Assembled here rather than under ``models/`` because it names quarantined fields, and
@@ -241,7 +330,7 @@ def _build_truth(root: Path, merchants: list[str], cutoff_day: int) -> Truth:
         .to_list()
     )
 
-    origin = DEFAULT_BOUNDARIES.origin
+    origin = boundaries.origin
     onset = np.array(
         [
             (by_id[m]["drift_onset_at"].date() - origin).days
@@ -265,7 +354,7 @@ def _build_truth(root: Path, merchants: list[str], cutoff_day: int) -> Truth:
     # days from onset to the end of the horizon makes the loss summed over any window the
     # loss actually accrued in that window, which is what the cost matrix is charging for.
     # Made here rather than in eval/, which is frozen and correct as written.
-    horizon = float(DEFAULT_BOUNDARIES.n_days)
+    horizon = float(boundaries.n_days)
     accrual_days = np.maximum(horizon - np.nan_to_num(onset, nan=horizon - 1.0), 1.0)
     return Truth(
         merchant_id=np.array(merchants, dtype=object),
@@ -277,7 +366,7 @@ def _build_truth(root: Path, merchants: list[str], cutoff_day: int) -> Truth:
         / accrual_days,
         onset_day=onset,
         typology=typology,
-        volume=_observed_volume(root, merchants, cutoff_day),
+        volume=_observed_volume(root, merchants, cutoff_day, boundaries),
     )
 
 
@@ -322,7 +411,7 @@ def _capacity(n_merchants: int, root: Path = ROOT) -> int:
     and holding K at 50 over a sixth of the merchants would hand that split six times the
     analyst budget the system is claimed to run under.
     """
-    lock = load_lock(root)
+    lock = load_lock(root, lock_path=root / LOCK_PATH)
     per = int(lock["capacity_per_n_merchants"])
     return max(1, round(int(lock["capacity_k"]) * n_merchants / per))
 
@@ -379,13 +468,25 @@ def features(
     out: Path = typer.Option(  # noqa: B008
         dataset.DEFAULT_PANEL, "--out", "-o", help="Panel destination."
     ),
+    config: Path = typer.Option(  # noqa: B008
+        DEFAULT_CONFIG, "--config", "-c", help="Scenario manifest. The split geometry is "
+        "derived from it, so the panel is labelled with the same boundaries eval scores on."
+    ),
     last_day: int | None = typer.Option(
         None, "--last-day", help="Final epoch to materialise. Defaults to the last "
         "VALIDATION day; the test split cannot be materialised from here at all."
     ),
 ) -> None:
     """Materialise the (merchant-day x feature) panel every rung trains and scores on."""
-    summary = dataset.materialise(root, out, last_day=last_day, echo=typer.echo)
+    shares = _fold_shares(config)
+    summary = dataset.materialise(
+        root,
+        out,
+        boundaries=_boundaries(config),
+        fold_fn=lambda m: _merchant_fold_t0101(m, shares),
+        last_day=last_day,
+        echo=typer.echo,
+    )
     summary["seed"] = seed
     (out.parent / "features_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
@@ -420,7 +521,8 @@ def train(
     rows = full.select("train")
     columns = _columns_for(rung)
     x = rows.with_columns(columns).x
-    as_of = _epoch_end(DEFAULT_BOUNDARIES.train[1])
+    boundaries = _boundaries(config)
+    as_of = _epoch_end(boundaries.train[1], boundaries)
     y = _training_labels(root, rows.merchant_id, as_of)
     coverage = label_coverage(as_of, _label_path(root))
 
@@ -455,7 +557,7 @@ def train(
     summary = {
         "rung": rung,
         "seed": seed,
-        "train_as_of_day": DEFAULT_BOUNDARIES.train[1],
+        "train_as_of_day": boundaries.train[1],
         "columns": list(columns),
         "n_columns": len(columns),
         "n_train_rows": model.n_train_rows,
@@ -528,8 +630,9 @@ def score_split(
         raise typer.BadParameter(f"the panel holds no {split!r} rows")
 
     merchants = sorted(set(rows.merchant_id.tolist()))
-    span = getattr(DEFAULT_BOUNDARIES, split)
-    truth = _build_truth(root, merchants, cutoff_day=span[0] - 1)
+    boundaries = _boundaries(config)
+    span = getattr(boundaries, split)
+    truth = _build_truth(root, merchants, cutoff_day=span[0] - 1, boundaries=boundaries)
     k = _capacity(len(merchants))
     exposure = rows.column("p_declared_monthly_gmv")
 
@@ -599,16 +702,16 @@ def score_split(
             model_size_mb=model_size_mb,
         ),
         oracle_savings=ceiling,
-        eval_lock_sha=load_lock(ROOT)["eval_module_sha256"],
-        open_count=read_open_count(ROOT),
-        git_sha=str(load_lock(ROOT)["frozen_at_git_sha"]),
+        eval_lock_sha=load_lock(ROOT, lock_path=ROOT / LOCK_PATH)["eval_module_sha256"],
+        open_count=read_open_count(ROOT, lock_path=ROOT / LOCK_PATH),
+        git_sha=str(load_lock(ROOT, lock_path=ROOT / LOCK_PATH)["frozen_at_git_sha"]),
     )
 
     if split == "test":
-        record_open(ROOT, [rung])
+        record_open(ROOT, [rung], lock_path=ROOT / LOCK_PATH)
         typer.echo(
             f"opened the test split. {LOCK_PATH} open_count is now "
-            f"{read_open_count(ROOT)} — COMMIT IT."
+            f"{read_open_count(ROOT, lock_path=ROOT / LOCK_PATH)} — COMMIT IT."
         )
 
     payload: dict[str, Any] = dataclasses.asdict(result)
@@ -622,9 +725,22 @@ def score_split(
         "n_rows_scored": int(rows.x.shape[0]),
         "n_rows_kept": int(keep.sum()),
         "n_censored_dropped": int((~keep).sum()),
+        # T-0101 (GitHub #34): both denominators, on every row, at MERCHANT grain (the
+        # two above are row/merchant-day grain). `truth` is one row per merchant scored
+        # in this split; `is_censored` is exactly the set whose label had not resolved
+        # by the cutoff this Truth was built at (`_build_truth` above). Landed here as
+        # sidecar diagnostics rather than as new `EvalResult` fields, so `schemas.py`
+        # stays untouched (docs/RE-FREEZE-2026-08-31.md Amendment 4).
+        "n_labelled_merchants": int((~truth.is_censored).sum()),
+        "n_censored_merchants": int(truth.is_censored.sum()),
         "oracle_savings": ceiling,
         "beats_all_floors": result.beats_all_floors,
         "n_features": len(rows.columns) if rung in (0, 1) else len(_columns_for(rung)),
+        "split_boundaries": {
+            "train": list(boundaries.train),
+            "val": list(boundaries.val),
+            "test": list(boundaries.test),
+        },
     }
     results = panel.parent / RESULT_DIR.name
     results.mkdir(parents=True, exist_ok=True)
