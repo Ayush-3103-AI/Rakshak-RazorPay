@@ -15,13 +15,11 @@ results artifact — both out of T-0020's scope, so it was raised rather than pa
 stale claim also sits in `docs/adr/README.md:39-40` and `11-tickets/BOARD.md:415`. **Tracked as issue
 #31.** Regenerating must be diffed to confirm the change is prose-only and no number moved.
 
-**2. `src/rakshak/explain/` is an empty package** — a 29-byte `__init__.py`, no `reasons.py`. The
-Viterbi decode exists in `models/hmm.py`, but FR-014's merchant-facing reason string — which
-`CLAUDE.md` calls the centrepiece and the only answer to the audience's Question 3 — has never had its
-own ticket. It is bundled into **T-0013, alongside the entire README, on the last build day**, and
-T-0014 (which also cites FR-014 and `results/reasons.json`) is scheduled *after* the freeze. Found
-independently by T-0018 while writing the architecture doc, which records it as a dated gap in §3.
-**If T-0013 is thinned under time pressure, the thing that gets thinned is the differentiator.**
+**2. ~~`src/rakshak/explain/` is an empty package~~ — closed 2026-08-31.** `src/rakshak/explain/reasons.py`
+and `src/rakshak/eval/typology.py` are built and committed (commits `e66cec2`, `caaeba7`), with
+`results/reasons.json` and `results/typology_recall.md` as the machine-readable artifacts T-0014's
+dashboard reads directly. T-0013's remaining piece is the README prose itself (K2's FAIL verdict,
+the synthetic-data disclosure, the scope/safety section) — in progress.
 
 **Also from T-0023, for the video and the README:** the closest deployed system in the published
 record (arXiv:2607.17586, a production money-mule detector, LightGBM + 280 features + TreeSHAP + LLM
