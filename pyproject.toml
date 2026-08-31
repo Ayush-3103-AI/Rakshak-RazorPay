@@ -6,7 +6,15 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
     "numpy>=1.26",
-    "pandas>=2.2",
+    # T-0021: unpinned upper bound let a clean checkout install pandas 3.x, whose
+    # `future.infer_string` default silently upcasts object-dtype string columns
+    # (merchant_id, payer_id, mcc, method — see generator/generate.py) to the new
+    # StringDtype. Same values, different dtype metadata: it broke
+    # test_transaction_schema and is exactly the kind of environment drift that
+    # would put the "results/ are byte-identical at seed 42" claim at risk without
+    # ever changing a number anyone would notice. Pin to the major version this
+    # was built and the committed results/ were generated against.
+    "pandas>=2.2,<3",
     "pyarrow>=15",
     "scipy>=1.11",
     "lightgbm>=4.3",
