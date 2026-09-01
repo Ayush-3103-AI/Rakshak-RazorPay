@@ -49,10 +49,18 @@ turned one reading of the code into a finding two methods agree on.
 
 **The measurement, once the hypothesis was named, took four minutes.** Against realised
 loss over 294 fraud merchants: `declared_monthly_gmv` ρ = **0.533**, observed GMV ρ =
-**0.929**. At K = 15, exposure *alone* captures 20.5% of total fraud loss when declared and
-37.8% when observed, against an oracle's 46.2%. `volume_rank` was never a dumb floor beating
-clever models — it is a ρ = 0.93 exposure estimator beating models whose excellent `p` was
-multiplied by a ρ = 0.53 one.
+**0.935**. At K = 15, exposure *alone* captures 20.5% of total fraud loss when declared and
+**42.7%** when observed, against an oracle's 46.2%. `volume_rank` was never a dumb floor
+beating clever models — it is a ρ = 0.94 exposure estimator beating models whose excellent
+`p` was multiplied by a ρ = 0.53 one.
+
+**And the first version of those numbers was wrong, which is why the script exists.**
+Writing `scripts/exposure_diagnostic.py` so a reader could regenerate them caught that the
+original measurement filtered `status == "captured"` but did not exclude refunds, while
+`cli._observed_volume` — the quantity `volume_rank` is actually handed — excludes both. The
+observed column was understated (ρ 0.929, 37.83% at K = 15). Both corrections make the gap
+*wider*. The lesson is not "check your filters": it is that a number nobody can regenerate
+is a number nobody can correct, and this one was in a graded artefact for three commits.
 
 **4. The fix needed no new feature.** `v_declared_ratio` is defined as
 `trailing-30d GMV ÷ declared_monthly_gmv`, so `v_declared_ratio × declared_monthly_gmv` *is*
@@ -78,6 +86,22 @@ generated data gives **7**, for a standard error near **19 pp** rather than the 
 declared. Inside the range, so the pre-registration stands — but the latency comparison is
 even less powered than it was declared to be, and every TTD number must carry that
 denominator.
+
+**7. The rescore's binding constraint is a dtype, not the models.**
+`dataset.load_panel` ends with `.to_numpy().astype(np.float64)`, so every process that
+touches the panel materialises **6,146,940 × 49 × 8 bytes = 2.24 GiB** before it selects a
+split or a column subset. Three concurrent jobs is therefore ~7 GiB of panel alone on a
+16 GB machine, and a fourth process attempting the same load raised
+`numpy._core._exceptions._ArrayMemoryError` outright. The cube this panel was *written*
+from is `float32` (`dataset.build_panel`: "float32 halves the peak and is what LightGBM bins
+to anyway"), so the widening on read is pure cost — it doubles the footprint to reach a
+precision the writer deliberately declined and the consumer discards at binning time.
+
+Not changed during cycle 4, and the reason is not caution about the edit. Narrowing the read
+to `float32` would shift the low-order bits of every feature, so models trained before the
+change and models trained after it would not be comparable — and a ladder with
+mixed-provenance rows is the thing this cycle exists to avoid. It is a one-line change for a
+cycle that begins with a clean rescore, and it belongs in the next one.
 
 ## Broke
 
