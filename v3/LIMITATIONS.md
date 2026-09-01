@@ -375,6 +375,11 @@ correct summary sentence is:
 
 ## 6. G5 is green for the RAW detector too — the demo premise does not hold
 
+> **Superseded in its numbers AND its conclusion — see §6a immediately below.** The
+> raw detector is not green on the current gate: it fails at 3.5x the allowance, and
+> the residual cuts the excess by 62%. Verified under a controlled comparison that
+> reproduces the live gate exactly. Read §6a before citing anything here.
+
 The narrative the project was built around is that a platform-wide confounder makes raw
 z-scores spike while cohort residuals stay flat. **Measured on the real generator at
 prevalence = 0, that is not what happens.**
@@ -400,6 +405,76 @@ detector still does not fail there, then charter K-1 has fired on its own terms 
 figure to publish is the falsification**: the cohort-residual layer would be a solution to a
 problem this generator does not create. That would be a real finding and it must not be
 softened into "the residual was slightly better".
+
+---
+
+## 6a. CORRECTION — §6's numbers do not reproduce, and its conclusion inverts
+
+§6 is preserved above unedited. It is one of this project's most prominent
+self-criticisms — it says the premise the whole system was built on does not hold — and it
+is cited by `STATE.md`'s risk register and by §8.2's reasoning about charter K-1. **It does
+not reproduce on the current gate.**
+
+Run today, at `GATE_MERCHANTS = 1,200`, `prevalence = 0`, seed 20260832:
+
+| detector | §6 records | measured now | allowance |
+|---|---|---|---|
+| raw z-score | +1.27pp, **GREEN** | **+7.07pp, RED** | +2pp |
+| cohort residual | +0.72pp, GREEN | **+2.70pp, RED** | +2pp |
+| residual's advantage | +0.55pp | **+4.37pp** | — |
+
+**The measurement is controlled and the control is the point.**
+`scripts/g5_cycle_comparison.py` runs the identical statistic — the gate's own
+`trailing_z`, `cohort_residual`, `calibrate` and `alert_rate`, not a reimplementation — over
+the cycle-3 config and the cycle-4 config at the same seed and the same population. The two
+columns come out **bit-identical**:
+
+```
+  detector                 cycle 3     cycle 4
+  raw                       +7.07pp     +7.07pp
+  cohort-residual           +2.70pp     +2.70pp
+```
+
+Two things follow, and the second is the important one.
+
+**1. The cycle-4 regeneration had nothing to do with it.** G5 runs at `prevalence = 0`, so
+no typology is assigned and the onset-window change cannot act. The identity above confirms
+that rather than assuming it, which is why `docs/gates/GATES-CYCLE4.md` declined to call the
+shift a finding when it was first seen. That caution was correct and the observation it
+recorded is now retired: there is no cycle-3 → cycle-4 effect here.
+
+**2. So the difference is between §6 and the gate as it stands, not between two cycles.**
+The script's cycle-4 column reproduces the live gate run in `docs/gates/GATES-CYCLE4.md`
+exactly (+7.07pp / +2.70pp), which is what makes the cycle-3 column trustworthy: the same
+code that agrees with the real gate on one config is what produced the other.
+
+**What is NOT claimed here.** §6 is not asserted to have been wrong when it was written. Its
+numbers carry no population size, and the scenario geometry moved underneath it afterwards
+— T-0101 took the horizon from 180 to 365 days and rescaled every confounder window with it
+(P1's festival days became `[93, 308]`), and the confounder magnitudes became sigma-valued.
+Any of those changes the answer. **The claim is narrower and checkable: §6's numbers are not
+reproducible with today's gate and today's config, and a reader who follows §6's citation
+today will not find them.**
+
+**What this does to §6's conclusion.** §6 argues: *"the raw detector did not fail, so the
+confounder does not demonstrate the failure the residual is supposed to repair"*, and asks
+whether the honest figure to publish is a falsification of the project's premise. On the
+current measurement the raw detector **does** fail — at 3.5× the allowance — and the
+residual cuts the worst-window excess by **62%**. That is evidence *for* the cohort-residual
+premise, not against it, and it is the opposite of what §6 concludes.
+
+**Both detectors are still RED, and that is not softened here.** The residual is better; it
+is not good enough. A +2.70pp excess against a 0.5% nominal rate is still more than five
+times the alert budget on a confounder window in a population with **no fraud in it at
+all** — every one of those alerts is a false positive by construction. §6's explanation (1)
+stands unchanged and is worth repeating: a single-feature z-threshold is a weak stand-in for
+a trained rung, and the question that actually matters is whether Rung 2 or Rung 3 alerts on
+confounders. That is still not answered.
+
+**Reproduce:**
+`uv run python scripts/g5_cycle_comparison.py --cycle3-config <cycle-3 scenario_v2.yaml>`,
+where the cycle-3 config comes out of the tag rather than being reconstructed:
+`git show cycle3-ladder-immutable:v3/configs/scenario_v2.yaml`.
 
 ---
 
