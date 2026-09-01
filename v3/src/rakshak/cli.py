@@ -39,6 +39,7 @@ from rakshak.eval.lock import (
     read_open_count,
     record_open,
     require_unlocked_or_refuse,
+    resolve_authoritative,
     verify_lock,
 )
 from rakshak.eval.metrics import CostParams, PerfBudget, RungOutput, Truth, build_eval_result
@@ -73,7 +74,20 @@ RESULT_DIR = Path("data/v2/eval")
 #: intact. `eval_module_sha256` is byte-identical across the two — verified in
 #: tests/unit/test_lock.py — because the harness did not change, only the window and the
 #: population it is pointed at.
-LOCK_PATH = Path("EVAL-LOCK-CYCLE2.json")
+def _lock_path(root: Path = ROOT) -> Path:
+    """The lock that governs right now, resolved from the supersession chain.
+
+    This was a module constant pinned to a filename — first ``EVAL-LOCK.json``, then
+    ``EVAL-LOCK-CYCLE2.json`` when cycle 2 superseded it. Both edits were correct on the
+    day and both went stale on the next freeze, silently: a pinned name keeps loading a
+    superseded lock and nothing complains, because a superseded lock is still a valid file.
+
+    That matters most at ``record_open`` below, which is the one-way door. Opening the test
+    split against a pinned name would increment the counter on a lock that no longer
+    governs, leaving the authoritative lock reading ``open_count: 0`` after the split had
+    been opened — the single fact this project most needs to be true.
+    """
+    return resolve_authoritative(root)
 
 #: Default scenario manifest. Named once; commands below default to it.
 DEFAULT_CONFIG = Path("configs/scenario_v2.yaml")
@@ -102,12 +116,13 @@ def _boundaries(config: Path, *, root: Path = ROOT) -> SplitBoundaries:
         val=(s.train_end_day + 1, s.val_end_day),
         test=(s.val_end_day + 1, s.test_end_day),
     )
-    locked = load_lock(root, lock_path=root / LOCK_PATH)["split_boundaries"]
+    locked = load_lock(root, lock_path=_lock_path(root))["split_boundaries"]
     derived = {"train": list(boundaries.train), "val": list(boundaries.val),
                "test": list(boundaries.test)}
     if derived != locked:
         raise typer.BadParameter(
-            f"{config} implies split boundaries {derived}, but {LOCK_PATH} froze {locked}. "
+            f"{config} implies split boundaries {derived}, but "
+            f"{_lock_path(root).name} froze {locked}. "
             "The window and the splitter are the same fact stated twice and they disagree; "
             "results scored across that gap are not comparable to anything."
         )
@@ -253,7 +268,7 @@ def _guard(split: Split, *, root: Path = ROOT) -> list[str]:
     require_unlocked_or_refuse(split)
     return [
         f"{d.key}: recorded {d.expected[:12]}… now {d.actual[:12]}…"
-        for d in verify_lock(root, lock_path=root / LOCK_PATH)
+        for d in verify_lock(root, lock_path=_lock_path(root))
     ]
 
 
@@ -411,7 +426,7 @@ def _capacity(n_merchants: int, root: Path = ROOT) -> int:
     and holding K at 50 over a sixth of the merchants would hand that split six times the
     analyst budget the system is claimed to run under.
     """
-    lock = load_lock(root, lock_path=root / LOCK_PATH)
+    lock = load_lock(root, lock_path=_lock_path(root))
     per = int(lock["capacity_per_n_merchants"])
     return max(1, round(int(lock["capacity_k"]) * n_merchants / per))
 
@@ -702,16 +717,16 @@ def score_split(
             model_size_mb=model_size_mb,
         ),
         oracle_savings=ceiling,
-        eval_lock_sha=load_lock(ROOT, lock_path=ROOT / LOCK_PATH)["eval_module_sha256"],
-        open_count=read_open_count(ROOT, lock_path=ROOT / LOCK_PATH),
-        git_sha=str(load_lock(ROOT, lock_path=ROOT / LOCK_PATH)["frozen_at_git_sha"]),
+        eval_lock_sha=load_lock(ROOT, lock_path=_lock_path(ROOT))["eval_module_sha256"],
+        open_count=read_open_count(ROOT, lock_path=_lock_path(ROOT)),
+        git_sha=str(load_lock(ROOT, lock_path=_lock_path(ROOT))["frozen_at_git_sha"]),
     )
 
     if split == "test":
-        record_open(ROOT, [rung], lock_path=ROOT / LOCK_PATH)
+        record_open(ROOT, [rung], lock_path=_lock_path(ROOT))
         typer.echo(
-            f"opened the test split. {LOCK_PATH} open_count is now "
-            f"{read_open_count(ROOT, lock_path=ROOT / LOCK_PATH)} — COMMIT IT."
+            f"opened the test split. {_lock_path(ROOT).name} open_count is now "
+            f"{read_open_count(ROOT, lock_path=_lock_path(ROOT))} — COMMIT IT."
         )
 
     payload: dict[str, Any] = dataclasses.asdict(result)

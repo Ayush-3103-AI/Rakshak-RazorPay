@@ -32,9 +32,14 @@ import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rakshak.schemas import Split
+
+if TYPE_CHECKING:
+    # Annotation only. write_lock imports the concrete default lazily inside the function,
+    # as it always has, so the module-level import graph is unchanged.
+    from rakshak.eval.splits import SplitBoundaries
 
 __all__ = [
     "ENFORCED_KEYS",
@@ -226,6 +231,7 @@ def write_lock(
     cycle: int = 1,
     supersedes: str | None = None,
     pre_registration: str | None = None,
+    boundaries: SplitBoundaries | None = None,
 ) -> dict[str, Any]:
     """Write ``EVAL-LOCK.json``. **One-way door — there is no rollback.**
 
@@ -241,7 +247,20 @@ def write_lock(
             "cycle, not an edit."
         )
 
-    from rakshak.eval.splits import DEFAULT_BOUNDARIES as b
+    # The window the lock records must be the window that is actually scored. Taking it
+    # from DEFAULT_BOUNDARIES was safe while they were the same fact, but T-0101 moved the
+    # geometry to 365 days by passing explicit day tuples and deliberately NOT editing
+    # eval/splits.py (see cli._boundaries' docstring), so the dataclass defaults are still
+    # the 180-day window: train (0,119) / val (120,149) / test (150,179). Sealing from them
+    # writes a lock whose split_boundaries contradict the pre-registration and every day the
+    # harness actually scores. Caller passes the derived boundaries; the default reproduces
+    # the old behaviour for cycles 1 and 2, which were written when the two agreed.
+    if boundaries is None:
+        from rakshak.eval.splits import DEFAULT_BOUNDARIES
+
+        b = DEFAULT_BOUNDARIES
+    else:
+        b = boundaries
 
     lock: dict[str, Any] = {
         "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
