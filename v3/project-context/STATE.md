@@ -6,8 +6,8 @@ STATUS:   live — update at the end of EVERY session
 SUMMARY:  The resume point for Rakshak v3. Read this first, every session, before anything
           else. It names the current cycle, what is running, and the exact next action.
           Nothing else should be loaded speculatively.
-OPEN:     The cycle-4 regeneration is IN FLIGHT. Two findings are banked and committed and
-          do not depend on it landing.
+OPEN:     The cycle-4 ladder rescore is IN FLIGHT. Three findings are banked and committed
+          and none of them depends on it landing.
 -->
 
 # STATE — Rakshak, cycle 4
@@ -29,16 +29,17 @@ Cycle 4 is regenerating the dataset underneath the same harness.
 | 2 | write the survey, no code during it | ✅ three surveys, `13a` / `13b` / `13c`, ran in parallel |
 | 3 | pre-register cycle 4 | ✅ `docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`, committed `2ee6972` |
 | 4 | seal the lock, recording the previous as superseded | ✅ `EVAL-LOCK-CYCLE4.json`, `open_count: 0` |
-| 5 | regenerate the dataset | ⏳ **IN FLIGHT** — 40,000 × 365, ~2.7 GB |
-| 6 | rescore the full ladder, every floor and every rung | ☐ next |
-| 7 | implement and score the new rung | ☐ Rung 8 built; Rung 9 is cuttable |
+| 5 | regenerate the dataset | ✅ 40,000 × 365, 121.9M txns, 2.7 GB; panel 6.15M rows |
+| 6 | rescore the full ladder, every floor and every rung | ⏳ **IN FLIGHT** — 80 jobs, both arms, 5 seeds |
+| 7 | implement and score the new rung | ✅ built + wired; Rung 9 is cuttable |
 | 8 | open the test split, once, only if the §5 gate is met | ☐ **not delegated** |
 
-Gate across the tree: `ruff` clean, `mypy --strict` clean (48 source files).
+Gate across the tree: `ruff` clean, `mypy --strict` clean (49 source files).
+Gates on cycle-4 data: **20 passed, 4 skipped** (BAF still not vendored).
 
 ---
 
-## The two findings. Both are committed and neither depends on the regeneration.
+## Three findings. All committed; none depends on the rescore landing.
 
 **1. Time-to-detection was never measurable** (`LIMITATIONS.md` §8.7a). `detection_rate_d7`
 / `d14` / `d30` read 0.000 for every rung *and every floor* in cycle 3 because drift onsets
@@ -54,12 +55,28 @@ ranking-quality hypothesis produces that. `capacity.py` already ranks by expecte
 it was ranking on `p_declared_monthly_gmv` — the *declared* figure, corrupted by the
 generator at σ = 0.55 — while `volume_rank` ranks on observed GMV and `true_loss` is
 `loss_fraction × post-onset realised GMV`. Against realised loss: declared ρ = **0.533**,
-observed ρ = **0.929**. At K = 15, exposure alone captures 20.5% of total loss when
-declared, 37.8% when observed, against an oracle's 46.2%.
+observed ρ = **0.935**. At K = 15, exposure alone captures 20.5% of total loss when
+declared, **42.7%** when observed, against an oracle's 46.2%. Reproduce with
+`scripts/exposure_diagnostic.py`.
 
 **Every savings verdict in §8.2–§8.5 was rendered through the weaker estimator**, including
 the cut of Rung 4. Not overturned — provisional, in a way they were not previously reported
 as being. The rescore is what settles them.
+
+**3. §6's demo-premise falsification does not reproduce** (`LIMITATIONS.md` §6a). §6 records
+the raw detector GREEN at +1.27pp and concludes the premise the system was built on does not
+hold — a claim cited by the risk register below and by §8.2's K-1 reasoning. Measured on the
+current gate: raw **+7.07pp RED**, residual **+2.70pp RED**, residual's advantage **+4.37pp**
+rather than +0.55pp. So the raw detector *does* fail and the residual cuts the excess by 62%,
+which is evidence **for** the premise, not against it.
+
+The comparison is controlled: `scripts/g5_cycle_comparison.py` runs the gate's own functions
+over both configs at the same seed and population, the two columns come out **bit-identical**,
+and its cycle-4 column reproduces the live gate exactly. That also retires the
+`docs/gates/GATES-CYCLE4.md` observation — there is no cycle-3 → cycle-4 effect in G5 at all.
+**Not claimed: that §6 was wrong when written.** Its numbers carry no population size and
+T-0101 moved the horizon 180 → 365 days underneath it. **Both detectors are still RED** and
+§6a does not soften that.
 
 ---
 
