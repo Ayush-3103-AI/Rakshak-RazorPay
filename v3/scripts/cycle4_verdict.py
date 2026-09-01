@@ -150,6 +150,39 @@ def main() -> int:
               f"={_fmt(None if k is None else MIN_ALERT_FRACTION * k, 1)} -> "
               f"{'PASS' if ok_a else 'FAIL'}")
 
+    # 3b — the comparison the gate SHOULD have made, labelled as post-hoc
+    print("")
+    print("3b. THE SAME QUESTION AGAINST THE CYCLE-4 FLOOR  ** POST-HOC, NOT A GATE **")
+    print("      The gate in §3 is anchored to 0.7017 = the CYCLE-3 volume_rank floor of")
+    print("      0.6017 plus 0.10. The regeneration moved that floor. Anchoring a gate to a")
+    print("      number the same cycle invalidates was an error in the pre-registration, and")
+    print("      it is reported as an error rather than quietly re-anchored: the gate above")
+    print("      stands as written and its verdict stands with it. What follows is the")
+    print("      comparison that gate was TRYING to make, and it is post-hoc by construction.")
+    vr_rows = data.get(("volume_rank", "declared"))
+    floor = _mean(vr_rows, "savings") if vr_rows else None
+    if bb and floor is not None:
+        label, rows = bb
+        best_b = _mean(rows, "savings")
+        per_seed = [r["savings"] for r in rows if r.get("savings") is not None]
+        n_over = sum(1 for x in per_seed if x > floor)
+        print("")
+        print(f"      cycle-4 volume_rank floor           {floor:+.4f}")
+        if best_b is not None:
+            print(f"      best arm-B rung ({label})           {best_b:+.4f}"
+                  f"   ({n_over}/{len(per_seed)} seeds above the floor)")
+            print(f"      -> {'BEATS' if best_b > floor else 'does not beat'} the floor this"
+                  f" cycle actually measured, by {best_b - floor:+.4f}")
+        print("")
+        print("      every arm-B rung against that floor:")
+        for lbl, arm in sorted(data):
+            if arm != "realised":
+                continue
+            m = _mean(data[(lbl, arm)], "savings")
+            if m is not None:
+                print(f"        {lbl:<10}{m:+.4f}  "
+                      f"{'ABOVE' if m > floor else 'below'} floor")
+
     # 5 — were the two failures one failure?
     print("\n5. ONE FAILURE OR TWO? — does arm A close the floor-fail on its own? (§7 row 4)")
     ba, vr = best("declared"), data.get(("volume_rank", "declared"))
