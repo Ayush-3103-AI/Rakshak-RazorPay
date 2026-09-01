@@ -1,7 +1,7 @@
 {
   "artifact": "lock_state",
   "payload": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "locks": [
       {
         "authoritative": false,
@@ -88,7 +88,7 @@
         "supersedes": "EVAL-LOCK.json"
       },
       {
-        "authoritative": true,
+        "authoritative": false,
         "capacity_k": 50,
         "created_at": "2026-09-01T08:34:19.512691Z",
         "cycle": 3,
@@ -126,17 +126,59 @@
             299
           ]
         },
-        "superseded_by": null,
+        "superseded_by": "EVAL-LOCK-CYCLE4.json",
         "supersedes": "EVAL-LOCK-CYCLE2.json"
+      },
+      {
+        "authoritative": true,
+        "capacity_k": 50,
+        "created_at": "2026-09-01T18:31:08.242473Z",
+        "cycle": 4,
+        "enforced": [
+          "eval_module_sha256"
+        ],
+        "file": "EVAL-LOCK-CYCLE4.json",
+        "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
+        "hashes": {
+          "eval_module_sha256": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
+          "generator_module_sha256": "e750edbf3b30cf837c100a9b993bd4bf071a3014df67af881e1a694452aba36a",
+          "scenario_config_sha256": "683c435c13af18a39078b79e448f7da08f299d719b14aa4ea934b1636379b61a"
+        },
+        "open_count": 0,
+        "open_log": [],
+        "pre_registration": "docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md",
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "split_boundaries": {
+          "test": [
+            300,
+            364
+          ],
+          "train": [
+            0,
+            239
+          ],
+          "val": [
+            240,
+            299
+          ]
+        },
+        "superseded_by": null,
+        "supersedes": "EVAL-LOCK-CYCLE3.json"
       }
     ],
-    "n_locks": 3,
+    "n_locks": 4,
     "test_split_opened": false
   },
   "provenance": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
-    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
     "inputs": [
       {
         "path": "EVAL-LOCK-CYCLE2.json",
@@ -145,6 +187,10 @@
       {
         "path": "EVAL-LOCK-CYCLE3.json",
         "sha256": "6f04fa6ce7c323ebe4639c7416aaea0bf15defa5ecd7e4e867c5ad94c6490b75"
+      },
+      {
+        "path": "EVAL-LOCK-CYCLE4.json",
+        "sha256": "0cc39f5c9d78cc29f192face50db5b51673d9bc155b2a467d130481e5b1ad741"
       },
       {
         "path": "EVAL-LOCK.json",

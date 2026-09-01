@@ -1,0 +1,77 @@
+================================================================================================
+CYCLE-4 LADDER — validation, mean over seeds, both exposure arms
+================================================================================================
+policy                arm         n         pr_auc            ece        savings  precision_at_    recall_at_k  alerts_per_da  alert_jaccard  detection_rat  ttd_median_da
+all_pass              declared    5         0.0107         0.0107         0.0000              —         0.0000         0.0000              —         0.0000            inf
+random_at_k           declared    5         0.0108         0.4895         0.0024         0.0120         0.0056        30.0000         0.0165         0.0154            inf
+rung1                 declared    5         0.2984         0.0202         0.3587         0.1656         0.0771        30.0000         0.2097         0.0462            inf
+rung1                 realised    5         0.2984         0.0202         0.5224         0.4094         0.1907        30.0000         0.2132         0.0462            inf
+rung2                 declared    5         0.7303         0.0075         0.4276         0.7520         0.3502        30.0000         0.4198         0.0862       152.5000
+rung2                 realised    5         0.7303         0.0075         0.5386         0.8904         0.4147        30.0000         0.3421         0.0769       147.3000
+rung3                 declared    5         0.7385         0.0074         0.4522         0.7819         0.3641        30.0000         0.3728         0.0708       146.6000
+rung3                 realised    5         0.7385         0.0074         0.4955         0.8864         0.4128        30.0000         0.3140         0.0738       143.9000
+rung4                 declared    5         0.7693         0.0387         0.4883         0.3582         0.1668        30.0000         0.3644         0.0585            inf
+rung4                 realised    5         0.7693         0.0387         0.5981         0.5444         0.2536        30.0000         0.3760         0.0462            inf
+rung9                 declared    5         0.7455         0.0061         0.4580         0.8518         0.3967        30.0000         0.3490         0.0831       136.7000
+rung9                 realised    5         0.7455         0.0061         0.4919         0.9132         0.4253        30.0000         0.2783         0.0615       151.0000
+volume_rank           declared    5         0.1428         0.4893         0.5240         0.2667         0.1242        30.0000         1.0000         0.0000            inf
+
+================================================================================================
+THE PRE-REGISTERED QUESTIONS
+================================================================================================
+
+1. GEOMETRY — did detection_rate_d30 become measurable?
+   YES: 11 of 13 policies score non-zero d30 (cycle 3: 0 of 7).
+      rung2 [declared]  d30=0.0862
+      rung9 [declared]  d30=0.0831
+      rung2 [realised]  d30=0.0769
+      rung3 [realised]  d30=0.0738
+      rung3 [declared]  d30=0.0708
+
+2. EXPOSURE — does arm B raise savings? (§7 row 3; falsifies §8.3a if not)
+      rung1              declared=+0.3587  realised=+0.5224  delta=+0.1636  UP
+      rung2              declared=+0.4276  realised=+0.5386  delta=+0.1110  UP
+      rung3              declared=+0.4522  realised=+0.4955  delta=+0.0433  UP
+      rung4              declared=+0.4883  realised=+0.5981  delta=+0.1098  UP
+      rung9              declared=+0.4580  realised=+0.4919  delta=+0.0339  UP
+   5 of 5 rungs improve under realised exposure.
+
+3. FLOOR-FAIL — best rung under arm B vs the gate 0.7017
+      rung4: mean=0.5981, per-seed=[0.5862, 0.5927, 0.5927, 0.6211, 0.5976]
+      0/5 seeds >= 0.7017 (need 4) -> FAIL
+
+4. ANTI-DEGENERACY — is the win a re-derived watchlist?
+      alert_jaccard_wow=0.3760 < 0.95 -> PASS
+      alerts_per_day=30.0 >= 0.9*K=27.0 -> PASS
+
+3b. THE SAME QUESTION AGAINST THE CYCLE-4 FLOOR  ** POST-HOC, NOT A GATE **
+      The gate in §3 is anchored to 0.7017 = the CYCLE-3 volume_rank floor of
+      0.6017 plus 0.10. The regeneration moved that floor. Anchoring a gate to a
+      number the same cycle invalidates was an error in the pre-registration, and
+      it is reported as an error rather than quietly re-anchored: the gate above
+      stands as written and its verdict stands with it. What follows is the
+      comparison that gate was TRYING to make, and it is post-hoc by construction.
+
+      cycle-4 volume_rank floor           +0.5240
+      best arm-B rung (rung4)           +0.5981   (5/5 seeds above the floor)
+      -> BEATS the floor this cycle actually measured, by +0.0740
+
+      every arm-B rung against that floor:
+        rung1     +0.5224  below floor
+        rung2     +0.5386  ABOVE floor
+        rung3     +0.4955  below floor
+        rung4     +0.5981  ABOVE floor
+        rung9     +0.4919  below floor
+
+5. ONE FAILURE OR TWO? — does arm A close the floor-fail on its own? (§7 row 4)
+      best rung arm A = 0.4883 (rung4);  volume_rank cycle 4 = 0.5240;  cycle 3 = 0.6017
+      -> arm A still loses to the floor, so in-window onsets alone do not close it. The two failures are not the same failure.
+
+6. TEST SPLIT — the four §5 conditions
+      1. best arm-B rung savings >= 0.7017 at >= 4/5 seeds              FAIL
+      2. both anti-degeneracy conditions hold                           PASS
+      3. detection_rate_d30 non-zero for at least one policy            PASS
+      4. lock verifies and eval_module_sha256 unchanged                 UNCHECKED (verify_lock)
+
+   The split opens ONLY if all four pass. Otherwise it stays shut and the
+   report says which condition failed. Conditionality is disclosed either way.

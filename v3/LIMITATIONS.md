@@ -889,3 +889,169 @@ numbers should be expected to differ from these by more than seed noise.
 
 Rung 2 trains in **7.6 s** on 4 cores (NFR-06 budget 20 min) and the artifact is **0.489 MB**
 (NFR-05 budget 20 MB). Compute was never the constraint. Labels were.
+
+---
+
+## 9. Cycle 4 — what the regeneration and the exposure correction actually measured
+
+Validation split, 40,000 merchants, K = 30, **five seeds on every row**, both exposure arms
+over the whole ladder, 65 scored rows, no failures. `eval_module_sha256` is `c009e38d…` —
+byte-identical to cycle 3 — so the harness that scored the failing ladder scored this one.
+
+| policy | arm | PR-AUC | ECE | savings | P@K | R@K | d30 | Jaccard |
+|---|---|---|---|---|---|---|---|---|
+| `all_pass` | — | 0.0107 | 0.0107 | 0.0000 | — | 0.0000 | 0.0000 | — |
+| `random_at_k` | — | 0.0108 | 0.4895 | 0.0024 | 0.0120 | 0.0056 | 0.0154 | 0.0165 |
+| `volume_rank` | — | 0.1428 | 0.4893 | **0.5240** | 0.2667 | 0.1242 | **0.0000** | **1.0000** |
+| Rung 1 rules | A | 0.2984 | 0.0202 | 0.3587 | 0.1656 | 0.0771 | 0.0462 | 0.2097 |
+| Rung 1 rules | B | 0.2984 | 0.0202 | 0.5224 | 0.4094 | 0.1907 | 0.0462 | 0.2132 |
+| Rung 2 LGBM | A | 0.7303 | 0.0075 | 0.4276 | 0.7520 | 0.3502 | **0.0862** | 0.4198 |
+| Rung 2 LGBM | B | 0.7303 | 0.0075 | 0.5386 | 0.8904 | 0.4147 | 0.0769 | 0.3421 |
+| Rung 3 cohort | A | 0.7385 | 0.0074 | 0.4522 | 0.7819 | 0.3641 | 0.0708 | 0.3728 |
+| Rung 3 cohort | B | 0.7385 | 0.0074 | 0.4955 | 0.8864 | 0.4128 | 0.0738 | 0.3140 |
+| Rung 4 cost | A | 0.7693 | 0.0387 | 0.4883 | 0.3582 | 0.1668 | 0.0585 | 0.3644 |
+| Rung 4 cost | B | 0.7693 | 0.0387 | **0.5981** | 0.5444 | 0.2536 | 0.0462 | 0.3760 |
+| Rung 9 CUSUM | A | 0.7455 | **0.0061** | 0.4580 | 0.8518 | 0.3967 | 0.0831 | 0.3490 |
+| Rung 9 CUSUM | B | 0.7455 | **0.0061** | 0.4919 | **0.9132** | 0.4253 | 0.0615 | 0.2783 |
+
+Arm A is cycle 3's wiring (`exposure_inr = p_declared_monthly_gmv`), asserted byte-identical
+to the unwrapped selector. Arm B swaps in trailing-30d realised GMV and changes nothing
+else — **PR-AUC and ECE are identical to four decimals across the arms, on every rung**,
+because the wrapper never touches a score.
+
+### 9.1 The metric fires. That is the cycle's first result and it is unambiguous.
+
+`detection_rate_d30` is non-zero for **11 of 13 policies**, against **0 of 7** in cycle 3, and
+it *discriminates*: `random_at_k` 0.0154, Rung 1 0.0462, Rung 2 0.0862. Cycle 3 gave every
+policy the same number because the number was a property of the calendar (§8.7a).
+
+**`volume_rank` scores 0.0000 and that is the metric working, not failing.** A ranking that
+alerts on the same K merchants every day — week-over-week alert Jaccard exactly **1.000** —
+cannot catch a merchant that starts drifting after the window opens. It is structurally
+incapable of the thing TTD measures, and cycle 4 is the first time the ladder could say so.
+
+### 9.2 The exposure correction: 5 of 5 rungs improve. §8.3a is not falsified.
+
+| rung | arm A | arm B | Δ |
+|---|---|---|---|
+| Rung 1 | +0.3587 | +0.5224 | **+0.1636** |
+| Rung 2 | +0.4276 | +0.5386 | **+0.1110** |
+| Rung 3 | +0.4522 | +0.4955 | +0.0433 |
+| Rung 4 | +0.4883 | +0.5981 | **+0.1098** |
+| Rung 9 | +0.4580 | +0.4919 | +0.0339 |
+
+The pre-registered falsifier — *"if arm B does not raise savings, §8.3a is wrong"* — does not
+fire. Precision@K rises on every rung too (Rung 1 0.166 → 0.409; Rung 2 0.752 → 0.890),
+which is the mechanism showing itself: the decision layer ranks on `0.8·p·exposure − 250`, so
+a better exposure changes *which* merchants are selected, not merely how the rupees are
+counted afterwards.
+
+### 9.3 The floor-fail gate FAILS as written, and the test split stays shut.
+
+**Pre-registered gate (§4.2): best arm-B rung ≥ 0.7017 savings at ≥ 4 of 5 seeds. Result:
+0 of 5. FAIL.**
+
+That gate was mis-anchored by its author. 0.7017 is *the cycle-3 floor of 0.6017 plus 0.10* —
+a number this very cycle invalidated, because the regeneration moved the floor to **0.5240**.
+Anchoring a gate to a quantity the same cycle replaces is an error, it is recorded as an
+error in the pre-registration's own §8, and **it is not re-anchored**. The gate stands as
+written and its verdict stands with it.
+
+Consequently **the test split does not open.** Of the four §5 conditions, 2 and 3 pass, 4
+verifies, and **1 fails**. It has been opened zero times and remains so. A held-out number is
+not worth spending the one-way door on a gate that was not met, however sympathetic the
+reason.
+
+**Post-hoc, and labelled as such:** against the floor cycle 4 actually measured, **Rung 4
+under arm B beats `volume_rank` at 5 of 5 seeds** (+0.5981 vs +0.5240, margin +0.0740), and
+Rung 2 clears it too (+0.5386). Rungs 1, 3 and 9 do not. This is the comparison the gate was
+trying to make; it is not a pre-registered result and must never be quoted as one.
+
+### 9.4 The two failures were not one failure.
+
+Arm A on cycle-4 data — the geometry fix alone, with cycle 3's wiring — puts the best rung at
+**0.4883** against a floor of **0.5240**. It still loses. Cycle 3's best rung lost by 27%;
+this loses by 6.8%. So in-window onsets narrowed the gap substantially and did not close it;
+the exposure correction closed it. **Neither change alone suffices**, which is a cleaner
+answer than either "the stationary window explained everything" or "it explained nothing",
+and it is the answer §7 row 4 of the pre-registration asked for.
+
+### 9.5 Catching the most rupees and catching drift soonest are different objectives.
+
+This is new, and cycle 3 could not have seen it because d30 was identically zero.
+
+**Arm B raises savings on every rung and *lowers* d30 on three of five:**
+
+| rung | d30 arm A → arm B | savings arm A → arm B |
+|---|---|---|
+| Rung 2 | 0.0862 → **0.0769** | 0.4276 → 0.5386 |
+| Rung 4 | 0.0585 → **0.0462** | 0.4883 → 0.5981 |
+| Rung 9 | 0.0831 → **0.0615** | 0.4580 → 0.4919 |
+| Rung 3 | 0.0708 → 0.0738 | 0.4522 → 0.4955 |
+| Rung 1 | 0.0462 → 0.0462 | 0.3587 → 0.5224 |
+
+Exposure-weighting pulls the alert budget toward large merchants. Large merchants are where
+the rupees are; they are not especially where the *new* drift is. **The rung with the best
+savings (Rung 4, arm B) has the worst d30 of any trained rung (0.0462), and the rung with the
+best d30 (Rung 2, arm A, 0.0862) is mid-table on savings.** Charter §2 makes both equal-standing
+win conditions. On this evidence they pull against each other, and no single row on this
+ladder is best at both.
+
+### 9.6 Rung 9 is NOT ADOPTED, and for a reason that is not about its performance.
+
+§4.1 named the primary gate as a paired McNemar test on d30 discordant pairs. **The harness
+emits no per-merchant detection outcome**, so those pairs cannot be reconstructed from any
+committed artefact and the test cannot be computed. §4.1 requires the primary *and* the
+mechanism gate; a gate that cannot be evaluated has not been met. Rung 9 is not adopted and
+stays in the tree as a negative result, per §4.4. The pre-registration records this as its
+own defect — a gate specified against a quantity the output format does not contain.
+
+Its other gates, reported on their own terms: mechanism gate (median Jaccard in [0.30, 0.85])
+**passes on arm A at 0.3490** and **fails on arm B at 0.2783**, below the floor. Do-no-harm
+savings holds. **p99 scoring latency is `nan` and therefore unmeasured, not passed** — its
+cost is a per-day cross-sectional ranking and a blend fit, not a per-merchant call.
+
+**And the honest headline: the rung built to optimise detection delay does not have the best
+detection delay.** Rung 2 — plain LightGBM on windowed aggregates — beats it, 0.0862 to
+0.0831. Rung 9 does take the best precision@K on the ladder (0.9132) and the best calibration
+(ECE 0.0061), but it was not built for those.
+
+This is consistent with the weakness its own diagnostic flagged before it was ever scored: the
+Page recursion assumes mean-zero increments under the null, and a merchant's *cross-sectional
+rank* is persistent, so the accumulator ramps on **level** rather than on **change**. 11.6% of
+merchant-days sit at the cap. The method as specified ranks the incumbent score; a change
+detector needs a quantity that is mean-zero when *that merchant* is stable. It was run as
+pre-registered and **not tuned**.
+
+### 9.7 Rung 4's cut was an artefact of the exposure defect.
+
+§8.5 cut Rung 4 (cost-in-loss) as *"a clean negative"* on savings. Under the corrected
+exposure it is **the best savings rung on the ladder at 5 of 5 seeds**. §8.3a warned that
+every savings verdict in §8.2–§8.5 was rendered through the weaker estimator and was
+therefore provisional; this is that warning cashing out. The cut is not merely unsupported —
+it is reversed on the metric it was made on.
+
+Two cautions against over-reading it. Rung 4's precision@K is **0.5444**, far below Rung 2's
+0.8904, and its ECE is **0.0387**, five times worse than Rungs 2, 3 and 9. It buys rupees by
+concentrating on exposure and it is not the rung you would ship for detection quality.
+
+### 9.8 What did not improve, and what is still unmeasured
+
+- **Rung 3's cohort residual still does not earn its place on savings.** Arm B: 0.4955
+  against Rung 2's 0.5386. The residual layer adds PR-AUC (+0.008) and costs money. Charter
+  K-1's verdict from §8.2 is unchanged in direction by this cycle.
+- **The floors' pricing asymmetry stands.** Floors are scored REVIEW-only at ₹250/error;
+  rungs are scored on their own actions, which may HOLD at ₹8,250. Fixing it requires editing
+  the locked eval package. Every floor-vs-rung savings comparison above carries that caveat.
+- **Per-typology latency is structurally uncomputable for R2 and R9** — 25% of the fraud mix,
+  including the slow-ramp bust-out v1 failed on. The affine rescale preserves each typology's
+  relative position, so neither can onset in an evaluation window. Reported as absent, never
+  as zero.
+- **The latency denominator is 7 merchants** in the validation fold at seed 42, at the bottom
+  of the pre-registered 7–14 range, for a standard error near **19 pp**. Every d30 difference
+  in §9.5 is smaller than that. **The latency orderings in this section are not statistically
+  separable and must not be reported as if they were.** The savings numbers are measured over
+  the whole population and are far better powered; the two halves of this section do not carry
+  equal weight.
+- **The external anchor is still absent.** G1b/G1c/G1d/G2 SKIP because BAF is not vendored.
+  Everything above is measured against a generator, and §5 is unchanged.

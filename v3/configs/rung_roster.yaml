@@ -334,11 +334,13 @@ rungs:
   - rung: 9
     name: rank_cusum
     title: Page/CUSUM on the within-day cross-sectional rank of the incumbent score
-    # `built`, not `scored`: the module and its 12 tests are in the tree, and the cycle-4
-    # ladder rescore that will give it an EvalResult row has not finished. Flip to `scored`
-    # when data/v2/eval/rung9_*.json exists, and set `adopted` only from the 4.1 gate.
-    status: built
-    adopted: null
+    status: scored
+    # NOT adopted, and the reason is not its performance. 4.1 named the primary gate as a
+    # paired McNemar test on d30 discordant pairs; the harness emits no per-merchant
+    # detection outcome, so those pairs cannot be reconstructed from any committed artefact
+    # and the test cannot be computed. 4.1 requires the primary AND the mechanism gate, and
+    # a gate that cannot be evaluated has not been met. See PRE-REGISTRATION-CYCLE4 8.
+    adopted: false
     module: src/rakshak/models/rung9_rank_cusum.py
     ticket: cycle-4
     issue: null
@@ -354,8 +356,17 @@ rungs:
       cut order — the cycle's findings do not depend on it. INSEPARABLE was pre-declared as
       a likely and acceptable outcome, because the realised validation latency denominator
       is 7 merchants and carries a standard error near 20pp.
+    result: >-
+      Scored on cycle-4 validation, 5 seeds, both exposure arms. Best precision@K on the
+      whole ladder (0.9132, arm B) and best calibration (ECE 0.0061). But the rung built to
+      optimise detection delay does NOT have the best detection delay: Rung 2, plain LightGBM
+      on windowed aggregates, beats it 0.0862 to 0.0831 on detection_rate_d30. Mechanism gate
+      (median alert_jaccard_wow in [0.30, 0.85]) passes on arm A at 0.3490 and FAILS on arm B
+      at 0.2783. p99 scoring latency is unmeasured, not passed - its cost is a per-day
+      cross-sectional ranking and a blend fit, not a per-merchant call. LIMITATIONS.md 9.6.
     known_issue: >-
-      Its own diagnostic flags a structural weakness. The Page recursion assumes mean-zero
+      Its own diagnostic flagged this before it was scored, and the result is consistent
+      with it. The Page recursion assumes mean-zero
       increments under the null, but a merchant's cross-sectional RANK is persistent: a
       consistently high-risk merchant sits near the top of its cohort every day and the
       accumulator ramps without anything having changed. A smoke run put 15.4% of

@@ -239,13 +239,31 @@
         "title": "Hawkes/NB temporal point process with a time-rescaling KS test"
       },
       {
+        "adopted": false,
+        "citation": [
+          "docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md §4.1 (named, with its gate, before the code)",
+          "project-context/13a-survey-quickest-change-detection.md §4 (first place of three surveys)",
+          "LIMITATIONS.md §8.7a (why a latency rung was unbuildable before the geometry fix)"
+        ],
+        "issue": null,
+        "known_issue": "Its own diagnostic flagged this before it was scored, and the result is consistent with it. The Page recursion assumes mean-zero increments under the null, but a merchant's cross-sectional RANK is persistent: a consistently high-risk merchant sits near the top of its cohort every day and the accumulator ramps without anything having changed. A smoke run put 15.4% of merchant-days at the cap with alert_jaccard_wow 1.000. `accumulator_frac_at_cap` is written onto every result row so this is checkable rather than narrated. Run as pre-registered and NOT tuned.",
+        "module": "src/rakshak/models/rung9_rank_cusum.py",
+        "name": "rank_cusum",
+        "note": "The one new SCORING rung of cycle 4, and the only rung on the ladder whose objective IS detection delay rather than a classification score with latency inherited as a side effect. It could not have been evaluated before cycle 4: detection_rate_d7 was 0.000 for a perfect oracle on cycle-3 data. Declared CUTTABLE FIRST in the pre-registration's cut order — the cycle's findings do not depend on it. INSEPARABLE was pre-declared as a likely and acceptable outcome, because the realised validation latency denominator is 7 merchants and carries a standard error near 20pp.",
+        "result": "Scored on cycle-4 validation, 5 seeds, both exposure arms. Best precision@K on the whole ladder (0.9132, arm B) and best calibration (ECE 0.0061). But the rung built to optimise detection delay does NOT have the best detection delay: Rung 2, plain LightGBM on windowed aggregates, beats it 0.0862 to 0.0831 on detection_rate_d30. Mechanism gate (median alert_jaccard_wow in [0.30, 0.85]) passes on arm A at 0.3490 and FAILS on arm B at 0.2783. p99 scoring latency is unmeasured, not passed - its cost is a per-day cross-sectional ranking and a blend fit, not a per-merchant call. LIMITATIONS.md 9.6.",
+        "rung": 9,
+        "status": "scored",
+        "ticket": "cycle-4",
+        "title": "Page/CUSUM on the within-day cross-sectional rank of the incumbent score"
+      },
+      {
         "adopted": null,
         "citation": [
           "GitHub #65, OPEN, label `conditional`, title \"(needs ADR-V3-001 reversed)\"",
           "GitHub #51 (\"Gated-attention MIL is the upgrade and it requires the torch decision\")"
         ],
         "decided_in": "GitHub",
-        "gap": "ADR-V3-001 has no file in this tree — `grep -rn ADR-V3-001` returns nothing. The status rests on the issue label and #51's prose, not on a readable ADR.",
+        "gap": "RESOLVED 2026-09-02: `docs/adr/ADR-V3-001-no-autograd.md`. The status now rests on a readable ADR rather than on an issue label. The ADR records the reversal process, so `conditional` means gated-and-revisitable rather than quietly abandoned.",
         "issue": 65,
         "module": null,
         "name": "mil_gated_attention",
@@ -262,7 +280,7 @@
           "GitHub #51 (\"A neural intensity is the upgrade and it requires the torch decision\")"
         ],
         "decided_in": "GitHub",
-        "gap": "ADR-V3-001 has no file in this tree.",
+        "gap": "RESOLVED 2026-09-02: `docs/adr/ADR-V3-001-no-autograd.md`. Same gate as T-0131.",
         "issue": 66,
         "module": null,
         "name": "tpp_neural_intensity",
@@ -277,7 +295,7 @@
     "source": {
       "derived_at_tree": "docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md era",
       "derived_by": "T-0130 lane (artefacts), from committed documents only",
-      "known_gap": "ADR-V3-001 (the torch decision) gates the two `conditional` entries below. It is referenced by GitHub #51 as \"ADR-V3-001 below records it\", but `grep -rn ADR-V3-001` over this tree returns nothing — the ADR has no file here. The two entries are marked conditional on the strength of the issue labels and #51's prose, not on an ADR anyone in this repo can read.",
+      "known_gap": "CLOSED 2026-09-02 (cycle 4). ADR-V3-001 (the torch decision) gates the two `conditional` entries below. It was referenced by GitHub #51 as \"ADR-V3-001 below records it\" while `grep -rn ADR-V3-001` over this tree returned nothing, so the two entries rested on issue labels and #51's prose rather than on an ADR anyone could read. The ADR now exists as a file at `docs/adr/ADR-V3-001-no-autograd.md`, with the decision, its consequences, the alternatives rejected, and the numbered process that would reverse it. The per-rung `gap` fields below are updated to cite it.",
       "primary_sources": [
         "LIMITATIONS.md §8 — \"Lane D — what the rungs actually measured (T-140…T-143)\"",
         "project-context/00-charter-v2.md §8 — \"Scope cut, in cut order\"",
@@ -303,13 +321,13 @@
     ]
   },
   "provenance": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
-    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
     "inputs": [
       {
         "path": "configs/rung_roster.yaml",
-        "sha256": "ea81a0229f6c1ebfe6b6cb8bec4e1eb6c3d163e9dabd76029a2114dc6de51cb7"
+        "sha256": "5f835060059759952cc4d826ef0b6257b152dac8057bdadef1fcb895cd63fb6e"
       }
     ],
     "open_count": 0

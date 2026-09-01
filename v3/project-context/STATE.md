@@ -6,8 +6,8 @@ STATUS:   live — update at the end of EVERY session
 SUMMARY:  The resume point for Rakshak v3. Read this first, every session, before anything
           else. It names the current cycle, what is running, and the exact next action.
           Nothing else should be loaded speculatively.
-OPEN:     The cycle-4 ladder rescore is IN FLIGHT. Three findings are banked and committed
-          and none of them depends on it landing.
+OPEN:     Cycle 4 is COMPLETE — all 8 protocol steps. The test split was not opened; the
+          pre-registered gate that governs it was not met. See LIMITATIONS.md §9.
 -->
 
 # STATE — Rakshak, cycle 4
@@ -30,9 +30,9 @@ Cycle 4 is regenerating the dataset underneath the same harness.
 | 3 | pre-register cycle 4 | ✅ `docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`, committed `2ee6972` |
 | 4 | seal the lock, recording the previous as superseded | ✅ `EVAL-LOCK-CYCLE4.json`, `open_count: 0` |
 | 5 | regenerate the dataset | ✅ 40,000 × 365, 121.9M txns, 2.7 GB; panel 6.15M rows |
-| 6 | rescore the full ladder, every floor and every rung | ⏳ **IN FLIGHT** — 80 jobs, both arms, 5 seeds |
-| 7 | implement and score the new rung | ✅ built + wired; Rung 9 is cuttable |
-| 8 | open the test split, once, only if the §5 gate is met | ☐ **not delegated** |
+| 6 | rescore the full ladder, every floor and every rung | ✅ 65 rows, both arms, 5 seeds, all green |
+| 7 | implement and score the new rung | ✅ Rung 9 scored — **NOT ADOPTED**, see §9.6 |
+| 8 | open the test split, once, only if the §5 gate is met | ✅ **decided: STAYS SHUT.** `open_count: 0` |
 
 Gate across the tree: `ruff` clean, `mypy --strict` clean (49 source files).
 Gates on cycle-4 data: **20 passed, 4 skipped** (BAF still not vendored).
@@ -80,22 +80,43 @@ T-0101 moved the horizon 180 → 365 days underneath it. **Both detectors are st
 
 ---
 
+## Cycle-4 results, in one screen
+
+`LIMITATIONS.md` §9 is the full account. `docs/results/CYCLE4-VERDICT.txt` is the machine
+verdict; `docs/results_v2.md` is the rendered table. Reproduce either with
+`uv run python scripts/cycle4_verdict.py` and `make report`.
+
+1. **The metric fires.** `detection_rate_d30` non-zero for **11 of 13** policies against
+   **0 of 7** in cycle 3, and it discriminates. `volume_rank` scores 0.0000 — correctly: a
+   static watchlist (Jaccard 1.000) cannot catch a merchant that starts drifting later.
+2. **The exposure correction lifts every rung** (+0.034 to +0.164 savings, 5 of 5). PR-AUC
+   and ECE identical across arms to four decimals, so it is the decision layer moving and
+   nothing else. §8.3a's falsifier did not fire.
+3. **The pre-registered floor-fail gate FAILED, 0/5 seeds, so the test split stayed shut.**
+   The gate was anchored to 0.7017 = the *cycle-3* floor + 0.10, a number this cycle
+   invalidated (the floor is now 0.5240). That is an error by the pre-registration's author
+   and it is recorded as one, **not re-anchored**. Post-hoc, Rung 4 arm B beats the cycle-4
+   floor at 5/5 seeds (0.5981 vs 0.5240).
+4. **Two failures, not one.** Arm A alone still loses to the floor (0.4883 vs 0.5240) — but
+   by 6.8%, where cycle 3 lost by 27%. Neither change alone closes it.
+5. **Savings and latency pull against each other.** Arm B raises savings on all five rungs
+   and *lowers* d30 on three. Best-savings rung has the worst d30; best-d30 rung is
+   mid-table on savings. Charter §2 calls both equal-standing win conditions.
+6. **Rung 9 not adopted** — its primary gate is uncomputable from the harness's output, and
+   separately, the rung built for detection delay does not have the best detection delay
+   (Rung 2 beats it, 0.0862 to 0.0831).
+7. **Rung 4's cycle-3 cut was an artefact** of the exposure defect. It is now the best
+   savings rung on the ladder.
+
+**The latency half of this is not well powered** — 7 evaluable merchants, ~19 pp standard
+error, larger than every d30 difference above. The savings half is measured over the whole
+population. They do not carry equal weight and §9.8 says so.
+
 ## Next action
 
-**Step 6 — rescore the full ladder on cycle-4 data, both exposure arms, five seeds.**
-
-```
-make features                      # ~70 min at --workers 10; the long pole
-make gates                         # G1-G5 must be green before any model trains
-uv run python -m rakshak.cli train --rung 2 --seed 42   # ... 43 44 45 46, then rung 3, 4
-uv run python -m rakshak.cli eval  --rung R --seed S --exposure declared
-uv run python -m rakshak.cli eval  --rung R --seed S --exposure realised
-```
-
-`--exposure declared` is the default and reproduces cycle 3's wiring exactly
-(`test_the_wrapper_is_a_no_op_when_the_exposures_agree` asserts byte-identity). Arm B is
-the pre-registered comparison. **Both arms, every rung, or the comparison is not
-controlled.**
+Cycle 4 is closed. Before anything new: **`make all` from a clean clone** has not been run
+end to end this cycle (it regenerates the dataset, ~11 min gen + ~47 min features). The
+carried defects below are the shortest list of things worth fixing first.
 
 ---
 

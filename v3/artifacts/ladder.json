@@ -1,7 +1,7 @@
 {
   "artifact": "ladder",
   "payload": {
-    "capacity_k": null,
+    "capacity_k": 30.0,
     "metric_keys": [
       "prevalence",
       "pr_auc",
@@ -44,364 +44,55 @@
           "volume_rank"
         ],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
         "label": "all_pass",
         "metrics": {
           "alert_jaccard_wow": null,
           "alerts_per_day": 0.0,
-          "capacity_k": 15.0,
+          "capacity_k": 30.0,
           "detection_rate_d14": 0.0,
           "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.013517969007583251,
+          "ece": 0.010691562932226832,
           "gap_to_oracle": 1.0,
           "model_size_mb": null,
-          "n_censored_dropped": 180.0,
+          "n_censored_dropped": 0.0,
           "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
           "p99_latency_ms": null,
-          "pr_auc": 0.013517969007583251,
+          "pr_auc": 0.010691562932226832,
           "precision_at_k": null,
-          "prevalence": 0.013517969007583251,
+          "prevalence": 0.011950207468879669,
           "recall_at_k": 0.0,
           "roc_auc": 0.5,
           "savings": 0.0,
-          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_hold": -13.698366375248463,
           "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.001017948124361956,
-          "savings_floor_volume_rank": 0.6015771605172751,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
           "ttd_median_days": null
-        },
-        "n_seeds": 1,
-        "n_seeds_floor_fail": 1,
-        "non_finite": {
-          "alert_jaccard_wow": {
-            "NaN": 1
-          },
-          "model_size_mb": {
-            "NaN": 1
-          },
-          "p99_latency_ms": {
-            "NaN": 1
-          },
-          "precision_at_k": {
-            "NaN": 1
-          },
-          "recall_by_typology": {
-            "R9:NaN": 1
-          },
-          "ttd_median_days": {
-            "Infinity": 1
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": 0.0,
-          "R9": null
-        },
-        "rung": 0,
-        "seeds": [
-          42
-        ],
-        "sources": [
-          "all_pass_val_seed42.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [
-          "random_at_k",
-          "volume_rank"
-        ],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "random_at_k",
-        "metrics": {
-          "alert_jaccard_wow": 0.015906887972015324,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.4867808063143157,
-          "gap_to_oracle": 0.9969740506596676,
-          "model_size_mb": null,
-          "n_censored_dropped": 180.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": null,
-          "pr_auc": 0.01360127732513345,
-          "precision_at_k": 0.015555555555555555,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.005691056910569106,
-          "roc_auc": 0.5014372835239047,
-          "savings": 0.002749788965041855,
-          "savings_floor_all_hold": -9.136795644875383,
-          "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.003691144415038261,
-          "savings_floor_volume_rank": 0.6015771605172751,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 1,
-        "n_seeds_floor_fail": 1,
-        "non_finite": {
-          "model_size_mb": {
-            "NaN": 1
-          },
-          "p99_latency_ms": {
-            "NaN": 1
-          },
-          "recall_by_typology": {
-            "R9:NaN": 1
-          },
-          "ttd_median_days": {
-            "Infinity": 1
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": 0.0,
-          "R9": null
-        },
-        "rung": 0,
-        "seeds": [
-          42
-        ],
-        "sources": [
-          "random_at_k_val_seed42.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": true,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "volume_rank",
-        "metrics": {
-          "alert_jaccard_wow": 1.0,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.4866190293818142,
-          "gap_to_oracle": 0.33789371937957974,
-          "model_size_mb": null,
-          "n_censored_dropped": 180.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": null,
-          "pr_auc": 0.21689648072948195,
-          "precision_at_k": 0.5714285714285714,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.1951219512195122,
-          "roc_auc": 0.7043090517803574,
-          "savings": 0.6016797835534564,
-          "savings_floor_all_hold": -9.136795644875383,
-          "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.001017948124361956,
-          "savings_floor_volume_rank": 0.6015771605172751,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 1,
-        "n_seeds_floor_fail": 0,
-        "non_finite": {
-          "model_size_mb": {
-            "NaN": 1
-          },
-          "p99_latency_ms": {
-            "NaN": 1
-          },
-          "recall_by_typology": {
-            "R9:NaN": 1
-          },
-          "ttd_median_days": {
-            "Infinity": 1
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": 0.0,
-          "R9": null
-        },
-        "rung": 0,
-        "seeds": [
-          42
-        ],
-        "sources": [
-          "volume_rank_val_seed42.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [
-          "volume_rank"
-        ],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "rung1",
-        "metrics": {
-          "alert_jaccard_wow": 0.2326167916912894,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.018367421838622756,
-          "gap_to_oracle": 0.8737796802541522,
-          "model_size_mb": null,
-          "n_censored_dropped": 180.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": null,
-          "pr_auc": 0.2842882428215557,
-          "precision_at_k": 0.06060606060606061,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.02195121951219512,
-          "roc_auc": 0.8086294945962493,
-          "savings": 0.11470094286610144,
-          "savings_floor_all_hold": -9.136795644875383,
-          "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.001017948124361956,
-          "savings_floor_volume_rank": 0.6015771605172751,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 1,
-        "n_seeds_floor_fail": 1,
-        "non_finite": {
-          "model_size_mb": {
-            "NaN": 1
-          },
-          "p99_latency_ms": {
-            "NaN": 1
-          },
-          "recall_by_typology": {
-            "R9:NaN": 1
-          },
-          "ttd_median_days": {
-            "Infinity": 1
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": 0.0,
-          "R9": null
-        },
-        "rung": 1,
-        "seeds": [
-          42
-        ],
-        "sources": [
-          "rung1_val_seed42.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [
-          "volume_rank"
-        ],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "rung2",
-        "metrics": {
-          "alert_jaccard_wow": 0.2875,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.007945052615067748,
-          "gap_to_oracle": 0.545399776302596,
-          "model_size_mb": 0.5142,
-          "n_censored_dropped": 180.0,
-          "n_features": 28.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": 0.008085685660959642,
-          "pr_auc": 0.835700213824045,
-          "precision_at_k": 0.8636871508379889,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.31422764227642275,
-          "roc_auc": 0.9638204249271771,
-          "savings": 0.41311156864620613,
-          "savings_floor_all_hold": -9.136795644875383,
-          "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.0011624668804387506,
-          "savings_floor_volume_rank": 0.6015771605172751,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": 163.0
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
-          "recall_by_typology": {
-            "R9:NaN": 5
+          "alert_jaccard_wow": {
+            "NaN": 5
+          },
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
+          },
+          "precision_at_k": {
+            "NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
           }
         },
         "provenance_consistent": true,
@@ -414,7 +105,419 @@
           "R6": 0.0,
           "R7": 0.0,
           "R8": 0.0,
-          "R9": null
+          "R9": 0.0
+        },
+        "rung": 0,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "all_pass_val_seed42.json",
+          "all_pass_val_seed43.json",
+          "all_pass_val_seed44.json",
+          "all_pass_val_seed45.json",
+          "all_pass_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "all_pass",
+          "random_at_k",
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "random_at_k",
+        "metrics": {
+          "alert_jaccard_wow": 0.016323236649961416,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.015384615384615385,
+          "detection_rate_d7": 0.0,
+          "ece": 0.48946212868667743,
+          "gap_to_oracle": 0.9961611135863808,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.010829684352428566,
+          "precision_at_k": 0.011666666666666667,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.0054333764553686935,
+          "roc_auc": 0.5022853841946548,
+          "savings": 0.0035905698244284023,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.002962205035265786,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 0,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "random_at_k_val_seed42.json",
+          "random_at_k_val_seed43.json",
+          "random_at_k_val_seed44.json",
+          "random_at_k_val_seed45.json",
+          "random_at_k_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "volume_rank",
+        "metrics": {
+          "alert_jaccard_wow": 1.0,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.48930843706777316,
+          "gap_to_oracle": 0.43972724592705503,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.14279549097419392,
+          "precision_at_k": 0.26666666666666666,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.12419146183699871,
+          "roc_auc": 0.6971591548915451,
+          "savings": 0.524031770538153,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 0,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "volume_rank_val_seed42.json",
+          "volume_rank_val_seed43.json",
+          "volume_rank_val_seed44.json",
+          "volume_rank_val_seed45.json",
+          "volume_rank_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung1",
+        "metrics": {
+          "alert_jaccard_wow": 0.20968869514440708,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.030303030303030304,
+          "detection_rate_d30": 0.046153846153846156,
+          "detection_rate_d7": 0.029411764705882353,
+          "ece": 0.020205206784490806,
+          "gap_to_oracle": 0.6164769737196323,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.2983761125413377,
+          "precision_at_k": 0.16555555555555557,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.07710219922380336,
+          "roc_auc": 0.7901465237048239,
+          "savings": 0.35871501700345976,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.16666666666666666,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.2
+        },
+        "rung": 1,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung1_val_seed42.json",
+          "rung1_val_seed43.json",
+          "rung1_val_seed44.json",
+          "rung1_val_seed45.json",
+          "rung1_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung1_realised_exposure",
+        "metrics": {
+          "alert_jaccard_wow": 0.2131624205771378,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.030303030303030304,
+          "detection_rate_d30": 0.046153846153846156,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.020205206784490806,
+          "gap_to_oracle": 0.44151194660575527,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.2983761125413377,
+          "precision_at_k": 0.40944444444444444,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.1906856403622251,
+          "roc_auc": 0.7901465237048239,
+          "savings": 0.5223625123960407,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.25,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 1,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung1_realised_exposure_val_seed42.json",
+          "rung1_realised_exposure_val_seed43.json",
+          "rung1_realised_exposure_val_seed44.json",
+          "rung1_realised_exposure_val_seed45.json",
+          "rung1_realised_exposure_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung2",
+        "metrics": {
+          "alert_jaccard_wow": 0.45312936668920445,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.06060606060606061,
+          "detection_rate_d30": 0.07692307692307693,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.007525892190830804,
+          "gap_to_oracle": 0.533951668662014,
+          "model_size_mb": 0.5193,
+          "n_censored_dropped": 0.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.00628165172890085,
+          "pr_auc": 0.7280793937337461,
+          "precision_at_k": 0.7383333333333333,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.3438551099611902,
+          "roc_auc": 0.9489892646949322,
+          "savings": 0.4359022109356395,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 157.0
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {},
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.06666666666666667,
+          "R2": 0.0,
+          "R3": 0.25,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.2
         },
         "rung": 2,
         "seeds": [
@@ -443,56 +546,126 @@
           "volume_rank"
         ],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung2_realised_exposure",
+        "metrics": {
+          "alert_jaccard_wow": 0.3141887626262626,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.030303030303030304,
+          "detection_rate_d30": 0.07692307692307693,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.007525892190830804,
+          "gap_to_oracle": 0.42501404644238694,
+          "model_size_mb": 0.5193,
+          "n_censored_dropped": 0.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.006371409958486097,
+          "pr_auc": 0.7280793937337461,
+          "precision_at_k": 0.8894444444444445,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.41423027166882276,
+          "roc_auc": 0.9489892646949322,
+          "savings": 0.5377932535304668,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 150.5
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 1,
+        "non_finite": {},
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.06666666666666667,
+          "R2": 0.0,
+          "R3": 0.25,
+          "R4": 0.0,
+          "R5": 0.3333333333333333,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 2,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung2_realised_exposure_val_seed42.json",
+          "rung2_realised_exposure_val_seed43.json",
+          "rung2_realised_exposure_val_seed44.json",
+          "rung2_realised_exposure_val_seed45.json",
+          "rung2_realised_exposure_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
         "label": "rung3",
         "metrics": {
-          "alert_jaccard_wow": 0.23905261405261402,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.007950827683954474,
-          "gap_to_oracle": 0.5234081634485661,
-          "model_size_mb": 0.5165,
-          "n_censored_dropped": 180.0,
+          "alert_jaccard_wow": 0.36817163228927935,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.06060606060606061,
+          "detection_rate_d30": 0.06153846153846154,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.007448912789570802,
+          "gap_to_oracle": 0.5240059916421473,
+          "model_size_mb": 0.5222,
+          "n_censored_dropped": 0.0,
           "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": 0.006328757136584713,
-          "pr_auc": 0.8551029847208473,
-          "precision_at_k": 0.8558659217877095,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.31138211382113823,
-          "roc_auc": 0.9804109377490835,
-          "savings": 0.43309613796581026,
-          "savings_floor_all_hold": -9.136795644875383,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.005286984232349004,
+          "pr_auc": 0.7379858549557606,
+          "precision_at_k": 0.7911111111111111,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.3684346701164295,
+          "roc_auc": 0.9578214767269332,
+          "savings": 0.44520455644509616,
+          "savings_floor_all_hold": -13.698366375248463,
           "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.0011624668804387506,
-          "savings_floor_volume_rank": 0.6015771605172751,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
-          "ttd_median_days": 162.0
+          "ttd_median_days": 146.5
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
-        "non_finite": {
-          "recall_by_typology": {
-            "R9:NaN": 5
-          }
-        },
+        "non_finite": {},
         "provenance_consistent": true,
         "recall_by_typology": {
-          "R1": 0.0,
+          "R1": 0.13333333333333333,
           "R2": 0.0,
-          "R3": 0.0,
+          "R3": 0.16666666666666666,
           "R4": 0.0,
           "R5": 0.0,
           "R6": 0.0,
           "R7": 0.0,
           "R8": 0.0,
-          "R9": null
+          "R9": 0.0
         },
         "rung": 3,
         "seeds": [
@@ -521,44 +694,115 @@
           "volume_rank"
         ],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung3_realised_exposure",
+        "metrics": {
+          "alert_jaccard_wow": 0.28953251609501607,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.045454545454545456,
+          "detection_rate_d30": 0.06153846153846154,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.007448912789570802,
+          "gap_to_oracle": 0.4790971750506727,
+          "model_size_mb": 0.5222,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.00593676348550942,
+          "pr_auc": 0.7379858549557606,
+          "precision_at_k": 0.8833333333333333,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.4113842173350582,
+          "roc_auc": 0.9578214767269332,
+          "savings": 0.48720846704064813,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 144.5
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 4,
+        "non_finite": {},
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.06666666666666667,
+          "R2": 0.0,
+          "R3": 0.16666666666666666,
+          "R4": 0.0,
+          "R5": 0.3333333333333333,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 3,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung3_realised_exposure_val_seed42.json",
+          "rung3_realised_exposure_val_seed43.json",
+          "rung3_realised_exposure_val_seed44.json",
+          "rung3_realised_exposure_val_seed45.json",
+          "rung3_realised_exposure_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
         "label": "rung4",
         "metrics": {
-          "alert_jaccard_wow": 0.368568871830257,
-          "alerts_per_day": 15.0,
-          "capacity_k": 15.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.04326038043058097,
-          "gap_to_oracle": 0.5215465402970286,
-          "model_size_mb": 0.5201,
-          "n_censored_dropped": 180.0,
+          "alert_jaccard_wow": 0.3751144880225501,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.045454545454545456,
+          "detection_rate_d30": 0.06153846153846154,
+          "detection_rate_d7": 0.04411764705882353,
+          "ece": 0.038984042967393856,
+          "gap_to_oracle": 0.47848071500444384,
+          "model_size_mb": 0.5233,
+          "n_censored_dropped": 0.0,
           "n_features": 49.0,
-          "n_merchants_scored": 3036.0,
-          "n_rows_kept": 181980.0,
-          "oracle_savings": 0.9087359554868717,
-          "p99_latency_ms": 0.004978601229701617,
-          "pr_auc": 0.8533790773016571,
-          "precision_at_k": 0.3902714932126697,
-          "prevalence": 0.013517969007583251,
-          "recall_at_k": 0.1402439024390244,
-          "roc_auc": 0.976483144301697,
-          "savings": 0.43478786185917917,
-          "savings_floor_all_hold": -9.136795644875383,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.006083871922578101,
+          "pr_auc": 0.7677428463254012,
+          "precision_at_k": 0.3611111111111111,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.16817593790426907,
+          "roc_auc": 0.9453284518564724,
+          "savings": 0.48778505165437946,
+          "savings_floor_all_hold": -13.698366375248463,
           "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.0011624668804387506,
-          "savings_floor_volume_rank": 0.6015771605172751,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
-          "recall_by_typology": {
-            "R9:NaN": 5
-          },
           "ttd_median_days": {
             "Infinity": 5
           }
@@ -567,13 +811,13 @@
         "recall_by_typology": {
           "R1": 0.0,
           "R2": 0.0,
-          "R3": 0.0,
+          "R3": 0.25,
           "R4": 0.0,
           "R5": 0.0,
           "R6": 0.0,
           "R7": 0.0,
           "R8": 0.0,
-          "R9": null
+          "R9": 0.2
         },
         "rung": 4,
         "seeds": [
@@ -593,57 +837,48 @@
         "split": "VALIDATION"
       },
       {
-        "beats_all_floors": false,
+        "beats_all_floors": true,
         "cost_scenario": "base",
         "eval_lock_sha": [
           "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
-        "floor_fail": [
-          "all_hold",
-          "volume_rank"
-        ],
+        "floor_fail": [],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
-        "label": "rung5_mil",
+        "label": "rung4_realised_exposure",
         "metrics": {
-          "alert_jaccard_wow": null,
-          "alerts_per_day": 1.0,
-          "capacity_k": 1.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.1630346010173526,
-          "gap_to_oracle": 0.9236188389263542,
-          "model_size_mb": 0.5186,
-          "n_censored_dropped": 60.0,
-          "n_features": 13.0,
-          "n_merchants_scored": 161.0,
-          "n_rows_kept": 9600.0,
-          "oracle_savings": 0.32678418005303955,
-          "p99_latency_ms": 0.06972536231868603,
-          "pr_auc": 0.7176099885887234,
-          "precision_at_k": 0.9361702127659575,
-          "prevalence": 0.25625,
-          "recall_at_k": 0.01788617886178862,
-          "roc_auc": 0.7334777732231105,
-          "savings": 0.024960155092950465,
-          "savings_floor_all_hold": 0.5927917924327979,
+          "alert_jaccard_wow": 0.38119873096256124,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.030303030303030304,
+          "detection_rate_d30": 0.046153846153846156,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.038984042967393856,
+          "gap_to_oracle": 0.3662760474543477,
+          "model_size_mb": 0.5233,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": 0.004921997786990018,
+          "pr_auc": 0.7677428463254012,
+          "precision_at_k": 0.5472222222222223,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.25485122897800777,
+          "roc_auc": 0.9453284518564724,
+          "savings": 0.5927318122660268,
+          "savings_floor_all_hold": -13.698366375248463,
           "savings_floor_all_pass": 0.0,
-          "savings_floor_random": 0.0031499296609796,
-          "savings_floor_volume_rank": 0.2614068194351954,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 5,
-        "n_seeds_floor_fail": 5,
+        "n_seeds_floor_fail": 0,
         "non_finite": {
-          "alert_jaccard_wow": {
-            "NaN": 5
-          },
-          "recall_by_typology": {
-            "R9:NaN": 5
-          },
           "ttd_median_days": {
             "Infinity": 5
           }
@@ -652,15 +887,15 @@
         "recall_by_typology": {
           "R1": 0.0,
           "R2": 0.0,
-          "R3": 0.0,
+          "R3": 0.25,
           "R4": 0.0,
           "R5": 0.0,
           "R6": 0.0,
           "R7": 0.0,
           "R8": 0.0,
-          "R9": null
+          "R9": 0.0
         },
-        "rung": 5,
+        "rung": 4,
         "seeds": [
           42,
           43,
@@ -669,11 +904,11 @@
           46
         ],
         "sources": [
-          "rung5_mil_val_seed42.json",
-          "rung5_mil_val_seed43.json",
-          "rung5_mil_val_seed44.json",
-          "rung5_mil_val_seed45.json",
-          "rung5_mil_val_seed46.json"
+          "rung4_realised_exposure_val_seed42.json",
+          "rung4_realised_exposure_val_seed43.json",
+          "rung4_realised_exposure_val_seed44.json",
+          "rung4_realised_exposure_val_seed45.json",
+          "rung4_realised_exposure_val_seed46.json"
         ],
         "split": "VALIDATION"
       },
@@ -687,59 +922,61 @@
           "volume_rank"
         ],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
-        "label": "rung6_crc_base2_alpha0.05",
+        "label": "rung9",
         "metrics": {
-          "alert_jaccard_wow": 0.1369047619047619,
-          "alerts_per_day": 8.0,
-          "capacity_k": 8.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.008579023251794448,
-          "gap_to_oracle": 0.7182869371863514,
-          "model_size_mb": 0.5142,
-          "n_censored_dropped": 60.0,
-          "n_features": 28.0,
-          "n_merchants_scored": 1518.0,
-          "n_rows_kept": 91020.0,
-          "oracle_savings": 0.8659162208551578,
-          "p99_latency_ms": 0.005706415239332182,
-          "pr_auc": 0.8318528896592612,
-          "precision_at_k": 0.9166666666666666,
-          "prevalence": 0.014502307185234015,
-          "recall_at_k": 0.3333333333333333,
-          "roc_auc": 0.9583081145907233,
-          "savings": 0.24393991071712628,
-          "savings_floor_all_hold": -10.43605979594687,
-          "savings_floor_all_pass": 2.220446049250313e-16,
-          "savings_floor_random": 0.001697305943235805,
-          "savings_floor_volume_rank": 0.6111642410310991,
+          "alert_jaccard_wow": 0.3636864597390913,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.06060606060606061,
+          "detection_rate_d30": 0.07692307692307693,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.0061466164940674264,
+          "gap_to_oracle": 0.5137218628051315,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.7449590321358185,
+          "precision_at_k": 0.8594444444444445,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.4002587322121604,
+          "roc_auc": 0.9617570658008425,
+          "savings": 0.4548234611727071,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
-          "ttd_median_days": 161.0
+          "ttd_median_days": 137.0
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
-          "recall_by_typology": {
-            "R8:NaN": 5,
-            "R9:NaN": 5
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
           }
         },
         "provenance_consistent": true,
         "recall_by_typology": {
-          "R1": 0.0,
+          "R1": 0.13333333333333333,
           "R2": 0.0,
-          "R3": 0.0,
+          "R3": 0.16666666666666666,
           "R4": 0.0,
-          "R5": 0.0,
+          "R5": 0.3333333333333333,
           "R6": 0.0,
           "R7": 0.0,
-          "R8": null,
-          "R9": null
+          "R8": 0.0,
+          "R9": 0.0
         },
-        "rung": 6,
+        "rung": 9,
         "seeds": [
           42,
           43,
@@ -748,11 +985,11 @@
           46
         ],
         "sources": [
-          "rung6_crc_base2_alpha0.05_val_seed42.json",
-          "rung6_crc_base2_alpha0.05_val_seed43.json",
-          "rung6_crc_base2_alpha0.05_val_seed44.json",
-          "rung6_crc_base2_alpha0.05_val_seed45.json",
-          "rung6_crc_base2_alpha0.05_val_seed46.json"
+          "rung9_val_seed42.json",
+          "rung9_val_seed43.json",
+          "rung9_val_seed44.json",
+          "rung9_val_seed45.json",
+          "rung9_val_seed46.json"
         ],
         "split": "VALIDATION"
       },
@@ -766,59 +1003,61 @@
           "volume_rank"
         ],
         "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
         ],
-        "label": "rung6_crc_base2_alpha0.1",
+        "label": "rung9_realised_exposure",
         "metrics": {
-          "alert_jaccard_wow": 0.1369047619047619,
-          "alerts_per_day": 8.0,
-          "capacity_k": 8.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.008579023251794448,
-          "gap_to_oracle": 0.7182869371863514,
-          "model_size_mb": 0.5142,
-          "n_censored_dropped": 60.0,
-          "n_features": 28.0,
-          "n_merchants_scored": 1518.0,
-          "n_rows_kept": 91020.0,
-          "oracle_savings": 0.8659162208551578,
-          "p99_latency_ms": 0.005706415239332182,
-          "pr_auc": 0.8318528896592612,
-          "precision_at_k": 0.9166666666666666,
-          "prevalence": 0.014502307185234015,
-          "recall_at_k": 0.3333333333333333,
-          "roc_auc": 0.9583081145907233,
-          "savings": 0.24393991071712628,
-          "savings_floor_all_hold": -10.43605979594687,
-          "savings_floor_all_pass": 2.220446049250313e-16,
-          "savings_floor_random": 0.001697305943235805,
-          "savings_floor_volume_rank": 0.6111642410310991,
+          "alert_jaccard_wow": 0.27721185064935067,
+          "alerts_per_day": 30.0,
+          "capacity_k": 30.0,
+          "detection_rate_d14": 0.045454545454545456,
+          "detection_rate_d30": 0.06153846153846154,
+          "detection_rate_d7": 0.014705882352941176,
+          "ece": 0.0061466164940674264,
+          "gap_to_oracle": 0.4842370159361594,
+          "model_size_mb": null,
+          "n_censored_dropped": 0.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 6025.0,
+          "n_rows_kept": 361500.0,
+          "oracle_savings": 0.9353154632786702,
+          "p99_latency_ms": null,
+          "pr_auc": 0.7449590321358185,
+          "precision_at_k": 0.91,
+          "prevalence": 0.011950207468879669,
+          "recall_at_k": 0.4238033635187581,
+          "roc_auc": 0.9617570658008425,
+          "savings": 0.48240109438166046,
+          "savings_floor_all_hold": -13.698366375248463,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0035905698244284023,
+          "savings_floor_volume_rank": 0.524031770538153,
           "state_bytes_p99": 9716.0,
-          "ttd_median_days": 161.0
+          "ttd_median_days": 152.0
         },
         "n_seeds": 5,
-        "n_seeds_floor_fail": 5,
+        "n_seeds_floor_fail": 4,
         "non_finite": {
-          "recall_by_typology": {
-            "R8:NaN": 5,
-            "R9:NaN": 5
+          "model_size_mb": {
+            "NaN": 5
+          },
+          "p99_latency_ms": {
+            "NaN": 5
           }
         },
         "provenance_consistent": true,
         "recall_by_typology": {
           "R1": 0.0,
           "R2": 0.0,
-          "R3": 0.0,
+          "R3": 0.16666666666666666,
           "R4": 0.0,
-          "R5": 0.0,
+          "R5": 0.3333333333333333,
           "R6": 0.0,
           "R7": 0.0,
-          "R8": null,
-          "R9": null
+          "R8": 0.0,
+          "R9": 0.0
         },
-        "rung": 6,
+        "rung": 9,
         "seeds": [
           42,
           43,
@@ -827,167 +1066,11 @@
           46
         ],
         "sources": [
-          "rung6_crc_base2_alpha0.1_val_seed42.json",
-          "rung6_crc_base2_alpha0.1_val_seed43.json",
-          "rung6_crc_base2_alpha0.1_val_seed44.json",
-          "rung6_crc_base2_alpha0.1_val_seed45.json",
-          "rung6_crc_base2_alpha0.1_val_seed46.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [
-          "volume_rank"
-        ],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "rung6_crc_base4_alpha0.05",
-        "metrics": {
-          "alert_jaccard_wow": 0.3213093803154713,
-          "alerts_per_day": 8.0,
-          "capacity_k": 8.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.042221616890657454,
-          "gap_to_oracle": 0.6994728489620465,
-          "model_size_mb": 0.5202,
-          "n_censored_dropped": 60.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 1518.0,
-          "n_rows_kept": 91020.0,
-          "oracle_savings": 0.8659162208551578,
-          "p99_latency_ms": 0.0041695652174040376,
-          "pr_auc": 0.8195905423319597,
-          "precision_at_k": 0.42291666666666666,
-          "prevalence": 0.014502307185234015,
-          "recall_at_k": 0.15378787878787878,
-          "roc_auc": 0.968457509881423,
-          "savings": 0.2602313348911519,
-          "savings_floor_all_hold": -10.43605979594687,
-          "savings_floor_all_pass": 2.220446049250313e-16,
-          "savings_floor_random": 0.0020115233409759847,
-          "savings_floor_volume_rank": 0.6111642410310991,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 3,
-        "n_seeds_floor_fail": 3,
-        "non_finite": {
-          "recall_by_typology": {
-            "R8:NaN": 3,
-            "R9:NaN": 3
-          },
-          "ttd_median_days": {
-            "Infinity": 3
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": null,
-          "R9": null
-        },
-        "rung": 6,
-        "seeds": [
-          42,
-          43,
-          44
-        ],
-        "sources": [
-          "rung6_crc_base4_alpha0.05_val_seed42.json",
-          "rung6_crc_base4_alpha0.05_val_seed43.json",
-          "rung6_crc_base4_alpha0.05_val_seed44.json"
-        ],
-        "split": "VALIDATION"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
-        ],
-        "floor_fail": [
-          "volume_rank"
-        ],
-        "git_sha": [
-          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
-        ],
-        "label": "rung6_crc_base4_alpha0.1",
-        "metrics": {
-          "alert_jaccard_wow": 0.3213093803154713,
-          "alerts_per_day": 8.0,
-          "capacity_k": 8.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.042221616890657454,
-          "gap_to_oracle": 0.6994728489620465,
-          "model_size_mb": 0.5202,
-          "n_censored_dropped": 60.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 1518.0,
-          "n_rows_kept": 91020.0,
-          "oracle_savings": 0.8659162208551578,
-          "p99_latency_ms": 0.0041695652174040376,
-          "pr_auc": 0.8195905423319597,
-          "precision_at_k": 0.42291666666666666,
-          "prevalence": 0.014502307185234015,
-          "recall_at_k": 0.15378787878787878,
-          "roc_auc": 0.968457509881423,
-          "savings": 0.2602313348911519,
-          "savings_floor_all_hold": -10.43605979594687,
-          "savings_floor_all_pass": 2.220446049250313e-16,
-          "savings_floor_random": 0.0020115233409759847,
-          "savings_floor_volume_rank": 0.6111642410310991,
-          "state_bytes_p99": 9716.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 3,
-        "n_seeds_floor_fail": 3,
-        "non_finite": {
-          "recall_by_typology": {
-            "R8:NaN": 3,
-            "R9:NaN": 3
-          },
-          "ttd_median_days": {
-            "Infinity": 3
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": 0.0,
-          "R2": 0.0,
-          "R3": 0.0,
-          "R4": 0.0,
-          "R5": 0.0,
-          "R6": 0.0,
-          "R7": 0.0,
-          "R8": null,
-          "R9": null
-        },
-        "rung": 6,
-        "seeds": [
-          42,
-          43,
-          44
-        ],
-        "sources": [
-          "rung6_crc_base4_alpha0.1_val_seed42.json",
-          "rung6_crc_base4_alpha0.1_val_seed43.json",
-          "rung6_crc_base4_alpha0.1_val_seed44.json"
+          "rung9_realised_exposure_val_seed42.json",
+          "rung9_realised_exposure_val_seed43.json",
+          "rung9_realised_exposure_val_seed44.json",
+          "rung9_realised_exposure_val_seed45.json",
+          "rung9_realised_exposure_val_seed46.json"
         ],
         "split": "VALIDATION"
       }
@@ -1009,171 +1092,271 @@
     ]
   },
   "provenance": {
-    "authoritative_cycle": 3,
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_cycle": 4,
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
-    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
     "harness_note": "Every results_eval_lock_sha is verified to match a lock in the supersession chain, and results_scored_under names which cycle froze each one. results_are_current is false when any row was scored under a SUPERSEDED cycle — that is the pre-registered state for a rung the newer cycle did not rescore, not drift, and such a row must be rendered as 'scored under cycle N', never as a current number. EvalResult rows do NOT record generator_module_sha256 or scenario_config_sha256, so this artefact cannot certify that they were computed at any lock's geometry. Compare results_git_sha with that cycle's frozen_at_git_sha before presenting a number as current.",
     "inputs": [
       {
         "path": "data/v2/eval/all_pass_val_seed42.json",
-        "sha256": "c95afaec84b65ab5895fde75aace9ad09b600def10b9dfffed25f1ac9ce5bbc1"
+        "sha256": "34137492d1a2b47d4a6651820e5fd1a40697fa6fcef1b826170ad4d0ea74f203"
+      },
+      {
+        "path": "data/v2/eval/all_pass_val_seed43.json",
+        "sha256": "5d837e3803b0c0cd401180707f4ad53a715860d6169385d3a835b217f8e95c14"
+      },
+      {
+        "path": "data/v2/eval/all_pass_val_seed44.json",
+        "sha256": "a410ed8f6c769ad92a69ce3591754b13adde304f94a35e40da59f33ae26b265a"
+      },
+      {
+        "path": "data/v2/eval/all_pass_val_seed45.json",
+        "sha256": "ce76f6299ca3c7f58ade716e99233312ab5846297cfee29727dddbb332c8823d"
+      },
+      {
+        "path": "data/v2/eval/all_pass_val_seed46.json",
+        "sha256": "6ddee679bad85d3113af6a31fb45a0b94fdad78b089d2140a8b7c7f261447823"
       },
       {
         "path": "data/v2/eval/random_at_k_val_seed42.json",
-        "sha256": "92575731b8c167fc503f729afe4011745d5f4c8cb3c89e605d458715035ec204"
+        "sha256": "b97609bb1c86292c04c13a7c989f42bb265a7218f6a50f44f67980e61f2f4e9c"
+      },
+      {
+        "path": "data/v2/eval/random_at_k_val_seed43.json",
+        "sha256": "824305024effbbeb209304fb4a17427b61528e3b9209b998bc887f4a6bf2d91a"
+      },
+      {
+        "path": "data/v2/eval/random_at_k_val_seed44.json",
+        "sha256": "48175d291bdc4735fff28880ad2a0cf59c18ca156d48f9e16ebb3fd594773f07"
+      },
+      {
+        "path": "data/v2/eval/random_at_k_val_seed45.json",
+        "sha256": "56836093efc6e7279409e2b21527e70099328a472088df381d299287c2ecd953"
+      },
+      {
+        "path": "data/v2/eval/random_at_k_val_seed46.json",
+        "sha256": "248f63bc2e4887dd1a704ba48081f29df54e273db88a5b63b2f356bb45aaadfb"
+      },
+      {
+        "path": "data/v2/eval/rung1_realised_exposure_val_seed42.json",
+        "sha256": "2018708da97df35af74116078eb1048d5222239567e3ca2fc97645973bbc7971"
+      },
+      {
+        "path": "data/v2/eval/rung1_realised_exposure_val_seed43.json",
+        "sha256": "cfa4410e7f9e6b4ee7c2af573469fef0f207ea6e0dab61a30af0bd929a8b7b29"
+      },
+      {
+        "path": "data/v2/eval/rung1_realised_exposure_val_seed44.json",
+        "sha256": "02e51ff9e3845160ca1671bfc37b828ebb19f3d3cb4658d95137b18932733ca8"
+      },
+      {
+        "path": "data/v2/eval/rung1_realised_exposure_val_seed45.json",
+        "sha256": "0e2085f55057f14591e98856d56b3f199ba586e975fe22277ea0b3ec6d708352"
+      },
+      {
+        "path": "data/v2/eval/rung1_realised_exposure_val_seed46.json",
+        "sha256": "8686c542952aea87faa96af85fa65d6df9a67b0eb2e10abd20045dbd4adfa4c4"
       },
       {
         "path": "data/v2/eval/rung1_val_seed42.json",
-        "sha256": "d3b189f77836177d11d6f8bf4b7b8081bca4ef3409934d96eb6f7556b82ede40"
+        "sha256": "ffc3a1765b6933fcb00afba39407f0070ca3d371e7889f7ba0b96c8156ae5d36"
+      },
+      {
+        "path": "data/v2/eval/rung1_val_seed43.json",
+        "sha256": "984facbbd303f3311abdfe567c0dce8ef4536c764a78467e1a46bf4d7764f812"
+      },
+      {
+        "path": "data/v2/eval/rung1_val_seed44.json",
+        "sha256": "33983b876a053e12ad2abeed2f5302437a57b8b798b9fcd42b8986efe3ce8c5d"
+      },
+      {
+        "path": "data/v2/eval/rung1_val_seed45.json",
+        "sha256": "3b4f0d1231d5879bbf412484b83c6c20a39e83f3b9e4d6e4a5d49a25e55770b1"
+      },
+      {
+        "path": "data/v2/eval/rung1_val_seed46.json",
+        "sha256": "ab187667631fdfdca52ae388b26d8ff0f930933bbd6258077112e567162744e5"
+      },
+      {
+        "path": "data/v2/eval/rung2_realised_exposure_val_seed42.json",
+        "sha256": "ecec2ad338f6cc9262f73e0649faac59949a0814b5bc04997fbe2cda96db89ad"
+      },
+      {
+        "path": "data/v2/eval/rung2_realised_exposure_val_seed43.json",
+        "sha256": "393829fd57fc35c33bba7ba673ec5272e943cc5dda2967e6548dccf196d6bcd4"
+      },
+      {
+        "path": "data/v2/eval/rung2_realised_exposure_val_seed44.json",
+        "sha256": "68403316f4b13470827979ef2fe1d4f82693b4ba700571d0fe5276c8aefcefc0"
+      },
+      {
+        "path": "data/v2/eval/rung2_realised_exposure_val_seed45.json",
+        "sha256": "5a7191d4c80d6974f216693a69a700ed1af477482f71d749d346fbfab20e4ed4"
+      },
+      {
+        "path": "data/v2/eval/rung2_realised_exposure_val_seed46.json",
+        "sha256": "334166c69b416ad467d4ee96d6d7784eb375b489e5c53d6491cc5a85a5c03474"
       },
       {
         "path": "data/v2/eval/rung2_val_seed42.json",
-        "sha256": "1b4a4da1dd71f46bd3d7bde0e1d1c9dac5af490a283803416c4414bcfa361e59"
+        "sha256": "ca03f9842beab66e614f0df7944015764c8f087359dc0adfb268176fdfe6ca38"
       },
       {
         "path": "data/v2/eval/rung2_val_seed43.json",
-        "sha256": "a6a556fd5ab1d6229d01ccc315c19c22273be57dd307149b8f43cca8f48284bb"
+        "sha256": "b5e978bc6cbe0268900f31e488c56ad44f2c5120ccbe7fc07e05e6b282017295"
       },
       {
         "path": "data/v2/eval/rung2_val_seed44.json",
-        "sha256": "eac15ccd74829da6e4f2ea2bc7d80a104746c7e61b4867ce4b6e9022cda2e749"
+        "sha256": "1b83fae30fe382acbc7a31e8862854d8dc073dbb2b4536ee5c2de0991ec8eeb4"
       },
       {
         "path": "data/v2/eval/rung2_val_seed45.json",
-        "sha256": "87f8bbcf9f1fab49749a5f89ec9cbf4df523f20453a8bbb4443dc8ed631b16ce"
+        "sha256": "90746f342cf9b9b8e462c98416bccc663cb5cfda7fa94d3bc4c5b16ce40d0c41"
       },
       {
         "path": "data/v2/eval/rung2_val_seed46.json",
-        "sha256": "ac9e3a291663d30a463807964c27cdc2e8cd5962e8d0b8fad3a36b6702466bb6"
+        "sha256": "9e960173024605fbb4790350d5f357286c4b7895efd27b34862564c15878a919"
+      },
+      {
+        "path": "data/v2/eval/rung3_realised_exposure_val_seed42.json",
+        "sha256": "02e372d1fd856a1caedcaaa2bdecb6742d44f9c35768db59432e1e747094e4dd"
+      },
+      {
+        "path": "data/v2/eval/rung3_realised_exposure_val_seed43.json",
+        "sha256": "afca8b97138b7e3172d349dfd509c55235b51e3cf839255590f9bf2d94904bfe"
+      },
+      {
+        "path": "data/v2/eval/rung3_realised_exposure_val_seed44.json",
+        "sha256": "02f1cfa37652068a5a85f2b848d092d0602f92593bb991d761efaa9c8de4fbc2"
+      },
+      {
+        "path": "data/v2/eval/rung3_realised_exposure_val_seed45.json",
+        "sha256": "b39f3e0b533ed838dfd4f54aec419eb1b88783074bcfc295fb13317b1d05b0cd"
+      },
+      {
+        "path": "data/v2/eval/rung3_realised_exposure_val_seed46.json",
+        "sha256": "c69b6d76c50c6a186ef2da40e33e9ebd3b171684369de4341918b9d33a1b317e"
       },
       {
         "path": "data/v2/eval/rung3_val_seed42.json",
-        "sha256": "a964f35f1d7f3de8567bee7336318aff565eebc6aacb7ed5f1770a9947d183f2"
+        "sha256": "bc022401d7c2a570ee42039d89c44259549777a09cde24bc8cd2ae86442cbe14"
       },
       {
         "path": "data/v2/eval/rung3_val_seed43.json",
-        "sha256": "3cdcb097de359f5df3f22ec016436ce8a8f90d04977ef65c0555711122b5d99e"
+        "sha256": "0931bf751927468b94d315e75030b02496e31323d173b01ba7d390ce63385e16"
       },
       {
         "path": "data/v2/eval/rung3_val_seed44.json",
-        "sha256": "b5aef9d26767ebfd4494bc4b31147074b02d33320c948084a5185f365332cb04"
+        "sha256": "13ab4ef747703db57436feabe645e8fc0869a11b7c0c619ac960ace34bce25da"
       },
       {
         "path": "data/v2/eval/rung3_val_seed45.json",
-        "sha256": "4a079ba591f6c2b2469d4f34cd847947dfc082abcb17b6a1b42cc73a21696258"
+        "sha256": "c607fe78801ae10fe9766d2edd020827315a2d61ce3dc856520b7290edda5688"
       },
       {
         "path": "data/v2/eval/rung3_val_seed46.json",
-        "sha256": "a6aae8a748f709259250f52f6b51d1631a33de7e99cd511e8c60557d5713d3cf"
+        "sha256": "cb48fd9befa30302346420327f3eec8d1d14267cf3248e9bbce16305241b2c0f"
+      },
+      {
+        "path": "data/v2/eval/rung4_realised_exposure_val_seed42.json",
+        "sha256": "3a648d5eae311f3468fd9bb15ca3bd7bc464b3e36964304142259e8020644b6d"
+      },
+      {
+        "path": "data/v2/eval/rung4_realised_exposure_val_seed43.json",
+        "sha256": "028b918bfc78f3b95ee550c22c7c7c77c9e4f953528bfb1270eb809903996404"
+      },
+      {
+        "path": "data/v2/eval/rung4_realised_exposure_val_seed44.json",
+        "sha256": "8b09ac11cde88011cd872bf678676654bada8ec01045385e0c823de600684d67"
+      },
+      {
+        "path": "data/v2/eval/rung4_realised_exposure_val_seed45.json",
+        "sha256": "869b678ab64467e154ec4d2f9c353d73f2f8718f9b44f7158b699ba00573aa38"
+      },
+      {
+        "path": "data/v2/eval/rung4_realised_exposure_val_seed46.json",
+        "sha256": "7ec3747d67e544b3eb864bdb1b6ac0a1a847147de9dfe17c0b1a922ec9ffd3e0"
       },
       {
         "path": "data/v2/eval/rung4_val_seed42.json",
-        "sha256": "d8bec7eab6b330866e21605074fddb4447f6d95551ded2523e4f5edd4da3e3a1"
+        "sha256": "b7872aa89653e9d3403d80a4392788717df825657d4b4266b9f08bf7da84eb90"
       },
       {
         "path": "data/v2/eval/rung4_val_seed43.json",
-        "sha256": "e3b83aa977b2ad5afc48c1b527c345b91951f9402fb2d38c6d06df3dab337aab"
+        "sha256": "1d710490301b353d5665db6e19e0528465aae6bcfd9636e5af67f8fb3a8446b4"
       },
       {
         "path": "data/v2/eval/rung4_val_seed44.json",
-        "sha256": "75546d1e39718166c22a67fdfc1f543ce6179acf199607326ae0004ef4c0ca93"
+        "sha256": "41ccfdd69d5b54ba9c54219b4771a3faf8be13370a77bd0442d131bc295202ef"
       },
       {
         "path": "data/v2/eval/rung4_val_seed45.json",
-        "sha256": "756d76b516411f021c6f1e23faaf94dbd63c8fb9d690890c1f3458c50339fdd3"
+        "sha256": "be2881b76de631f190ad31ab26318c66a194d2c3f2f67658e746d9cde775a562"
       },
       {
         "path": "data/v2/eval/rung4_val_seed46.json",
-        "sha256": "83c6a4087bd795abe136aadc7c0ca92332b60d2fae5355ed15aa0b49fd89dc78"
+        "sha256": "273bdbcecd103d4938715097e9b92ff13e506e24c5e81f15868775839bc6e53d"
       },
       {
-        "path": "data/v2/eval/rung5_mil_val_seed42.json",
-        "sha256": "9e0eabd99bdac34b366c0f11e80b28fef5cf21ec5a4f0c0e8db607b385e90282"
+        "path": "data/v2/eval/rung9_realised_exposure_val_seed42.json",
+        "sha256": "ca8fee8dcc284f8098c0061ae56500cc82e9b54e3c0e4b743786e875ad37792a"
       },
       {
-        "path": "data/v2/eval/rung5_mil_val_seed43.json",
-        "sha256": "be4415cfca0c3d7e4d6299fb15d2a1e1035e6375fbf148f0e89f4840f70c1f53"
+        "path": "data/v2/eval/rung9_realised_exposure_val_seed43.json",
+        "sha256": "6e908501eb5fca24d8554a98c014f2426f70b7349f76d9a95a5d85e24c088720"
       },
       {
-        "path": "data/v2/eval/rung5_mil_val_seed44.json",
-        "sha256": "ba4d6d871698566361a5eecb0fc9e68e85aaf66f4b1bdc10317bfc018174e5de"
+        "path": "data/v2/eval/rung9_realised_exposure_val_seed44.json",
+        "sha256": "9deba84cb27c90b9e5a75a73b5073dca4d8b6a19265a8cb48daaeb48221510c1"
       },
       {
-        "path": "data/v2/eval/rung5_mil_val_seed45.json",
-        "sha256": "d3baa8d86ec7b89393b58bdaa186a14a3c136d0d492e9e555d50e6059815b989"
+        "path": "data/v2/eval/rung9_realised_exposure_val_seed45.json",
+        "sha256": "97b3a20ff51d1ce60aa0f300b026f2f699ab5a1ebe80c05fe976ea98ab1c350a"
       },
       {
-        "path": "data/v2/eval/rung5_mil_val_seed46.json",
-        "sha256": "5034f6b6909401bcafd19e6d0a2661c392a136a3da17c64d874a0cf1036f36f3"
+        "path": "data/v2/eval/rung9_realised_exposure_val_seed46.json",
+        "sha256": "f975fd3fe33139fbabd2f72c305ed038946ef3c62606f5bd71501466bfec6468"
       },
       {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed42.json",
-        "sha256": "b57ea87d9e097c31ddbd7db7bd7b80ada2961f181ad7006ece1dda594b999032"
+        "path": "data/v2/eval/rung9_val_seed42.json",
+        "sha256": "1cd5da3dca0873131dbf15ef6b5b01dff0a073a7e4f4fce8a479396e7226ad13"
       },
       {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed43.json",
-        "sha256": "d8646c8cc76e04f3a5ca4259b02c1cdfd43647141f6bf1b95e2ba2bc6e05f851"
+        "path": "data/v2/eval/rung9_val_seed43.json",
+        "sha256": "54e66c187c926e17be0e35b5e75be5d4b737ab34c69a85cd399ade34d66e2679"
       },
       {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed44.json",
-        "sha256": "f0c8cd9e73d94c17cb9d4f81526ec20c66ae8e873237a7acdf30699318be776e"
+        "path": "data/v2/eval/rung9_val_seed44.json",
+        "sha256": "3423bc7d7c7a7d29f69304cee110e1a12afb91241290b95d8067d2bb92436de0"
       },
       {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed45.json",
-        "sha256": "f0b6c77ceb85b4021ace3c7617fd51cde399ea037c3744c198706fca27eb6d09"
+        "path": "data/v2/eval/rung9_val_seed45.json",
+        "sha256": "c8a5dc4494e595ef64e684c8839c11735f0b9f64bc274128e5cb0fd15a7c1ef0"
       },
       {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed46.json",
-        "sha256": "d75d940236b23a7e216e7f8076757cc03773710552e6b55bc8499bd168a801c4"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed42.json",
-        "sha256": "13a5ae234006af0f138066dc920962f17e275dfae618f5121658e2f4b04db944"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed43.json",
-        "sha256": "1d6fa17b12687ec85fa22b4b5c45851fe525ac5e2abf4625cdf3dda00d9a303b"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed44.json",
-        "sha256": "472ac36a2598eb7f05439aacc3825cf3c7a4289f8043b1f68179094beb0c7085"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed45.json",
-        "sha256": "2e424aacc94802c57d326fdc155f94f2b7b56e2865ed7c76995e35b102df5948"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed46.json",
-        "sha256": "93b844350b0d92e4d1a7315ade335ceb6fbd74e3db9ba7c036d3a1fbf2643d95"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed42.json",
-        "sha256": "cdbf34d8b2f58bef97d1a3e263c0d325977ca751ff3c59df30d4476b9c7b8b58"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed43.json",
-        "sha256": "04eaa63daba0cdc5a12bb9d2d2a28032e6fe1a4fcc0f08f90c22f0be09ddc128"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed44.json",
-        "sha256": "fd309d11a26edd88aff2c8114835bd2de47cb1c31c36b202cd34af3652e41d26"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed42.json",
-        "sha256": "eb43546c56f01e34072179489f5a207570f242b0923404b058f8dd22a580eb1c"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed43.json",
-        "sha256": "99442bfe9f4f5264b89d7574b1b9ff0d402ba8f57a06a86c00aada3eacb84001"
-      },
-      {
-        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed44.json",
-        "sha256": "dc5d3a7beb358fe0add3e7a95f5c0a2c548d63e6b62186e1bfe2c844dc44a2c2"
+        "path": "data/v2/eval/rung9_val_seed46.json",
+        "sha256": "096f426b9407c8abb89ba2d11fd42187e35d6a8a3d400b1114cab85cf22dc444"
       },
       {
         "path": "data/v2/eval/volume_rank_val_seed42.json",
-        "sha256": "c9290cdb80686b44af30628c401f2e1ff6508b41a9388a312dacced0cdb429ef"
+        "sha256": "7baf99607f02981999ea3f9a7f438d305b0ad2797253843dff17355a1a962b84"
+      },
+      {
+        "path": "data/v2/eval/volume_rank_val_seed43.json",
+        "sha256": "554363c8be40257c1fab5598f07e131c8262c96a131b4088d48036edfc0cab96"
+      },
+      {
+        "path": "data/v2/eval/volume_rank_val_seed44.json",
+        "sha256": "d1948a2ea976f13ee542155f00740035a80d60271a20d9cf6bd375e8f892e235"
+      },
+      {
+        "path": "data/v2/eval/volume_rank_val_seed45.json",
+        "sha256": "f3c95622a3fd4816e2d8fdf976ace42643d33960d5c50953d5c303fa3c10d9b2"
+      },
+      {
+        "path": "data/v2/eval/volume_rank_val_seed46.json",
+        "sha256": "62c8c6c396379b869133b841d051e540050703b5bac72437f15c7d377f771af5"
       }
     ],
     "open_count": 0,
@@ -1182,7 +1365,7 @@
       "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
     ],
     "results_git_sha": [
-      "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+      "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
     ],
     "results_open_count": [
       0
@@ -1190,53 +1373,80 @@
     "results_scored_under": {
       "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3": {
         "cycles": [
-          3
+          3,
+          4
         ],
         "is_authoritative_lock": true,
         "locks": [
-          "EVAL-LOCK-CYCLE3.json"
+          "EVAL-LOCK-CYCLE3.json",
+          "EVAL-LOCK-CYCLE4.json"
         ],
         "sources": [
           "all_pass_val_seed42.json",
+          "all_pass_val_seed43.json",
+          "all_pass_val_seed44.json",
+          "all_pass_val_seed45.json",
+          "all_pass_val_seed46.json",
           "random_at_k_val_seed42.json",
+          "random_at_k_val_seed43.json",
+          "random_at_k_val_seed44.json",
+          "random_at_k_val_seed45.json",
+          "random_at_k_val_seed46.json",
+          "rung1_realised_exposure_val_seed42.json",
+          "rung1_realised_exposure_val_seed43.json",
+          "rung1_realised_exposure_val_seed44.json",
+          "rung1_realised_exposure_val_seed45.json",
+          "rung1_realised_exposure_val_seed46.json",
           "rung1_val_seed42.json",
+          "rung1_val_seed43.json",
+          "rung1_val_seed44.json",
+          "rung1_val_seed45.json",
+          "rung1_val_seed46.json",
+          "rung2_realised_exposure_val_seed42.json",
+          "rung2_realised_exposure_val_seed43.json",
+          "rung2_realised_exposure_val_seed44.json",
+          "rung2_realised_exposure_val_seed45.json",
+          "rung2_realised_exposure_val_seed46.json",
           "rung2_val_seed42.json",
           "rung2_val_seed43.json",
           "rung2_val_seed44.json",
           "rung2_val_seed45.json",
           "rung2_val_seed46.json",
+          "rung3_realised_exposure_val_seed42.json",
+          "rung3_realised_exposure_val_seed43.json",
+          "rung3_realised_exposure_val_seed44.json",
+          "rung3_realised_exposure_val_seed45.json",
+          "rung3_realised_exposure_val_seed46.json",
           "rung3_val_seed42.json",
           "rung3_val_seed43.json",
           "rung3_val_seed44.json",
           "rung3_val_seed45.json",
           "rung3_val_seed46.json",
+          "rung4_realised_exposure_val_seed42.json",
+          "rung4_realised_exposure_val_seed43.json",
+          "rung4_realised_exposure_val_seed44.json",
+          "rung4_realised_exposure_val_seed45.json",
+          "rung4_realised_exposure_val_seed46.json",
           "rung4_val_seed42.json",
           "rung4_val_seed43.json",
           "rung4_val_seed44.json",
           "rung4_val_seed45.json",
           "rung4_val_seed46.json",
-          "rung5_mil_val_seed42.json",
-          "rung5_mil_val_seed43.json",
-          "rung5_mil_val_seed44.json",
-          "rung5_mil_val_seed45.json",
-          "rung5_mil_val_seed46.json",
-          "rung6_crc_base2_alpha0.05_val_seed42.json",
-          "rung6_crc_base2_alpha0.05_val_seed43.json",
-          "rung6_crc_base2_alpha0.05_val_seed44.json",
-          "rung6_crc_base2_alpha0.05_val_seed45.json",
-          "rung6_crc_base2_alpha0.05_val_seed46.json",
-          "rung6_crc_base2_alpha0.1_val_seed42.json",
-          "rung6_crc_base2_alpha0.1_val_seed43.json",
-          "rung6_crc_base2_alpha0.1_val_seed44.json",
-          "rung6_crc_base2_alpha0.1_val_seed45.json",
-          "rung6_crc_base2_alpha0.1_val_seed46.json",
-          "rung6_crc_base4_alpha0.05_val_seed42.json",
-          "rung6_crc_base4_alpha0.05_val_seed43.json",
-          "rung6_crc_base4_alpha0.05_val_seed44.json",
-          "rung6_crc_base4_alpha0.1_val_seed42.json",
-          "rung6_crc_base4_alpha0.1_val_seed43.json",
-          "rung6_crc_base4_alpha0.1_val_seed44.json",
-          "volume_rank_val_seed42.json"
+          "rung9_realised_exposure_val_seed42.json",
+          "rung9_realised_exposure_val_seed43.json",
+          "rung9_realised_exposure_val_seed44.json",
+          "rung9_realised_exposure_val_seed45.json",
+          "rung9_realised_exposure_val_seed46.json",
+          "rung9_val_seed42.json",
+          "rung9_val_seed43.json",
+          "rung9_val_seed44.json",
+          "rung9_val_seed45.json",
+          "rung9_val_seed46.json",
+          "volume_rank_val_seed42.json",
+          "volume_rank_val_seed43.json",
+          "volume_rank_val_seed44.json",
+          "volume_rank_val_seed45.json",
+          "volume_rank_val_seed46.json"
         ]
       }
     }

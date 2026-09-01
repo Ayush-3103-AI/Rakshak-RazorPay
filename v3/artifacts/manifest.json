@@ -6,7 +6,7 @@
         "file": "g5_confounder_null.json",
         "name": "g5_confounder_null",
         "reason": null,
-        "sha256": "405f9c6edd15f81ec444529732d6300d674178740ff2ad3784e00163ffd7e17e",
+        "sha256": "bde0b83f393992f8b3eeeaebbe30070613b497126a95b0134b76b50f2cf0cb52",
         "split": "NULL_RUN",
         "status": "PRESENT"
       },
@@ -14,7 +14,7 @@
         "file": "ladder.json",
         "name": "ladder",
         "reason": null,
-        "sha256": "d5ab37e53122af667aa9819937246fedd604287a86270921f43cc6e23e00346a",
+        "sha256": "9b5d72b09fa92ab29ea7abbbfb994f613735c009d0ce8443f88f67b9cbf6400c",
         "split": "VALIDATION",
         "status": "PRESENT"
       },
@@ -22,7 +22,7 @@
         "file": "lock_state.json",
         "name": "lock_state",
         "reason": null,
-        "sha256": "f8beb57a2fd058c96274336dcf1f12e2294975c3ec37c125b1665170f0a4b2a5",
+        "sha256": "ab02fdf659d65ace2ae11aa816f17ed46c23e388b9542a9e3a085c3669023bf2",
         "split": null,
         "status": "PRESENT"
       },
@@ -30,7 +30,7 @@
         "file": "rung_roster.json",
         "name": "rung_roster",
         "reason": null,
-        "sha256": "a176592bd4af436f033e5021073abdb177b8a9c0983ac84a065c9abffef691f1",
+        "sha256": "f3f9f72a845f826880197a53adf5671987ba0565d83b0bdaecd3b34da0a27660",
         "split": null,
         "status": "PRESENT"
       }
@@ -38,9 +38,9 @@
     "contract": "rakshak-v3-dashboard"
   },
   "provenance": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
-    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
     "open_count": 0
   },
   "schema_version": "v3.1.0",

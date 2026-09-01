@@ -989,9 +989,9 @@
     ]
   },
   "provenance": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
     "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
-    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
     "inputs": [
       {
         "path": "data/v2/gates/g5_series.json",
