@@ -603,3 +603,124 @@ Numbers:     panel 3,070,800 × 49 features · 50,334,951 events · 16,694.1s (4
 Next:        Rungs 0-4 rescored on this panel, then T-0114 (the K-1 test). The NFR-04
              overrun needs a lead decision BEFORE adoption is claimed for any rung — the
              margin and the NFR are two separate clauses of Prime Directive 5 and both bind.
+
+---
+
+## T-0112/0113/0114 | The ladder scored. K-1 FIRED, and no rung beats a volume ranker.
+Date:        2026-09-01  ·  Session:  2  ·  Duration:  ~1h30m
+Status:      DONE. Two findings, both negative, both reported per Prime Directive 6.
+
+Built:       Rungs 0-4 trained and scored on VALIDATION, all five locked seeds for every
+             trained rung. `data/v2/models/rung{2,3,4}_seed{42..46}` and 18 result rows in
+             `data/v2/eval/`. Harness verified before and after: `verify_lock` zero drift,
+             authoritative lock `EVAL-LOCK-CYCLE3.json`, `eval_module_sha256` c009e38d,
+             `open_count: 0` on both checks, `RAKSHAK_UNLOCK` never set, no `--split test`
+             ever passed, no `*_test_*` file anywhere in `data/v2/eval/`.
+
+## FINDING 1 — charter K-1 has fired. The cohort-residual hypothesis is dead.
+
+             Rung 3 (cohort residual) vs Rung 2 (LightGBM incumbent), relative PR-AUC:
+
+               seed 42   0.83404 -> 0.85781   +2.850%
+               seed 43   0.84296 -> 0.85203   +1.075%
+               seed 44   0.85105 -> 0.86556   +1.706%
+               seed 45   0.82865 -> 0.85510   +3.192%
+               seed 46   0.83570 -> 0.84281   +0.851%
+
+             **Mean +1.93% relative. Range +0.85% to +3.19%. All five seeds under the
+             declared 5% bar, none even reaching half of it.**
+
+             Charter K-1: *"Rung 3 fails to beat Rung 2 by >=5% relative PR-AUC -> the
+             cohort-residual hypothesis for separating adversarial from platform drift is
+             dead. Report it with the number. Do not add features to rescue it."*
+             No features were added. No retuning was done. One `HParams`, one seed threaded
+             identically across Rungs 2/3/4, as FR-031 requires so the delta is attributable
+             to the residual columns and nothing else. Feature sets verified to differ by
+             exactly the 21 `r_*` residual columns and nothing more.
+
+             Savings agrees: 0.4179 -> 0.4318, +3.3% relative. A small, real, economically
+             minor effect that does not change the verdict.
+
+             **THREE INDEPENDENT MEASUREMENTS NOW CONVERGE ON THE SAME ANSWER**, taken on
+             different data by different lanes on different days:
+               - Gate G5: the residual cuts the worst confounder window 62% (+7.07pp ->
+                 +2.70pp) and still misses the +2pp allowance. RED.
+               - T-0121's revived P2 test: the residual cuts the alert rate 14.3% against a
+                 15% bar. Misses by 0.7pp. RED, left red.
+               - K-1 here: +1.93% against a 5% bar.
+             The residual mechanism works — it cancels common-mode exactly, median residual
+             0.000 to three decimals — and it under-delivers against every bar declared for
+             it. That is a coherent, publishable falsification and it is the figure the
+             charter asked for.
+
+## FINDING 2 — no trained rung beats a trivial volume ranker on savings. None of them.
+
+             | rung | PR-AUC | savings | P@K | ECE | beats floors |
+             |---|---|---|---|---|---|
+             | volume_rank (FLOOR) | 0.2169 | **0.6017** | 0.5714 | 0.4866 | — |
+             | rung1 rules | 0.2843 | 0.1147 | 0.0606 | 0.0184 | NO |
+             | rung2 lgbm | 0.8385 | 0.4179 | 0.8574 | 0.0079 | NO |
+             | rung3 cohort | 0.8547 | 0.4318 | 0.8519 | 0.0080 | NO |
+             | rung4 cost | 0.8542 | 0.4347 | 0.3889 | 0.0435 | NO |
+
+             `floor_fail: ['volume_rank']` on **every rung, every seed**. Rank-by-GMV
+             captures more of the exposure-weighted savings pool than any trained model,
+             while losing to them massively on ranking (0.22 vs 0.83-0.87), on precision@K,
+             and on calibration (ECE 0.487 vs 0.008). Seed spread is tight (Rung 2 savings
+             0.406-0.435) and the floor is identical across every row because it is computed
+             on the same truth and population. This is not noise.
+
+             T-0113's own acceptance criterion says "beats all four floors on validation —
+             if it does not, that is the finding." It does not. That is the finding.
+
+## FINDING 3 — Rung 4 (cost-in-loss) makes it worse, and that was the fix for Finding 2.
+
+             Cost-reweighting was the designed answer to a savings gap. It moved savings
+             0.4179 -> 0.4347, nowhere near the 0.6016 floor, and it cost:
+               - ECE 0.0079 -> 0.0435, five to six times worse
+               - precision@K 0.857 -> 0.389 and recall@K 0.310 -> 0.140, both roughly halved
+               - **median TTD to infinity on all five seeds** — more than half of true
+                 positives are never alerted at all, where Rungs 2/3 have finite medians
+                 under the identical window
+             It concentrates alerts on a few high-loss merchants at the expense of broad
+             recall, without closing the gap to the heuristic it was built to beat.
+
+Surprised:   The volume-rank result. A one-line heuristic — sort merchants by GMV — out-earns
+             a tuned LightGBM, a cohort-residual model and a cost-aware model on the metric
+             the project cares most about, on every seed, while being catastrophically
+             worse on every other metric. The savings pool is exposure-weighted, so a model
+             that ranks by probability of fraud rather than by expected loss leaves most of
+             the money on the table. Rung 4 was supposed to be exactly that correction and
+             it did not work.
+
+Broke:       Nothing. Three lock checks clean, door never opened.
+
+Decided:     **No adoption claim arises from this run at all** — not because of NFR-04, but
+             because no rung clears the volume_rank savings floor. The NFR-04 overrun
+             (state_bytes_p99 9,716 B vs 4,096 B, 2.37x, carried in every result row) would
+             have made any adoption conditional anyway; it is moot here.
+
+Numbers:     Capacity K=15, 3,036 val merchants, 182,160 rows, prevalence 0.0135.
+             Validation split only. No test-split number exists anywhere in this repo.
+
+## TTD, detection rates and recall-by-typology are NOT interpretable on this split
+
+             Verified against `ground_truth.parquet` rather than assumed: **all 294 labelled
+             onsets fall in [30, 217], median 108** — strictly before the validation window
+             [240, 299] opens. `time_to_detection` computes `alert_day - onset_day` and an
+             alert cannot occur before day 240, so TTD is floored near `240 - onset` (>=132
+             for the median merchant) no matter how fast a model would have reacted. Only
+             4 of 294 merchants have onset >= 210, so a "detected within 30 days of onset"
+             hit is geometrically possible for a handful at most — which is why
+             `detection_rate_d7/d14/d30` read 0.000 for **every** rung including the floors.
+             `recall_by_typology` reads 0.0 across every typology for the same reason.
+
+             **This is window/onset geometry, not model responsiveness, and it must not be
+             reported as the latter.** The one exception is Rung 4's median TTD going to
+             infinity: that IS a genuine within-run signal about recall collapsing below
+             50%, because Rungs 2/3 have finite medians under the identical window.
+
+Next:        T-0116 (open the test split, once) and T-0117 (report). Both findings above are
+             validation-side and stand independent of the test split. The report's headline
+             is now written for it: the central hypothesis is falsified, and the ladder's own
+             floor beats the ladder.

@@ -53,7 +53,15 @@ from rakshak.eval.splits import (
 )
 from rakshak.generator.config import ScenarioConfig, load_scenario
 from rakshak.generator.engine import generate
-from rakshak.models import dataset, rung0_floors, rung1_rules, rung2_lgbm, rung3_cohort, rung4_cost
+from rakshak.models import (
+    dataset,
+    rung0_floors,
+    rung1_rules,
+    rung2_lgbm,
+    rung3_cohort,
+    rung4_cost,
+    rung5_mil,
+)
 from rakshak.schemas import Split
 
 app = typer.Typer(add_completion=False, help="Rakshak v2 — merchant risk sentinel.")
@@ -467,7 +475,13 @@ def _columns_for(rung: int) -> tuple[str, ...]:
         return dataset.base_columns()
     if rung in (3, 4):
         return rung3_cohort.feature_columns()
-    raise ValueError(f"rung {rung} is not a trained rung; 2, 3 and 4 are")
+    if rung == 5:
+        # NOT a merchant-day vector. Rung 5's rows are (merchant, day, payer) capsules and
+        # its columns are the capsule vector, so a Rung 5 "row" and a Rung 2 "row" are
+        # different objects entirely — see rung5_mil's module docstring. The two share this
+        # function only because both need a column contract that travels with the model.
+        return rung5_mil.feature_columns()
+    raise ValueError(f"rung {rung} is not a trained rung; 2, 3, 4 and 5 are")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -515,9 +529,108 @@ def features(
     typer.echo(json.dumps(summary, indent=2))
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Rung 5. Its bulk lives in ``score_rung5`` — a merchant subsample, a chunked capsule
+# materialiser and a RAM floor, none of which the other rungs need — and these two
+# functions are the seam that makes it reachable as ``train --rung 5`` / ``eval --rung 5``
+# rather than as a script somebody has to know about. The import is deferred because
+# ``score_rung5`` imports this module's helpers; a module-level import would be a cycle.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _train_rung5(*, seed: int, root: Path, config: Path) -> None:
+    """Fit the instance model on train bags, select the pooling on val bags, persist both."""
+    from rakshak import score_rung5
+
+    sample, capsules, boundaries, panel = score_rung5.prepare(root, config, echo=typer.echo)
+    tuned, tau_table = score_rung5.fit_seed(
+        seed,
+        root=root,
+        boundaries=boundaries,
+        panel=panel,
+        capsules=capsules,
+        train_merchants=sample["train"],
+        val_merchants=sample["val"],
+    )
+    path = tuned.save(_model_path(5, seed))
+    as_of = _epoch_end(boundaries.train[1], boundaries)
+    coverage = label_coverage(as_of, _label_path(root))
+    summary = {
+        "rung": 5,
+        "seed": seed,
+        "train_as_of_day": boundaries.train[1],
+        "columns": list(tuned.columns),
+        "n_columns": len(tuned.columns),
+        "n_train_rows": tuned.instance.n_train_rows,
+        "n_train_positive_rows": tuned.instance.n_train_positive_rows,
+        "n_train_positive_merchants": tuned.instance.n_train_positive_merchants,
+        "train_seconds": tuned.instance.train_seconds,
+        "model_size_mb": round(tuned.size_mb(path), 4),
+        "hparams": dataclasses.asdict(tuned.params),
+        # The fitted state. Persisted deliberately, and reconstructed deliberately — see
+        # _SIDECAR_RECONSTRUCTED. `tau` is NaN when noisy-OR wins, which is not a missing
+        # value: noisy-OR has no tau, and that is the point of it being the comparator.
+        "pooling": tuned.pooling,
+        "tau": tuned.tau,
+        "passes": tuned.passes,
+        "n_train_bags": tuned.n_train_bags,
+        "n_train_positive_bags": tuned.n_train_positive_bags,
+        "tau_selection_table": tau_table,
+        "subsample": {
+            "n_train_merchants": len(sample["train"]),
+            "n_val_merchants": len(sample["val"]),
+        },
+        "label_coverage_at_train_boundary": {
+            "n_merchants": coverage.n_merchants,
+            "n_available": coverage.n_available,
+            "n_positive": coverage.n_positive,
+            "n_censored": coverage.n_censored,
+            "n_pending": coverage.n_pending,
+        },
+    }
+    _sidecar_path(5, seed).write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    typer.echo(json.dumps(summary, indent=2))
+
+
+def _eval_rung5(*, seed: int, root: Path, config: Path, panel_path: Path) -> None:
+    """Score the persisted Rung 5 through the ``_load_trained`` round-trip.
+
+    Deliberately reloads from disk rather than keeping the model from ``train`` in memory:
+    the round-trip is the thing that would have silently lost the fitted pooling, so the
+    scoring path is the one place it must be exercised for real.
+    """
+    from rakshak import score_rung5
+
+    sample, capsules, boundaries, panel = score_rung5.prepare(root, config, echo=typer.echo)
+    tuned = _load_trained(5, seed)
+    if not isinstance(tuned, rung5_mil.TrainedMIL):
+        raise typer.BadParameter(f"rung 5 seed {seed} did not reload as a TrainedMIL")
+    payload = score_rung5.score_seed(
+        tuned,
+        seed,
+        root=root,
+        config=config,
+        boundaries=boundaries,
+        panel=panel,
+        capsules=capsules,
+        val_merchants=sample["val"],
+        train_merchants=sample["train"],
+        tau_table=json.loads(_sidecar_path(5, seed).read_text(encoding="utf-8"))[
+            "tau_selection_table"
+        ],
+        booster_path=_model_path(5, seed),
+    )
+    results = panel_path.parent / RESULT_DIR.name
+    results.mkdir(parents=True, exist_ok=True)
+    (results / f"rung5_mil_val_seed{seed}.json").write_text(
+        json.dumps(payload, indent=2, default=str), encoding="utf-8"
+    )
+    typer.echo(json.dumps(payload, indent=2, default=str))
+
+
 @app.command()
 def train(
-    rung: int = typer.Option(2, "--rung", help="2, 3 or 4."),
+    rung: int = typer.Option(2, "--rung", help="2, 3, 4 or 5."),
     seed: int = typer.Option(42, "--seed", help="Threaded into LightGBM; identical "
                              "across rungs so the Rung-3 delta is single-variable."),
     root: Path = typer.Option(Path("data/v2"), "--root", help="Generated dataset."),  # noqa: B008
@@ -537,6 +650,10 @@ def train(
     drift = _guard("train", root=ROOT)
     for line in drift:
         typer.echo(f"[lock drift, unenforced] {line}")
+
+    if rung == 5:
+        _train_rung5(seed=seed, root=root, config=config)
+        return
 
     full = dataset.load_panel(panel)
     rows = full.select("train")
@@ -610,6 +727,18 @@ _SIDECAR_RECONSTRUCTED: Final = frozenset(
         "n_train_positive_rows",
         "n_train_positive_merchants",
         "train_seconds",
+        # Rung 5's fitted state (T-0120). These five are the reason the refusal below
+        # exists at all, and they are handled here rather than exempted: `pooling` and
+        # `tau` are FITTED on validation by `rung5_mil.fit_tau` and change the score, so a
+        # reload that dropped them would return a rung scoring under the default pooling
+        # while every label still said Rung 5. `passes`, `n_train_bags` and
+        # `n_train_positive_bags` are constructor arguments of `TrainedMIL` and are
+        # rebuilt from here for the same reason `n_train_rows` is.
+        "pooling",
+        "tau",
+        "passes",
+        "n_train_bags",
+        "n_train_positive_bags",
     }
 )
 
@@ -625,11 +754,19 @@ _SIDECAR_PROVENANCE_ONLY: Final = frozenset(
         "n_columns",
         "model_size_mb",
         "label_coverage_at_train_boundary",
+        # Rung 5. `tau_selection_table` is the whole validation grid `fit_tau` scored; the
+        # winning row is already reconstructed as `pooling`/`tau` above, so the table is a
+        # *report* — ticket #54 makes the fitted tau a result, and the losing rows are what
+        # make the winning one mean anything. `subsample` is the merchant sample this rung
+        # was fitted and scored on, and it rides on every Rung 5 artefact so no reader can
+        # mistake the row for a full-population one.
+        "tau_selection_table",
+        "subsample",
     }
 )
 
 
-def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
+def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung | rung5_mil.TrainedMIL:
     """Rebuild a trained rung from its booster file and sidecar.
 
     **Refuses a sidecar carrying state it cannot rebuild.** Rung 5 (T-0120) fits a
@@ -641,6 +778,12 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
 
     So the check is on the sidecar, not on the rung number: any future rung that saves
     fitted state hits it too, without anyone remembering to come back here.
+
+    **T-0120 extended this rather than bypassing it.** Rung 5's ``pooling`` and ``tau`` are
+    now in ``_SIDECAR_RECONSTRUCTED`` and are rebuilt into a :class:`rung5_mil.TrainedMIL`
+    below; the refusal is untouched and still fires on any key nobody has classified. The
+    two lists and this function moved together, which is exactly what the docstring above
+    asked the next person to do.
     """
     import lightgbm as lgb
 
@@ -654,7 +797,7 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
             f"that fitted state and score with defaults under the right name. Extend "
             f"_load_trained and _SIDECAR_RECONSTRUCTED together, or do not persist it."
         )
-    return rung2_lgbm.TrainedRung(
+    booster = rung2_lgbm.TrainedRung(
         rung=rung,
         booster=lgb.Booster(model_file=str(path)),
         columns=tuple(sidecar["columns"]),
@@ -664,11 +807,30 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
         n_train_positive_merchants=sidecar["n_train_positive_merchants"],
         train_seconds=sidecar["train_seconds"],
     )
+    if rung != 5:
+        return booster
+    missing = sorted({"pooling", "tau", "passes", "n_train_bags", "n_train_positive_bags"}
+                     - set(sidecar))
+    if missing:
+        raise typer.BadParameter(
+            f"rung 5 seed {seed}: the sidecar is missing {missing}. Rung 5 is an instance "
+            "model PLUS a fitted pooling; without those keys the booster on disk is only "
+            "half of it, and scoring it under the default pooling would produce a wrong "
+            "number wearing the right name. Re-run `train --rung 5`."
+        )
+    return rung5_mil.TrainedMIL(
+        instance=booster,
+        pooling=sidecar["pooling"],
+        tau=float(sidecar["tau"]),
+        n_train_bags=int(sidecar["n_train_bags"]),
+        n_train_positive_bags=int(sidecar["n_train_positive_bags"]),
+        passes=int(sidecar["passes"]),
+    )
 
 
 @app.command("eval")
 def score_split(
-    rung: int = typer.Option(2, "--rung", help="0, 1, 2, 3 or 4."),
+    rung: int = typer.Option(2, "--rung", help="0, 1, 2, 3, 4, 5 or 6."),
     seed: int = typer.Option(42, "--seed", help="Threaded into the random_at_k floor."),
     split: str = typer.Option("val", "--split", help="val (default) or test. "
                               "test REFUSES without RAKSHAK_UNLOCK=1."),
@@ -680,17 +842,67 @@ def score_split(
         Path("configs/scenario_v2.yaml"), "--config", "-c", help="Scenario manifest."
     ),
     floor: str = typer.Option("", "--floor", help="With --rung 0: which floor to score."),
+    alphas: str = typer.Option(
+        "0.05,0.10", "--alphas", help="With --rung 6: comma-separated nominal false-HOLD "
+        "rates. One EvalResult row is written per alpha."
+    ),
+    base_rung: int = typer.Option(
+        2, "--base-rung", help="With --rung 6: which rung's decisions the conformal "
+        "wrapper softens. Rung 6 is a wrapper, not a scorer — it has no score of its own."
+    ),
 ) -> None:
     """Score one rung and write a complete ``EvalResult`` row.
 
     Refuses the test split unless ``RAKSHAK_UNLOCK=1`` and refuses any split at all if the
     frozen eval modules have changed. Both checks happen before the panel is opened.
+
+    **Rungs 5 and 6 are not shaped like Rungs 0-4 and are dispatched rather than folded in.**
+    Rung 5 scores bags of (merchant, day, payer) capsules over a merchant subsample, so its
+    row universe is not this panel's. Rung 6 is a *decision-policy wrapper*: it emits no
+    score at all, it softens another rung's HOLDs, and it writes one row per alpha rather
+    than one row. Forcing either into the branch below would mean a ``--rung`` that means
+    three different things, which is how a results table ends up comparing two quantities
+    that share a column heading.
     """
     if split not in ("train", "val", "test"):
         raise typer.BadParameter(f"split is train/val/test; got {split!r}")
     drift = _guard(split, root=ROOT)  # type: ignore[arg-type]
     for line in drift:
         typer.echo(f"[lock drift, unenforced] {line}")
+
+    if rung in (5, 6):
+        if split != "val":
+            raise typer.BadParameter(
+                f"rung {rung} scores the validation split only; got {split!r}. Rung 6 "
+                "calibrates on validation by contract (rung6_conformal.calibrate refuses "
+                "anything else) and Rung 5's pooling is selected there; the test split "
+                "opens exactly once, in T-0116, and not from here."
+            )
+        if rung == 5:
+            _eval_rung5(seed=seed, root=root, config=config, panel_path=panel)
+        else:
+            from rakshak import score_rung6
+
+            for path, row in score_rung6.score_val(
+                base_rung=base_rung,
+                seeds=(seed,),
+                alphas=tuple(float(a) for a in alphas.split(",")),
+                root=root,
+                panel=panel,
+                config=config,
+            ):
+                typer.echo(
+                    json.dumps(
+                        {
+                            "wrote": str(path),
+                            "alpha": row["alpha"],
+                            "savings": row["savings"],
+                            "n_hold_base_rung": row["n_hold_base_rung"],
+                            "n_softened": row["n_softened_hold_to_review"],
+                        }
+                    )
+                )
+        return
 
     rng = np.random.default_rng(seed)
     params = _cost_params(config)
@@ -819,6 +1031,53 @@ def score_split(
         json.dumps(payload, indent=2, default=str), encoding="utf-8"
     )
     typer.echo(json.dumps(payload, indent=2, default=str))
+
+
+@app.command()
+def explain(
+    rung: int = typer.Option(7, "--rung", help="7 — the HSMM onset explainer."),
+    seeds: str = typer.Option(
+        "1", "--seeds", help="Comma-separated EM INITIALISATION seeds. Not the lock's five "
+        "model seeds: Rung 7 is not judged on the PR-AUC/TTD adoption margin."
+    ),
+    fit_pool_size: int = typer.Option(500, "--fit-pool-size"),
+    n_iter: int = typer.Option(15, "--n-iter", help="EM iteration cap."),
+    n_states: int = typer.Option(4, "--n-states"),
+    root: Path = typer.Option(Path("data/v2"), "--root", help="Generated dataset."),  # noqa: B008
+    config: Path = typer.Option(  # noqa: B008
+        DEFAULT_CONFIG, "--config", "-c", help="Scenario manifest."
+    ),
+) -> None:
+    """Run the Stage-2 explainer and write its explanation-quality artifact.
+
+    **A separate stage from ``eval`` on purpose.** ``eval`` writes ``EvalResult`` rows into
+    ``data/v2/eval/``, which ``artifacts/build.py`` globs into ``ladder.json``; an explainer
+    routed through it would acquire a ladder row with an empty PR-AUC column and read as a
+    rung that scored badly rather than as one that does not score at all. The artifact goes
+    to ``data/v2/explanation_quality/`` and the metric is ``onset_localisation_error``,
+    which ``EVAL-LOCK-CYCLE3.json`` declared for exactly this.
+
+    The split guard still runs, on ``"val"``. Rung 7 reads days 0-299 and nothing later.
+    """
+    if rung != 7:
+        raise typer.BadParameter(
+            f"rung {rung} is not an explainer; 7 is. Rungs 0-6 are scored through `eval`."
+        )
+    drift = _guard("val", root=ROOT)
+    for line in drift:
+        typer.echo(f"[lock drift, unenforced] {line}")
+
+    from rakshak.explain import hsmm_onset
+
+    hsmm_onset.measure(
+        seeds=tuple(int(s) for s in seeds.split(",")),
+        fit_pool_size=fit_pool_size,
+        n_iter=n_iter,
+        n_states=n_states,
+        root=root,
+        config=config,
+        echo=typer.echo,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover - `python -m rakshak.cli`

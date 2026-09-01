@@ -59,7 +59,12 @@ import polars as pl
 from rakshak.schemas import CAPSULE_SCHEMA, Instrument, TxnStatus
 from rakshak.store import EventStore
 
-__all__ = ["CAPSULE_COLUMNS", "CAPSULE_VECTOR_COLUMNS", "capsules_as_of"]
+__all__ = [
+    "CAPSULE_COLUMNS",
+    "CAPSULE_VECTOR_COLUMNS",
+    "capsule_aggregation",
+    "capsules_as_of",
+]
 
 #: The contract, in order. ``CAPSULE_SCHEMA`` is the single definition; these are views of
 #: it so a rung can slice keys from vector without re-listing either.
@@ -83,7 +88,30 @@ def capsules_as_of(
     attempts = store.query_events(merchant_id, as_of=as_of).filter(~pl.col("is_refund"))
     if attempts.is_empty():
         return pl.DataFrame(schema=CAPSULE_SCHEMA)
+    return capsule_aggregation(attempts.lazy()).collect()
 
+
+def capsule_aggregation(attempts: pl.LazyFrame) -> pl.LazyFrame:
+    """The capsule reshape itself, over an already-filtered ``attempts`` frame.
+
+    Split out of :func:`capsules_as_of` (T-0120's harness lane) and **not** re-implemented
+    beside it, because a column definition written down twice is a column definition that
+    drifts (09-interfaces §9). ``capsules_as_of`` is now the store-backed caller of this
+    function and nothing else changed about it.
+
+    The reason the split exists: ``capsules_as_of`` gets its rows from
+    ``EventStore.query_events``, which materialises the whole visible prefix through duckdb
+    in one go. That is right for one merchant and impossible for twenty thousand — at the
+    v3 geometry the prefix at the validation boundary is ~50M rows x 18 columns, and the
+    box this runs on has under 2 GB free. Rung 5 therefore needs the same expressions
+    applied to a *lazily scanned* frame it can stream, and this is that seam. The
+    point-in-time predicate stays where it always was: the caller filters, this function
+    aggregates.
+
+    ``attempts`` must already have ``is_refund`` rows removed and be bounded above by an
+    ``as_of``. This function asserts neither, because it cannot see an ``as_of`` — which is
+    exactly why it is private-by-convention to the two callers above and below it.
+    """
     # Reuse, within the visible prefix. Nulls are dropped rather than grouped: a null
     # device_hash is "unknown", and grouping the unknowns together would report every
     # payer with a missing device as sharing one enormous device with all the others.
