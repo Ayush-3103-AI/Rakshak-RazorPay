@@ -32,6 +32,7 @@ import polars as pl
 from rakshak import SCHEMA_VERSION
 
 __all__ = [
+    "CAPSULE_SCHEMA",
     "CARD_INSTRUMENTS",
     "GROUND_TRUTH_SCHEMA",
     "HASH_LEN",
@@ -604,3 +605,32 @@ class EvalResult:
             self.savings_floor_all_hold,
             self.savings_floor_volume_rank,
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# §12  Capsule — one (payer, day) instance row, for the instance-level rungs
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: T-0119. Rungs 5, 7 and 8 score transaction-level state rather than the merchant-day
+#: aggregates the T1 register emits, so they need the bag of payers that transacted on a
+#: given merchant-day, each carrying a fixed-width vector. Column order is the contract,
+#: for exactly the reason ``FeatureVector`` documents: a model trained on one order and
+#: scored on another fails silently.
+#:
+#: The three key columns and ``last_event_time`` identify the capsule; everything after
+#: them is the vector. The instrument-mix block is generated from ``Instrument`` in
+#: declaration order, so adding an instrument to the enum widens the vector in the one
+#: place that already pins its order.
+CAPSULE_SCHEMA: dict[str, pl.DataType] = {
+    "merchant_id": pl.String(),
+    "event_date": pl.Date(),
+    "payer_id": pl.String(),
+    "last_event_time": TIMESTAMP,
+    "txn_count": pl.Float64(),
+    "value_inr": pl.Float64(),
+    "ticket_cv": pl.Float64(),
+    "failure_rate": pl.Float64(),
+    **{f"i_{instrument.value}_share": pl.Float64() for instrument in Instrument},
+    "payer_is_new": pl.Float64(),
+    "device_shared_payers": pl.Float64(),
+}
