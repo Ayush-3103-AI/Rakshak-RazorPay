@@ -39,7 +39,9 @@ from rakshak.schemas import Split
 __all__ = [
     "ENFORCED_KEYS",
     "EVAL_MODULES",
+    "LOCK_GLOB",
     "LOCK_PATH",
+    "BrokenLockChainError",
     "LockMismatchError",
     "SplitLockedError",
     "hash_paths",
@@ -47,11 +49,74 @@ __all__ = [
     "read_open_count",
     "record_open",
     "require_unlocked_or_refuse",
+    "resolve_authoritative",
     "verify_lock",
     "write_lock",
 ]
 
+#: Cycle 1. It predates the ``cycle`` key and is therefore cycle 1 by definition, and it is
+#: still the file ``write_lock`` defaults to — a NEW lock is never "the authoritative one".
 LOCK_PATH: Final = Path("EVAL-LOCK.json")
+
+LOCK_GLOB: Final = "EVAL-LOCK*.json"
+
+
+class BrokenLockChainError(RuntimeError):
+    """The supersession chain does not resolve to exactly one live lock."""
+
+
+def resolve_authoritative(root: Path) -> Path:
+    """The lock that is live right now, found by resolving the supersession chain.
+
+    Every read path defaults here rather than to ``LOCK_PATH``. Hardcoding cycle 1 was
+    correct while cycle 1 was the only lock and stayed correct through cycle 2 — which
+    re-sealed the harness *unchanged*, so the recorded ``eval_module_sha256`` never moved.
+    Cycle 3 is the first cycle in which it does move, and at that point a hardcoded
+    ``EVAL-LOCK.json`` means ``verify_lock`` checks the live tree against a permanently
+    stale hash and fails forever.
+
+    A lock that nothing supersedes is authoritative. More than one, or a ``supersedes``
+    pointing at a file that is not on disk, is a refusal rather than a guess: which lock is
+    live decides which numbers are comparable to which, and inferring it silently is how a
+    result gets reported under a freeze it was not computed against.
+
+    **This does not weaken enforcement.** The mismatch still raises; it is now raised
+    against the lock that actually governs. The audit trail is unchanged and explicit —
+    each lock records its own ``supersedes``, ``pre_registration``, ``open_count`` and
+    ``open_log``, so sealing a new cycle to clear drift is visible in the chain rather than
+    hidden by it.
+
+    ``artifacts/build.py::build_lock_state`` resolves the same chain for the dashboard and
+    predates this function. It should import this one instead; it was mid-edit by another
+    lane when this landed, so the duplication is recorded here rather than fixed silently.
+    """
+    paths = sorted(root.glob(LOCK_GLOB), key=lambda p: p.name)
+    if not paths:
+        raise FileNotFoundError(
+            f"no lock file matches {LOCK_GLOB} under {root}. The eval harness is frozen "
+            "before any v2 model is written (Prime Directive 1); running an eval without "
+            "the lock is not a degraded mode, it is the thing the lock exists to prevent."
+        )
+
+    superseded: set[str] = set()
+    for path in paths:
+        target = json.loads(path.read_text(encoding="utf-8")).get("supersedes")
+        if target is None:
+            continue
+        if not (root / target).exists():
+            raise BrokenLockChainError(
+                f"{path.name} supersedes {target!r}, which is not on disk. The chain is "
+                "broken and which lock is live cannot be stated honestly."
+            )
+        superseded.add(target)
+
+    live = [p for p in paths if p.name not in superseded]
+    if len(live) != 1:
+        raise BrokenLockChainError(
+            f"expected exactly one unsuperseded lock, found {[p.name for p in live]}. "
+            "Which lock is authoritative must be stated, never inferred."
+        )
+    return live[0]
 
 #: The modules that constitute the frozen harness — the code that turns a model's scores
 #: into a number. ``report.py`` and ``baf_adapter.py`` are deliberately **not** here: they
@@ -158,6 +223,9 @@ def write_lock(
     *,
     lock_path: Path | None = None,
     seeds: tuple[int, ...] = (42, 43, 44, 45, 46),
+    cycle: int = 1,
+    supersedes: str | None = None,
+    pre_registration: str | None = None,
 ) -> dict[str, Any]:
     """Write ``EVAL-LOCK.json``. **One-way door — there is no rollback.**
 
@@ -177,6 +245,14 @@ def write_lock(
 
     lock: dict[str, Any] = {
         "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        # Cycle 2 carried these three and write_lock did not emit them — they were added to
+        # the file by hand. resolve_authoritative() reads `supersedes` to find the live
+        # lock, so a hand-added chain link is a chain that breaks the next time someone
+        # forgets. Emitted here now; default cycle 1 / no supersedes reproduces the old
+        # output for any existing caller.
+        "cycle": cycle,
+        "supersedes": supersedes,
+        "pre_registration": pre_registration,
         **_current_hashes(root),
         "eval_modules": list(EVAL_MODULES),
         "generator_glob": GENERATOR_GLOB,
@@ -244,7 +320,7 @@ def write_lock(
 
 
 def load_lock(root: Path, *, lock_path: Path | None = None) -> dict[str, Any]:
-    target = lock_path if lock_path is not None else root / LOCK_PATH
+    target = lock_path if lock_path is not None else resolve_authoritative(root)
     if not target.exists():
         raise FileNotFoundError(
             f"{target} not found. The eval harness is frozen before any v2 model is "
@@ -272,7 +348,8 @@ def verify_lock(
     ``strict=True`` promotes every recorded hash to enforced — use it once the generator
     is itself frozen (T-116).
     """
-    lock = load_lock(root, lock_path=lock_path)
+    target = lock_path if lock_path is not None else resolve_authoritative(root)
+    lock = load_lock(root, lock_path=target)
     current = _current_hashes(root)
     enforced = set(lock.get("enforced", ENFORCED_KEYS)) if not strict else set(current)
 
@@ -283,7 +360,9 @@ def verify_lock(
             continue
         if key in enforced:
             raise LockMismatchError(
-                f"{key} does not match EVAL-LOCK.json: expected {expected}, got {actual}. "
+                # Name the lock that actually governs. Saying "EVAL-LOCK.json" once there
+                # is more than one lock sends the reader to the wrong file.
+                f"{key} does not match {target.name}: expected {expected}, got {actual}. "
                 "The eval code changed after the lock was written, so results computed "
                 "against it are not comparable to anything measured before. Restore the "
                 "frozen modules, or accept that this is a new harness and say so."
@@ -320,7 +399,7 @@ def record_open(
     root: Path, rungs_scored: list[int], *, lock_path: Path | None = None
 ) -> dict[str, Any]:
     """Append to ``open_log``, increment ``open_count``, write, and say to commit it."""
-    target = lock_path if lock_path is not None else root / LOCK_PATH
+    target = lock_path if lock_path is not None else resolve_authoritative(root)
     lock = load_lock(root, lock_path=lock_path)
     lock["open_log"].append(
         {
