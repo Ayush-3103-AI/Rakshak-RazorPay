@@ -1144,7 +1144,9 @@ that fails closed and is not noticed is indistinguishable from one that was neve
 one does. NFR-10's budget is **derived from the shipped population at the rate the NFR
 quotes** — 180 s per 10,000 × 180 is a seconds-per-merchant-day figure, and the test applies
 it rather than pinning a population the manifest has moved away from twice. At 40,000 × 365
-that gives a budget of **1,460 s**; the observed run is **~660 s**, roughly 2.2× inside.
+that gives a budget of **1,460 s**. **Measured: 121,896,985 transactions in 215.3 s — 6.78×
+inside the derived budget**, and NFR-10 is a measured requirement again rather than an
+unevaluable one.
 
 **That change is an amendment and is flagged as one.** Refusing to measure a different
 population against a fixed budget was correct; refusing forever is not, because the

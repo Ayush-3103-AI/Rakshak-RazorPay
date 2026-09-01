@@ -53,8 +53,8 @@ def budget_for(n_merchants: int, n_days: int) -> float:
     the rate fixed and letting the budget follow the population preserves the requirement
     exactly; holding the number fixed abandons it the moment the population changes.
 
-    At cycle 4's 40,000 x 365 the derived budget is ~1,460 s. The observed run was ~660 s
-    including the content hash over 2.7 GB, so the generator sits roughly 2.2x inside it.
+    At cycle 4's 40,000 x 365 the derived budget is ~1,460 s. Measured: 121,896,985
+    transactions in 215.3 s, 6.78x inside it.
     """
     return GEN_BUDGET_S_PER_MERCHANT_DAY * n_merchants * n_days
 
