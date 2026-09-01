@@ -18,9 +18,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from rakshak.artifacts import (
     FORBIDDEN_KEYS,
+    RUNG_STATUS_VALUES,
     SCHEMA_VERSION,
     SPLIT_VALUES,
     ArtifactSchemaError,
@@ -32,11 +34,13 @@ from rakshak.artifacts import (
     validate_file,
 )
 from rakshak.artifacts.build import (
+    DEFAULT_ROSTER_PATH,
     REPO_ROOT,
     build_all,
     build_g5,
     build_ladder,
     build_lock_state,
+    build_rung_roster,
     read_result_rows,
 )
 from rakshak.schemas import EvalResult
@@ -554,7 +558,17 @@ def test_ladder_provenance_reports_the_rows_own_shas_not_only_the_locks(tmp_path
     prov = doc["provenance"]
     for key in ("results_eval_lock_sha", "results_git_sha", "harness_note"):
         assert key in prov, f"ladder provenance is missing {key!r}"
-    assert prov["results_eval_lock_sha"] == [prov["eval_lock_sha"]]
+    # Chain-aware: every row sha is accounted for by SOME lock, and the artefact says
+    # which cycle. Asserting equality with the live lock's sha would be an assertion that
+    # nothing was ever scored under a superseded cycle, which the cycle-3 pre-registration
+    # explicitly commits to being false for Rungs 0-4.
+    assert set(prov["results_eval_lock_sha"]) == set(prov["results_scored_under"])
+    for sha, entry in prov["results_scored_under"].items():
+        assert entry["cycles"] and entry["locks"] and entry["sources"]
+        assert entry["is_authoritative_lock"] == (sha == prov["eval_lock_sha"])
+    assert prov["results_are_current"] == all(
+        e["is_authoritative_lock"] for e in prov["results_scored_under"].values()
+    )
     assert "geometry" in prov["harness_note"]
 
 
@@ -643,3 +657,282 @@ def test_the_committed_artifacts_are_what_this_generator_produces(tmp_path: Path
             f"artifacts/{path.name} is not what `make artifacts` produces — either it was "
             "hand-edited or the generator changed without a rebuild"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The lock chain: a superseded cycle is recorded, an unknown harness is refused
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _chain(tmp_path: Path, *, cycle3_sha: str) -> Path:
+    """The real locks plus a synthetic cycle 3 that MOVES the enforced hash.
+
+    Copied from the real files rather than written from scratch so the fixture cannot drift
+    from the shape the real locks have, and always into ``tmp_path`` — this package must
+    never author a lock, and ``EVAL-LOCK-CYCLE3.json`` is the lead's to seal.
+    """
+    root = tmp_path / "root"
+    root.mkdir()
+    for path in REPO_ROOT.glob("EVAL-LOCK*.json"):
+        (root / path.name).write_bytes(path.read_bytes())
+    body = json.loads((root / "EVAL-LOCK-CYCLE2.json").read_text(encoding="utf-8"))
+    (root / "EVAL-LOCK-CYCLE3.json").write_text(
+        json.dumps(
+            {
+                **body,
+                "cycle": 3,
+                "supersedes": "EVAL-LOCK-CYCLE2.json",
+                "eval_module_sha256": cycle3_sha,
+                "open_count": 0,
+                "pre_registration": "docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md",
+            }
+        ),
+        encoding="utf-8",
+    )
+    return root
+
+
+@has_results
+def test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused(tmp_path: Path) -> None:
+    """The cycle-3 pre-registration, as a test.
+
+    Its section 3: *"No existing rung is rescored and no committed number moves. Rungs 0-4
+    are judged on the cycle-2 lock exactly as before."* Refusing those rows the moment
+    cycle 3 seals would turn that written commitment into a broken build, so a row is
+    checked against the whole chain rather than against the live lock alone.
+    """
+    root = _chain(tmp_path, cycle3_sha="3" * 64)
+    out = tmp_path / "out"
+    build_all(
+        root,
+        results_dir=RESULTS_DIR,
+        g5_path=REPO_ROOT / "data/v2/gates/g5_series.json",
+        roster_path=REPO_ROOT / DEFAULT_ROSTER_PATH,
+        out_dir=out,
+    )
+    prov = json.loads((out / "ladder.json").read_text(encoding="utf-8"))["provenance"]
+
+    assert prov["authoritative_lock"] == "EVAL-LOCK-CYCLE3.json"
+    assert prov["authoritative_cycle"] == 3
+    assert prov["results_are_current"] is False, (
+        "rows scored under cycle 2 must not read as current once cycle 3 is live"
+    )
+    for entry in prov["results_scored_under"].values():
+        # Cycle 2 re-sealed the harness unchanged, so this sha names BOTH locks. Naming one
+        # of them would be a guess about which freeze a number belongs to.
+        assert entry["cycles"] == [1, 2]
+        assert entry["is_authoritative_lock"] is False
+        assert entry["sources"]
+
+
+def test_a_row_matching_no_lock_in_the_chain_is_still_a_hard_refusal(tmp_path: Path) -> None:
+    """Widening the check to the chain must not widen it to accepting anything.
+
+    This is the half that matters. An acceptance-only test is exactly how the original
+    too-strict version shipped without anyone noticing which side it was strict on.
+    """
+    root = _chain(tmp_path, cycle3_sha="3" * 64)
+    results = tmp_path / "eval"
+    results.mkdir()
+    row = _row("val", eval_lock_sha="f" * 64)
+    del row["_source"], row["_seed"]
+    (results / "rung2_val_seed42.json").write_text(json.dumps(row), encoding="utf-8")
+    with pytest.raises(ArtifactSchemaError, match="matches no lock in the supersession chain"):
+        build_all(root, results_dir=results, out_dir=tmp_path / "out")
+
+
+def test_a_row_matching_only_the_live_lock_reads_as_current(tmp_path: Path) -> None:
+    """The other side of the same field: a rescored row must not read as stale."""
+    root = _chain(tmp_path, cycle3_sha="3" * 64)
+    results = tmp_path / "eval"
+    results.mkdir()
+    row = _row("val", eval_lock_sha="3" * 64)
+    del row["_source"], row["_seed"]
+    (results / "rung2_val_seed42.json").write_text(json.dumps(row), encoding="utf-8")
+    out = tmp_path / "out"
+    build_all(root, results_dir=results, out_dir=out)
+    prov = json.loads((out / "ladder.json").read_text(encoding="utf-8"))["provenance"]
+    assert prov["results_are_current"] is True
+    assert prov["results_scored_under"]["3" * 64]["cycles"] == [3]
+
+
+def test_a_broken_chain_reaches_the_caller_as_a_named_artefact_refusal(tmp_path: Path) -> None:
+    """``BrokenLockChainError`` must not escape as a bare RuntimeError.
+
+    Every refusal this package makes names the artefact and the reason, because the loader
+    renders that pair. A raw exception from ``eval/lock.py`` would break that contract at
+    the one boundary where the two packages now meet.
+    """
+    root = tmp_path / "root"
+    root.mkdir()
+    body = {
+        "eval_module_sha256": "a" * 64,
+        "generator_module_sha256": "b" * 64,
+        "scenario_config_sha256": "c" * 64,
+        "open_count": 0,
+        "frozen_at_git_sha": "x",
+        "cycle": 2,
+        "supersedes": "EVAL-LOCK-THAT-IS-NOT-HERE.json",
+    }
+    (root / "EVAL-LOCK-CYCLE2.json").write_text(json.dumps(body), encoding="utf-8")
+    with pytest.raises(ArtifactSchemaError) as exc:
+        build_lock_state(root)
+    assert exc.value.artifact == "lock_state"
+    assert "chain is broken" in exc.value.reason
+
+
+def test_the_dashboard_and_the_harness_resolve_the_same_authoritative_lock() -> None:
+    """One implementation of which lock is live, not two that can drift apart."""
+    from rakshak.eval.lock import resolve_authoritative
+
+    payload, _ = build_lock_state(REPO_ROOT)
+    assert payload["authoritative_lock"] == resolve_authoritative(REPO_ROOT).name
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# G5 windows are half-open, and the artefact says so
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_g5_states_its_window_convention_rather_than_leaving_it_to_be_guessed() -> None:
+    """#62 shades from this field. Read as inclusive, every band is a day too wide."""
+    payload = build_g5(_g5_fixture())
+    assert payload["window_convention"] == "[start_day, end_day)"
+    assert validate(envelope("g5_confounder_null", payload, split="NULL_RUN", provenance={}))
+
+
+def test_g5_accepts_a_window_that_runs_to_the_last_day() -> None:
+    """``confounders.py`` computes ``end = min(n_days, start + duration)``, so ``end`` may
+    equal ``n_days``. The old inclusive bound refused that legal window."""
+    ok = _g5_fixture(n_days=5)
+    ok["windows"][1] = {**ok["windows"][1], "start_day": 3, "end_day": 5}
+    assert build_g5(ok)["windows"][1]["end_day"] == 5
+
+
+def test_g5_refuses_a_zero_day_window() -> None:
+    """T-0112 silent failure: five of nine windows measured zero days, every assert passed."""
+    bad = _g5_fixture()
+    bad["windows"][0] = {**bad["windows"][0], "start_day": 2, "end_day": 2}
+    with pytest.raises(ArtifactSchemaError, match="non-empty span"):
+        build_g5(bad)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The rung roster — a cut rung is named as cut, and never carries a score
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _roster_doc(**over: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "statuses": sorted(RUNG_STATUS_VALUES),
+        "source": {"derived_by": "a test"},
+        "rungs": [
+            {"rung": 4, "name": "cost", "status": "cut", "citation": ["LIMITATIONS.md 8.5"]},
+            {"rung": 5, "name": "mil", "status": "planned", "citation": ["GitHub 54"]},
+        ],
+    }
+    base.update(over)
+    return base
+
+
+def _committed_roster() -> dict[str, Any]:
+    return build_rung_roster(
+        yaml.safe_load((REPO_ROOT / DEFAULT_ROSTER_PATH).read_text(encoding="utf-8"))
+    )
+
+
+def test_the_committed_roster_parses_and_every_entry_cites_something() -> None:
+    payload = _committed_roster()
+    assert validate(envelope("rung_roster", payload, split=None, provenance={})) == "rung_roster"
+    assert payload["roster"], "the roster is empty"
+    for entry in payload["roster"]:
+        assert entry["citation"], f"{entry['name']} cites nothing"
+        assert entry["status"] in RUNG_STATUS_VALUES
+
+
+def test_the_roster_names_the_cut_rung_that_the_ladder_cannot() -> None:
+    """#64, as a test. A cut rung is named as cut, with a reason and a decision site."""
+    cut = [e for e in _committed_roster()["roster"] if e["status"] == "cut"]
+    assert cut, "no rung is recorded as cut, but LIMITATIONS.md 8.5 cuts Rung 4"
+    for entry in cut:
+        assert entry.get("reason"), f"{entry['name']} is cut with no reason"
+        assert entry.get("decided_in"), f"{entry['name']} is cut with no decision site"
+
+
+def test_the_roster_names_the_floor_that_cannot_produce_a_ladder_row() -> None:
+    """``all_hold`` has no EvalResult row (LIMITATIONS.md 8.6) and is therefore invisible to
+    ``ladder.json``. Being visible here is the whole point of the artefact."""
+    assert any(e["name"] == "all_hold" for e in _committed_roster()["roster"])
+
+
+@has_results
+def test_no_roster_entry_claims_a_rung_that_has_no_ladder_row_was_scored() -> None:
+    """The hard constraint, checked against what this tree actually emits.
+
+    Carries ``@has_results`` like every other test that reads ``RESULTS_DIR``. Without it
+    this raised ``ArtifactSchemaError`` — correctly, since ``build_ladder`` refuses to
+    invent a table from zero rows — but that made a red suite on any tree without scored
+    results, and ``data/`` is gitignored. So it failed on a clean clone, which is charter
+    K-5, the one kill criterion that scores zero regardless of what else is in the repo.
+    Found when a scoring lane emptied ``data/v2/eval/`` mid-run and this was the only
+    data-dependent test that did not skip.
+
+    Rungs 5-8 have no numbers. An entry marked ``scored`` whose rung has no row in
+    ``ladder.json`` would put a fabricated measurement on a judge-facing page.
+    """
+    scored_rungs = {r["rung"] for r in build_ladder(read_result_rows(RESULTS_DIR))["rungs"]}
+    for entry in _committed_roster()["roster"]:
+        if entry["status"] == "scored":
+            assert entry["rung"] in scored_rungs, (
+                f"{entry['name']} is marked scored but rung {entry['rung']} has no ladder row"
+            )
+
+
+def test_an_unverified_entry_is_counted_and_listed() -> None:
+    doc = _roster_doc()
+    doc["rungs"].append(
+        {"rung": 6, "name": "6b", "status": "UNVERIFIED", "citation": ["GitHub 56"]}
+    )
+    payload = build_rung_roster(doc)
+    assert payload["n_unverified"] == 1
+    assert payload["unverified"] == ["6b"]
+
+
+def test_a_roster_entry_carrying_a_score_is_refused() -> None:
+    """No rung is ever present-with-nulls: a null metric renders as a zero on a chart."""
+    doc = _roster_doc()
+    doc["rungs"][1]["metrics"] = {"pr_auc": None, "savings": None}
+    with pytest.raises(ArtifactSchemaError, match="never carries a score"):
+        validate(envelope("rung_roster", build_rung_roster(doc), split=None, provenance={}))
+
+
+def test_a_roster_entry_with_no_citation_is_refused() -> None:
+    doc = _roster_doc()
+    doc["rungs"][0]["citation"] = []
+    with pytest.raises(ArtifactSchemaError, match="cites nothing"):
+        validate(envelope("rung_roster", build_rung_roster(doc), split=None, provenance={}))
+
+
+def test_an_unknown_roster_status_is_refused_rather_than_rendered() -> None:
+    doc = _roster_doc()
+    doc["rungs"][0]["status"] = "probably-fine"
+    with pytest.raises(ArtifactSchemaError, match="probably-fine"):
+        validate(envelope("rung_roster", build_rung_roster(doc), split=None, provenance={}))
+
+
+def test_a_roster_entry_with_no_status_is_refused_not_defaulted() -> None:
+    """Guessing on behalf of a document that did not say is how the roster becomes fiction."""
+    doc = _roster_doc()
+    del doc["rungs"][0]["status"]
+    with pytest.raises(ArtifactSchemaError, match="missing 'status'"):
+        validate(envelope("rung_roster", build_rung_roster(doc), split=None, provenance={}))
+
+
+def test_a_missing_roster_is_a_named_absence(tmp_path: Path) -> None:
+    manifest = build_all(
+        REPO_ROOT, roster_path=Path("configs/no-such-roster.yaml"), out_dir=tmp_path
+    )
+    entry = next(a for a in manifest["artifacts"] if a["name"] == "rung_roster")
+    assert entry["status"] == "MISSING"
+    assert "no-such-roster.yaml" in entry["reason"]
+    assert not (tmp_path / "rung_roster.json").exists()

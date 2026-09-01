@@ -48,6 +48,7 @@ __all__ = [
     "ARTIFACT_NAMES",
     "ARTIFACTS_DIR",
     "FORBIDDEN_KEYS",
+    "RUNG_STATUS_VALUES",
     "SCHEMA_VERSION",
     "SPLIT_VALUES",
     "ArtifactSchemaError",
@@ -63,7 +64,7 @@ __all__ = [
 
 #: Bump on any payload shape change. The loader pins this exact string and rejects
 #: anything else by artefact name and reason.
-SCHEMA_VERSION: Final = "v3.0.0"
+SCHEMA_VERSION: Final = "v3.1.0"
 
 #: Committed. This is the point: the panel can open the same bytes the site serves.
 ARTIFACTS_DIR: Final = Path("artifacts")
@@ -94,8 +95,24 @@ ARTIFACT_NAMES: Final[dict[str, tuple[str, ...]]] = {
     "manifest": ("contract", "artifacts"),
     "lock_state": ("authoritative_lock", "locks"),
     "ladder": ("rungs", "capacity_k", "metric_keys"),
-    "g5_confounder_null": ("prevalence", "nominal_alert_rate", "n_days", "windows", "series"),
+    "g5_confounder_null": (
+        "prevalence",
+        "nominal_alert_rate",
+        "n_days",
+        "window_convention",
+        "windows",
+        "series",
+    ),
+    "rung_roster": ("roster", "statuses", "source"),
 }
+
+#: The roster's vocabulary, pinned here rather than in the YAML alone so a hand-edited
+#: status is a named refusal instead of an unrecognised badge on a judge-facing page.
+#: ``UNVERIFIED`` is uppercase because it is the one a reader must not skim past: it means
+#: the committed documents disagree or are silent, and the entry is a question, not state.
+RUNG_STATUS_VALUES: Final[frozenset[str]] = frozenset(
+    {"planned", "built", "scored", "cut", "deferred", "conditional", "UNVERIFIED"}
+)
 
 #: Artefacts whose rows are numbers, and therefore must carry a split on every row.
 _ROW_KEY: Final[dict[str, str]] = {"ladder": "rungs", "g5_confounder_null": "series"}
@@ -207,6 +224,58 @@ def _forbidden_hit(node: Any) -> str | None:
     return None
 
 
+def _validate_roster(payload: dict[str, Any]) -> None:
+    """The roster's own rules. Every entry states a status and cites where it came from.
+
+    Two refusals, and both exist because this file is rendered to judges as project state:
+
+    **No entry may carry a score.** Rungs 5-8 were never scored, and the failure mode is an
+    artefact that claims otherwise — a ``metrics`` block full of nulls renders as zeroes on
+    a chart and is indistinguishable from "measured, and it was zero". Scores live in
+    ``ladder.json``, keyed by the same ``rung`` id; the roster says what exists, the ladder
+    says what it measured, and nothing has to reconcile two copies of a number.
+
+    **Every entry cites a document.** A status with no citation is an assertion, and the
+    roster was derived by reading committed files rather than by knowing the answer.
+    """
+    for key in ("roster", "statuses"):
+        if not isinstance(payload.get(key), list):
+            raise ArtifactSchemaError("rung_roster", f"payload[{key!r}] must be a list")
+    declared = set(payload["statuses"])
+    if declared != set(RUNG_STATUS_VALUES):
+        raise ArtifactSchemaError(
+            "rung_roster",
+            f"declared statuses {sorted(declared)} do not match the contract's "
+            f"{sorted(RUNG_STATUS_VALUES)}",
+        )
+    for i, entry in enumerate(payload["roster"]):
+        if not isinstance(entry, dict):
+            raise ArtifactSchemaError("rung_roster", f"roster[{i}] is not an object")
+        for key in ("rung", "name", "status", "citation"):
+            if key not in entry:
+                raise ArtifactSchemaError("rung_roster", f"roster[{i}] is missing {key!r}")
+        if entry["status"] not in RUNG_STATUS_VALUES:
+            raise ArtifactSchemaError(
+                "rung_roster",
+                f"roster[{i}] ({entry['name']!r}) has status {entry['status']!r}, not one of "
+                f"{sorted(RUNG_STATUS_VALUES)}",
+            )
+        if not entry["citation"]:
+            raise ArtifactSchemaError(
+                "rung_roster",
+                f"roster[{i}] ({entry['name']!r}) cites nothing. Every entry names the "
+                "document it was derived from, or it is an assertion rather than a reading.",
+            )
+        if "metrics" in entry:
+            raise ArtifactSchemaError(
+                "rung_roster",
+                f"roster[{i}] ({entry['name']!r}) carries a 'metrics' key. The roster says "
+                "which rungs exist and what happened to them; it never carries a score. A "
+                "rung that was not scored must be ABSENT from ladder.json, not present here "
+                "with nulls that render as zeroes.",
+            )
+
+
 def validate(doc: Any) -> str:
     """Check one whole artefact document. Returns its name; raises with name and reason.
 
@@ -253,6 +322,9 @@ def validate(doc: Any) -> str:
                     f"{row_key}[{i}] has split {got!r}; every numeric row carries its split as "
                     "a field, not as a filename convention",
                 )
+
+    if name == "rung_roster":
+        _validate_roster(payload)
 
     hit = _forbidden_hit(payload)
     if hit is not None:

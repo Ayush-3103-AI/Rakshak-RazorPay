@@ -22,18 +22,23 @@ mislabelled file or a leak. Neither belongs on a judge-facing page. After the co
 moves, the same row is emitted normally: the guard is the lock, not a taboo.
 
 **The ladder does not borrow the live lock's authority.** Its provenance carries the
-result rows' own ``eval_lock_sha`` and ``git_sha`` beside the authoritative lock's, and a
-row computed against a different eval module is a refusal. What the rows cannot certify —
-the generator and scenario-config hashes, which ``EvalResult`` does not record — is said
-so in ``harness_note`` rather than left for the reader to assume.
+result rows' own ``eval_lock_sha`` and ``git_sha`` beside the authoritative lock's, and it
+says which *cycle* froze the harness each row was scored under. A row scored under a
+superseded cycle is not drift — the cycle-3 pre-registration commits in writing that
+Rungs 0-4 stay judged on cycle 2 and are not rescored — so it is recorded as such and
+rendered as such, never silently promoted to current. A row matching **no** lock in the
+chain is a refusal. What the rows cannot certify — the generator and scenario-config
+hashes, which ``EvalResult`` does not record — is said in ``harness_note`` rather than
+left for the reader to assume.
 
-**Lock files are discovered, never enumerated.** ``EVAL-LOCK.json`` is cycle 1 and
-``EVAL-LOCK-CYCLE2.json`` supersedes it; a further cycle is expected and must need no code
-change here, so nothing names a lock file. The artefact globs ``EVAL-LOCK*.json``, orders
-by cycle, resolves the supersession chain from each file's own ``supersedes``, and makes
-``authoritative_lock`` an explicit field so the dashboard never has to infer which lock is
-live. Exactly one lock may be unsuperseded; two would mean the chain is broken, and that
-is a refusal.
+**Lock files are discovered, never enumerated, and by one implementation.** ``EVAL-LOCK.json``
+is cycle 1 and ``EVAL-LOCK-CYCLE2.json`` supersedes it; a further cycle is expected and must
+need no code change here, so nothing names a lock file. Which lock is live comes from
+``eval.lock.resolve_authoritative`` — the same function ``verify_lock`` and the one-way door
+obey — rather than from a second resolver here, because two answers to "which lock governs"
+is how the dashboard ends up citing one lock while the harness enforces another. This module
+adds only what the dashboard needs on top: the per-lock detail and the back-links, with
+``authoritative_lock`` as an explicit field so nothing has to infer it.
 """
 
 from __future__ import annotations
@@ -48,8 +53,11 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any, Final
 
+import yaml
+
 from rakshak.artifacts import (
     ARTIFACTS_DIR,
+    RUNG_STATUS_VALUES,
     SCHEMA_VERSION,
     ArtifactSchemaError,
     canonical_bytes,
@@ -59,9 +67,17 @@ from rakshak.artifacts import (
     split_label,
     validate,
 )
+from rakshak.eval.lock import LOCK_GLOB, BrokenLockChainError, resolve_authoritative
 from rakshak.schemas import EvalResult
 
-__all__ = ["build_all", "build_g5", "build_ladder", "build_lock_state", "main"]
+__all__ = [
+    "build_all",
+    "build_g5",
+    "build_ladder",
+    "build_lock_state",
+    "build_rung_roster",
+    "main",
+]
 
 REPO_ROOT: Final = Path(__file__).resolve().parents[3]
 
@@ -69,8 +85,11 @@ DEFAULT_RESULTS_DIR: Final = Path("data/v2/eval")
 #: Where the G5 gate is expected to drop its series. Nothing in this module writes it —
 #: `tests/gates/test_g5_confounder_null.py` owns the measurement and must own the dump.
 DEFAULT_G5_PATH: Final = Path("data/v2/gates/g5_series.json")
+#: Hand-maintained, committed, and reviewed by the lead. The ladder can only show rungs
+#: that were scored, so a cut or deferred rung is invisible to it; this is where one is
+#: named as cut (#64).
+DEFAULT_ROSTER_PATH: Final = Path("configs/rung_roster.yaml")
 
-LOCK_GLOB: Final = "EVAL-LOCK*.json"
 LOCK_HASH_KEYS: Final = (
     "eval_module_sha256",
     "generator_module_sha256",
@@ -162,8 +181,10 @@ def _inputs_provenance(paths: Sequence[Path], root: Path) -> list[dict[str, str]
     ]
 
 
-def _results_provenance(rows: Sequence[dict[str, Any]], live: dict[str, Any]) -> dict[str, Any]:
-    """What the *rows* say about themselves, beside what the live lock says about itself.
+def _results_provenance(
+    rows: Sequence[dict[str, Any]], locks: Sequence[dict[str, Any]]
+) -> dict[str, Any]:
+    """What the *rows* say about themselves, placed in the lock chain that governs them.
 
     Without this the ladder carries the authoritative lock's shas and nothing else, which
     reads as "these numbers were computed under this lock" — and that is exactly the claim
@@ -172,32 +193,88 @@ def _results_provenance(rows: Sequence[dict[str, Any]], live: dict[str, Any]) ->
     cannot certify the *geometry* the population was drawn at. The dashboard gets both
     facts and the gap between them, stated rather than papered over.
 
-    The harness hash it *can* check is checked, and a mismatch is a refusal: a number
-    computed against a different eval module is not comparable to one computed against
-    this one, which is the whole reason ``EVAL-LOCK`` exists.
+    **The harness check is over the whole supersession chain, not only the live lock.**
+    A row scored under a superseded cycle is not drift: it is the pre-registered state.
+    ``docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md`` §3 — *"No existing rung is rescored and
+    no committed number moves. Rungs 0-4 are judged on the cycle-2 lock exactly as
+    before"* — is a commitment that the rungs already scored STAY on cycle 2 once cycle 3
+    seals. Comparing every row against the live lock alone would turn that commitment into
+    a refusal and stop the ladder emitting on the day the next lock lands, which is both
+    wrong and the opposite of what the lock is for.
+
+    So a row is legitimate if its ``eval_lock_sha`` matches **some** lock in the resolved
+    chain, and the artefact then records *which* — ``results_scored_under`` maps each
+    row-sha to the cycles and lock files that froze that harness, so the dashboard can
+    render "scored under cycle 2" beside a cycle-3 banner instead of implying the number
+    is current. ``results_are_current`` is that comparison, pre-computed and named.
+
+    A row whose sha matches **no** lock in the chain is still a hard refusal. That one is
+    genuine drift — a number computed against a harness this project never froze — and it
+    is not comparable to anything measured before, which is the whole reason the lock
+    exists. Cycles 1 and 2 record the *same* ``eval_module_sha256`` (cycle 2 re-sealed the
+    harness unchanged), so a sha can legitimately name more than one lock; both are listed
+    rather than one being picked, because picking would be a guess.
     """
-    result_lock_shas = sorted({str(r["eval_lock_sha"]) for r in rows})
+    by_sha: dict[str, list[dict[str, Any]]] = {}
+    for lock in locks:
+        by_sha.setdefault(str(lock["hashes"]["eval_module_sha256"]), []).append(lock)
+
+    live = next(lock for lock in locks if lock["authoritative"])
     authoritative = str(live["hashes"]["eval_module_sha256"])
-    strays = [sha for sha in result_lock_shas if sha != authoritative]
+
+    scored_under: dict[str, dict[str, Any]] = {}
+    strays: dict[str, list[str]] = {}
+    for row in rows:
+        sha = str(row["eval_lock_sha"])
+        source = str(row.get("_source", row.get("label", "<row>")))
+        matched = by_sha.get(sha)
+        if matched is None:
+            strays.setdefault(sha, []).append(source)
+            continue
+        entry = scored_under.setdefault(
+            sha,
+            {
+                "cycles": sorted({int(lock["cycle"]) for lock in matched}),
+                "locks": sorted(str(lock["file"]) for lock in matched),
+                "is_authoritative_lock": sha == authoritative,
+                "sources": [],
+            },
+        )
+        entry["sources"].append(source)
+    for entry in scored_under.values():
+        entry["sources"] = sorted(set(entry["sources"]))
+
     if strays:
         raise ArtifactSchemaError(
             "ladder",
-            f"result rows were computed against eval module {strays} but the authoritative "
-            f"lock {live['file']} freezes {authoritative}. Rendering them under this lock "
-            "would attribute a number to a harness that did not produce it; re-run `make "
-            "eval` against the live lock.",
+            f"result rows {sorted(s for v in strays.values() for s in v)} were computed "
+            f"against eval module {sorted(strays)}, which matches no lock in the "
+            f"supersession chain {[str(lock['file']) for lock in locks]} (authoritative "
+            f"lock: {live['file']}). A superseded cycle would be fine and is recorded as "
+            "such; a harness this project never froze is not, because nothing bounds what "
+            "it computed. Re-run `make eval` against a lock in the chain.",
         )
+
     return {
-        "results_eval_lock_sha": result_lock_shas,
+        "results_eval_lock_sha": sorted(scored_under),
         "results_git_sha": sorted({str(r["git_sha"]) for r in rows}),
         "results_open_count": sorted({int(r["open_count"]) for r in rows}),
+        "authoritative_cycle": int(live["cycle"]),
+        "results_scored_under": scored_under,
+        "results_are_current": all(
+            entry["is_authoritative_lock"] for entry in scored_under.values()
+        ),
         "harness_note": (
-            "results_eval_lock_sha is verified equal to the authoritative lock's "
-            "eval_module_sha256 — the harness that produced these numbers is the frozen "
-            "one. EvalResult rows do NOT record generator_module_sha256 or "
-            "scenario_config_sha256, so this artefact cannot certify that they were "
-            "computed at the authoritative lock's geometry. Compare results_git_sha with "
-            "the lock's frozen_at_git_sha before presenting a number as current."
+            "Every results_eval_lock_sha is verified to match a lock in the supersession "
+            "chain, and results_scored_under names which cycle froze each one. "
+            "results_are_current is false when any row was scored under a SUPERSEDED "
+            "cycle — that is the pre-registered state for a rung the newer cycle did not "
+            "rescore, not drift, and such a row must be rendered as 'scored under cycle "
+            "N', never as a current number. EvalResult rows do NOT record "
+            "generator_module_sha256 or scenario_config_sha256, so this artefact cannot "
+            "certify that they were computed at any lock's geometry. Compare "
+            "results_git_sha with that cycle's frozen_at_git_sha before presenting a "
+            "number as current."
         ),
     }
 
@@ -257,23 +334,25 @@ def build_lock_state(root: Path) -> tuple[dict[str, Any], list[Path]]:
             )
         by_file[target]["superseded_by"] = entry["file"]
 
-    live = [e for e in entries if e["superseded_by"] is None]
-    if len(live) != 1:
+    # Which lock is live is decided by `eval/lock.py`, not a second time here. That
+    # function is what `verify_lock` and the one-way door already obey, and two
+    # implementations of "which lock is authoritative" is how they drift apart — at which
+    # point the dashboard cites one lock and the harness enforces another.
+    try:
+        live_path = resolve_authoritative(root)
+    except BrokenLockChainError as exc:
+        raise ArtifactSchemaError("lock_state", str(exc)) from exc
+    live = by_file[live_path.name]
+    live["authoritative"] = True
+    if live["cycle"] != max(e["cycle"] for e in entries):
         raise ArtifactSchemaError(
             "lock_state",
-            f"expected exactly one unsuperseded lock, found {[e['file'] for e in live]}. "
-            "The dashboard must not have to infer which lock is authoritative.",
-        )
-    live[0]["authoritative"] = True
-    if live[0]["cycle"] != max(e["cycle"] for e in entries):
-        raise ArtifactSchemaError(
-            "lock_state",
-            f"{live[0]['file']} is unsuperseded but is not the highest cycle; the "
+            f"{live['file']} is unsuperseded but is not the highest cycle; the "
             "supersession chain and the cycle numbers disagree",
         )
 
     payload = {
-        "authoritative_lock": live[0]["file"],
+        "authoritative_lock": live["file"],
         "n_locks": len(entries),
         "test_split_opened": sum(int(e["open_count"]) for e in entries) > 0,
         "locks": entries,
@@ -428,6 +507,17 @@ def build_ladder(
 #: the gate dump and refused if absent.
 G5_WINDOW_ROLES: Final[frozenset[str]] = frozenset({"adversarial", "control"})
 
+#: The window convention, emitted as a field rather than left to the reader.
+#:
+#: **Half-open.** ``confounders.py`` computes ``end = min(n_days, start + duration_days)``,
+#: so P1's ``duration_days: 5`` at day 93 emits ``[93, 98)`` — five days, 93 through 97.
+#: Read as inclusive that is six, and P2's ``duration_hours: 6`` window ``[57, 58)`` becomes
+#: a two-day band instead of the one day it is. The error message here used to say
+#: "spans days [start, end]", which asserted the wrong one; #62 shades from this field.
+#: The bound is ``end <= n_days``, not ``end < n_days``, for the same reason: a confounder
+#: running to the last day emits ``end == n_days`` and is legal.
+WINDOW_CONVENTION: Final = "[start_day, end_day)"
+
 
 def _g5_window(window: Any, index: int, n_days: int) -> dict[str, Any]:
     """One shaded confounder window, checked so the figure cannot be drawn off the axis."""
@@ -449,11 +539,15 @@ def _g5_window(window: Any, index: int, n_days: int) -> dict[str, Any]:
             f"windows[{index}] role {window['role']!r} is not one of {sorted(G5_WINDOW_ROLES)}",
         )
     start, end = int(window["start_day"]), int(window["end_day"])
-    if not 0 <= start <= end < n_days:
+    if not 0 <= start < end <= n_days:
         raise ArtifactSchemaError(
             "g5_confounder_null",
-            f"windows[{index}] spans days [{start}, {end}], which is not inside "
-            f"[0, {n_days - 1}]; a shaded band cannot fall off the x axis",
+            f"windows[{index}] spans days [{start}, {end}) — the convention is "
+            f"{WINDOW_CONVENTION}, half-open — which is not a non-empty span inside "
+            f"[0, {n_days}); a shaded band cannot "
+            "fall off the x axis, and a zero-day band is the silent failure T-0112 found "
+            "(five of nine confounder windows measured as zero days while every assertion "
+            "passed)",
         )
     return {**window, "start_day": start, "end_day": end, "role": str(window["role"])}
 
@@ -465,7 +559,9 @@ def build_g5(series_doc: dict[str, Any]) -> dict[str, Any]:
     generation rather than in a browser: ``prevalence`` (0.0 — every alert in this run is a
     false positive by construction), ``nominal_alert_rate`` (K reviews per day per N
     merchants; a rate that ignores K is decoration), ``n_days``, the confounder ``windows``
-    to shade, and one ``series`` entry per detector — ``raw`` and ``cohort-residual``, the
+    to shade — each half-open, ``[start_day, end_day)``, stated on the payload as
+    ``window_convention`` so #62 does not have to guess and shade every band a day too wide
+    — and one ``series`` entry per detector — ``raw`` and ``cohort-residual``, the
     two lines whose difference *is* charter hypothesis K-1.
 
     ``split`` on each series is ``NULL_RUN``: this is a freshly generated zero-prevalence
@@ -510,8 +606,57 @@ def build_g5(series_doc: dict[str, Any]) -> dict[str, Any]:
         "nominal_alert_rate": float(series_doc["nominal_alert_rate"]),
         "n_days": n_days,
         "excess_allowed_pp": series_doc.get("excess_allowed_pp"),
+        "window_convention": WINDOW_CONVENTION,
         "windows": windows,
         "series": series,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# rung_roster — the rungs the ladder cannot show
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def build_rung_roster(doc: dict[str, Any]) -> dict[str, Any]:
+    """Pass the roster YAML through, checked. It is a source file, not a computation.
+
+    ``ladder.json`` is built from ``data/v2/eval/*.json`` and therefore contains exactly the
+    rungs that were scored. A rung that was cut, deferred or never started has no row and is
+    simply **absent** — not shown as cut, invisible. #64 asks for the opposite, so the
+    roster is a hand-maintained file and this function's only job is to refuse a malformed
+    one rather than to derive anything.
+
+    Nothing is defaulted. A missing ``status`` is a refusal, not a ``"planned"``: guessing
+    on behalf of a document that did not say would produce precisely the confidently-wrong
+    roster the file exists to avoid.
+    """
+    for key in ("statuses", "rungs", "source"):
+        if key not in doc:
+            raise ArtifactSchemaError("rung_roster", f"roster YAML is missing {key!r}")
+    statuses = sorted(str(v) for v in doc["statuses"])
+    if set(statuses) != set(RUNG_STATUS_VALUES):
+        raise ArtifactSchemaError(
+            "rung_roster",
+            f"roster YAML declares statuses {statuses}, which is not the contract's "
+            f"{sorted(RUNG_STATUS_VALUES)}. The vocabulary is pinned in two places on "
+            "purpose: the file the lead edits, and the contract the loader checks.",
+        )
+    roster = [{str(k): v for k, v in entry.items()} for entry in doc["rungs"]]
+    unverified = sorted(str(e["name"]) for e in roster if e.get("status") == "UNVERIFIED")
+    return {
+        "roster": roster,
+        "statuses": statuses,
+        "source": doc["source"],
+        "n_unverified": len(unverified),
+        "unverified": unverified,
+        "roster_note": (
+            "Derived from committed documents by an agent and NOT yet confirmed by the "
+            "lead. Every entry carries the citation it was derived from so the derivation "
+            "can be checked rather than trusted. An entry with status UNVERIFIED means the "
+            "documents disagree or are silent and must not be rendered as project state. "
+            "No entry carries a score: scores live in ladder.json under the same rung id, "
+            "and a rung with no ladder row was not scored."
+        ),
     }
 
 
@@ -533,11 +678,13 @@ def build_all(
     *,
     results_dir: Path | None = None,
     g5_path: Path | None = None,
+    roster_path: Path | None = None,
     out_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Emit every artefact this tree has input for. Returns the manifest payload."""
     results = root / (results_dir or DEFAULT_RESULTS_DIR)
     g5_file = root / (g5_path or DEFAULT_G5_PATH)
+    roster_file = root / (roster_path or DEFAULT_ROSTER_PATH)
     target = out_dir if out_dir is not None else root / ARTIFACTS_DIR
     target.mkdir(parents=True, exist_ok=True)
 
@@ -612,7 +759,7 @@ def build_all(
                 split=splits[0] if len(splits) == 1 else None,
                 provenance={
                     **base_provenance,
-                    **_results_provenance(rows, live),
+                    **_results_provenance(rows, lock_payload["locks"]),
                     "inputs": _inputs_provenance(sorted(results.glob("*.json")), root),
                 },
             ),
@@ -653,6 +800,31 @@ def build_all(
             "`make gates` must dump the confounder-null series before this figure exists",
         )
 
+    if roster_file.is_file():
+        roster = build_rung_roster(yaml.safe_load(roster_file.read_text(encoding="utf-8")))
+        record(
+            "rung_roster",
+            envelope(
+                "rung_roster",
+                roster,
+                split=None,
+                provenance={
+                    **base_provenance,
+                    "inputs": _inputs_provenance([roster_file], root),
+                },
+            ),
+            split=None,
+            reason="",
+        )
+    else:
+        record(
+            "rung_roster",
+            None,
+            split=None,
+            reason=f"no rung roster at {_rel(roster_file, root)}; a cut rung would then be "
+            "absent from the dashboard rather than named as cut",
+        )
+
     manifest_payload = {
         "contract": "rakshak-v3-dashboard",
         "artifacts": sorted(index, key=lambda a: str(a["name"])),
@@ -670,12 +842,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     parser.add_argument("--results-dir", type=Path, default=None)
     parser.add_argument("--g5", type=Path, default=None)
+    parser.add_argument("--roster", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
     try:
         manifest = build_all(
-            args.root, results_dir=args.results_dir, g5_path=args.g5, out_dir=args.out
+            args.root,
+            results_dir=args.results_dir,
+            g5_path=args.g5,
+            roster_path=args.roster,
+            out_dir=args.out,
         )
     except ArtifactSchemaError as exc:
         print(f"REFUSED  {exc}", file=sys.stderr)

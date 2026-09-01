@@ -1,0 +1,366 @@
+# Rung roster — every rung on the ladder, named with its status (T-0130, GitHub #64)
+#
+# WHY THIS FILE EXISTS. `artifacts/ladder.json` is built from `data/v2/eval/*.json`, so it
+# can only contain rungs that were scored. A rung that was cut, or deferred, or never
+# started, is therefore INVISIBLE to it — not shown as cut, simply absent. #64 asks for the
+# opposite: a cut rung named as cut. There was no machine-readable source for that, so this
+# file is it, and the emitter reads it into the `rung_roster` artefact.
+#
+# THIS IS A DRAFT FOR THE LEAD TO CORRECT, NOT AN ASSERTION OF FACT. It was derived from
+# committed documents by an agent, and every entry carries the citation it was derived from
+# so the derivation can be checked rather than trusted. Where the documents disagree or say
+# nothing, the entry is `status: UNVERIFIED` with the disagreement written out. A roster
+# that is confidently wrong is worse than one that flags its own gaps, because this gets
+# rendered to judges as project state.
+#
+# NO SCORES LIVE HERE, BY CONSTRUCTION. Scores live in `artifacts/ladder.json`, keyed by the
+# same `rung` id. Rungs 5-8 have no numbers, and the roster says they were not scored rather
+# than carrying nulls that render as zeroes. `artifacts.validate` refuses a roster entry
+# carrying a `metrics` key for exactly this reason.
+#
+# `adopted` is Prime Directive 5's question and is separate from `status`. A rung can be
+# scored and not adopted (Rung 3), or scored and then cut (Rung 4). `null` means the
+# question has not been put.
+
+schema: rung_roster/v1
+
+# The set the emitter and the contract validate against. UNVERIFIED is uppercase so it is
+# impossible to skim past.
+statuses:
+  - planned # ticket exists, not started
+  - built # code in the tree, no EvalResult row of its own
+  - scored # has rows under data/v2/eval/, therefore appears in ladder.json
+  - cut # was live at some point, then dropped, with a reason and a decision site
+  - deferred # explicitly out of scope, with a reason and a decision site
+  - conditional # gated on a decision that has not been made
+  - UNVERIFIED # the documents disagree or are silent — DO NOT render as fact
+
+source:
+  derived_by: T-0130 lane (artefacts), from committed documents only
+  derived_at_tree: docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md era
+  primary_sources:
+    - LIMITATIONS.md §8 — "Lane D — what the rungs actually measured (T-140…T-143)"
+    - project-context/00-charter-v2.md §8 — "Scope cut, in cut order"
+    - project-context/06-requirements-v2.md §E — "Non-goals"
+    - project-context/STATE.md — "Deferred (do not start)"
+    - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §3, §4
+    - GitHub #51 — SPEC: the five deferred capabilities
+    - GitHub issue list, `gh issue list --state all --limit 80`
+  known_gap: >-
+    ADR-V3-001 (the torch decision) gates the two `conditional` entries below. It is
+    referenced by GitHub #51 as "ADR-V3-001 below records it", but `grep -rn ADR-V3-001`
+    over this tree returns nothing — the ADR has no file here. The two entries are marked
+    conditional on the strength of the issue labels and #51's prose, not on an ADR anyone
+    in this repo can read.
+  standing_contradiction: >-
+    project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start"),
+    06-requirements-v2.md §E ("No MIL layer (Rung 5) and no HSMM explanation layer
+    (Rung 7) in this sprint") and STATE.md ("Deferred (do not start)") all still say Rungs
+    5-8 must not be started. GitHub #51 (2026-08-31) reverses that in as many words — "The
+    developer wants all five inside the current cycle" — and the cycle-3 pre-registration
+    §4 sequences T-0120/0121/0123/0125 after the lock. The reversal is later and explicit,
+    so the roster follows it; the three stale documents have NOT been updated to match and
+    that is a lead action, recorded here rather than smoothed over.
+
+rungs:
+  # ─── Rung 0 — the four mandatory floors ────────────────────────────────────
+  - rung: 0
+    name: all_pass
+    title: Floor — alert on nobody
+    status: scored
+    adopted: null
+    module: src/rakshak/models/rung0_floors.py
+    ticket: T-0112
+    issue: 45
+    citation:
+      - data/v2/eval/all_pass_val_seed42.json
+      - LIMITATIONS.md §8.3, §8.4 (savings 0.00000)
+    note: Reported on every row as savings_floor_all_pass (FR-021).
+
+  - rung: 0
+    name: random_at_k
+    title: Floor — alert on K merchants at random
+    status: scored
+    adopted: null
+    module: src/rakshak/models/rung0_floors.py
+    ticket: T-0112
+    issue: 45
+    citation:
+      - data/v2/eval/random_at_k_val_seed42.json
+      - LIMITATIONS.md §8.3, §8.4 (savings −0.00209)
+    note: Reported on every row as savings_floor_random.
+
+  - rung: 0
+    name: volume_rank
+    title: Floor — alert on the K largest merchants by pre-window GMV
+    status: scored
+    adopted: null
+    module: src/rakshak/models/rung0_floors.py
+    ticket: T-0112
+    issue: 45
+    citation:
+      - data/v2/eval/volume_rank_val_seed42.json
+      - LIMITATIONS.md §8.3 ("every rung is FLOOR-FAIL on savings")
+    note: >-
+      The floor that beats every rung on savings (0.16999). LIMITATIONS.md §8.3 records two
+      readings and does not settle between them: either the generator makes fraud too
+      legible in volume alone, or a supervised model with 8 positives cannot recover what a
+      size ranking gets for free.
+
+  - rung: 0
+    name: all_hold
+    title: Floor — hold everybody
+    status: built
+    adopted: null
+    module: src/rakshak/models/rung0_floors.py
+    ticket: T-0112
+    issue: 45
+    citation:
+      - LIMITATIONS.md §8.6 ("`all_hold` cannot produce an EvalResult row")
+      - tests/unit/test_rungs_0_1.py (the refusal is asserted, not worked around)
+    note: >-
+      THE ONE THE LADDER CANNOT SHOW. It alerts on every merchant every day, so
+      alerts_per_day is 1,723 against K = 9 and build_eval_result refuses — correctly — to
+      compute metrics above capacity. It therefore has no row in ladder.json and would be
+      silently absent without this roster. Its savings (−28.128) IS reported, on every row,
+      as savings_floor_all_hold. `built` rather than `scored` because no EvalResult row for
+      it exists; the choice of label is this lane's and the underlying facts are §8.6's.
+
+  # ─── Rungs 1-4 — built, scored, and one of them cut ────────────────────────
+  - rung: 1
+    name: rules
+    title: Static rule engine
+    status: scored
+    adopted: null
+    module: src/rakshak/models/rung1_rules.py
+    ticket: T-0112
+    issue: 45
+    citation:
+      - data/v2/eval/rung1_val_seed42.json, data/v2/eval/rung1_train_seed42.json
+      - LIMITATIONS.md §8.4 (PR-AUC 0.33644, 5.1x Rung 2's)
+    note: >-
+      Out-ranks LightGBM by 5.1x on PR-AUC and loses on every operational metric that
+      follows (precision@K 0.064 vs 0.207, day-30 detection 0.000 vs 0.118, alert Jaccard
+      0.203 vs 0.643). LIMITATIONS.md §8.4 declines to call it a reversal.
+
+  - rung: 2
+    name: lgbm
+    title: LightGBM on windowed aggregates — the incumbent and the bar
+    status: scored
+    adopted: null
+    module: src/rakshak/models/rung2_lgbm.py
+    ticket: T-0113
+    issue: 46
+    citation:
+      - data/v2/eval/rung2_val_seed{42,43,44,45,46}.json (the five locked seeds)
+      - LIMITATIONS.md §8.4, §8.10
+    note: Trains in 7.6 s on 4 cores against an NFR-06 budget of 20 min.
+
+  - rung: 3
+    name: cohort
+    title: Rung 2 plus 21 cohort-residual columns — the K-1 test
+    status: scored
+    adopted: false
+    module: src/rakshak/models/rung3_cohort.py
+    ticket: T-0114
+    issue: 47
+    citation:
+      - data/v2/eval/rung3_val_seed{42,43,44,45,46}.json
+      - LIMITATIONS.md §8.2 ("Rung 3 is not adopted")
+    adoption_note: >-
+      NOT ADOPTED, and it is not a cut. Gate D.1 requires >=10% relative PR-AUC or >=3 days
+      median TTD; the mean is +6.89% (median +9.25%, range −16.43% to +21.20% over the five
+      locked seeds) and median TTD is infinite for every rung. Gate D.2 fails too — every
+      rung is FLOOR-FAIL against volume_rank. LIMITATIONS.md §8.2 states in terms that the
+      seed-to-seed spread is larger than the effect and that the measurement does not have
+      the resolution to render K-1's verdict either way.
+
+  - rung: 4
+    name: cost
+    title: Cost-in-the-objective (FR-032, csboost-style)
+    status: cut
+    adopted: false
+    module: src/rakshak/models/rung4_cost.py
+    ticket: null
+    issue: null
+    citation:
+      - LIMITATIONS.md §8.5 ("Rung 4 (FR-032) loses on every seed. Cut.")
+      - data/v2/eval/rung4_val_seed{42,43,44,45,46}.json
+      - project-context/00-charter-v2.md §8, item 8 of the cut-first order
+    reason: >-
+      Zero of five seeds improve PR-AUC (mean −13.93%) and one of five improves savings
+      (mean −15.83%), against Rung 3 on the same five declared seeds. Weighting the 960
+      positive rows by an exposure ratio concentrates an already tiny positive class onto
+      its largest few merchants, which is the opposite of what eight positives need.
+    decided_in: >-
+      LIMITATIONS.md §8.5, on the Lane D measurement (T-140…T-143). Pre-registered as
+      cut-first at 00-charter-v2.md §8 item 8 BEFORE it was measured; the measurement then
+      independently agreed. Dropped from the scoring path, kept in the tree as a negative
+      result rather than deleted (Prime Directive 6).
+    note: >-
+      Still has rows under data/v2/eval/ and therefore still appears in ladder.json. The
+      ladder cannot tell you it was cut — this entry is the only place that does, which is
+      #64's whole point.
+
+  # ─── Rungs 5-8 — specified, deferred, then un-deferred by #51 ──────────────
+  - rung: 5
+    name: mil
+    title: Noisy-OR / log-sum-exp MIL pooling over payer capsules
+    status: planned
+    adopted: null
+    module: null
+    ticket: T-0120
+    issue: 54
+    citation:
+      - GitHub #54, OPEN, labels ready-for-agent + blocked
+      - GitHub #51 ("The developer wants all five inside the current cycle")
+      - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §4, step 4
+      - docs/LOGBOOK.md, T-0119 ("Next: T-0120 (Rung 5 MIL)")
+    contradicts:
+      - project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start")
+      - project-context/06-requirements-v2.md §E ("No MIL layer (Rung 5) ... in this sprint")
+      - project-context/STATE.md ("Deferred (do not start)")
+    blocked_by: >-
+      EVAL-LOCK-CYCLE3.json must be sealed first. Pre-registration §4: "If any Rung 5-8 code
+      lands before step 3, this pre-registration has failed and the rung must be reported as
+      post-lock and ineligible for adoption."
+    note: >-
+      Carry-forward from T-0119: `capsules_as_of` is NOT bounded — payer_is_new and
+      device_shared_payers scan the whole visible prefix per call — so Rung 5's NFR-04
+      servability question is open, and the logbook records that a sketch-based fix CHANGES
+      THE NUMBERS and therefore belongs to this rung's decision.
+
+  - rung: 6
+    name: conformal
+    title: Mondrian conformal risk control over the three-action decision
+    status: planned
+    adopted: null
+    module: null
+    ticket: T-0121
+    issue: 55
+    citation:
+      - GitHub #55, OPEN, labels ready-for-agent + blocked
+      - GitHub #51 ("the cheapest of the five and the strongest decision-layer claim")
+      - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2 (false_hold_coverage declared for it)
+    contradicts:
+      - >-
+        project-context/00-charter-v2.md §8 item 10 lists Rung 6 under "Cut first, in this
+        order" as the "highest-value deferral, spec it in Future Work"; CLAUDE.md's
+        dependency table says "Rung 6 only, cut first if time runs out". The cycle-3
+        pre-registration then declares false_hold_coverage specifically so Rung 6 can be
+        judged, which is not an act performed on a cut rung.
+    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+
+  - rung: 6
+    name: conformal_censoring_correction
+    title: Censoring-weighted conformal correction (Rung 6b)
+    status: UNVERIFIED
+    adopted: null
+    module: null
+    ticket: T-0122
+    issue: 56
+    citation:
+      - GitHub #56, OPEN, labels ready-for-agent + blocked
+      - 'GitHub #56 title carries the marker "[cut first]"'
+    reason: >-
+      UNVERIFIED because no document states whether this is in or out. Its own issue title
+      brands it "[cut first]", which is an ordering rather than a status, and the issue is
+      simultaneously OPEN and labelled ready-for-agent. GitHub #51 does not name it
+      separately from Rung 6, and 00-charter-v2.md §8's cut list does not mention it at all.
+      A reading either way would be a guess. LEAD ACTION.
+
+  - rung: 7
+    name: hsmm_nb
+    title: HSMM with negative-binomial emissions, Stage-2 explainer only
+    status: planned
+    adopted: null
+    module: null
+    ticket: T-0123
+    issue: 57
+    citation:
+      - GitHub #57, OPEN, labels ready-for-agent + blocked
+      - >-
+        GitHub #51 ("running at Stage 2 of the cascade only — on non-PASS decisions, never
+        in the scoring path, never scored on PR-AUC")
+      - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2 (onset_localisation_error)
+    contradicts:
+      - project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start")
+      - project-context/06-requirements-v2.md §E ("No ... HSMM explanation layer (Rung 7)")
+    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+    note: >-
+      Never scored on PR-AUC by design — it registers as an explainer, not a scorer. A
+      roster consumer must not expect a ladder row for it even after it ships. GitHub #51
+      records that reinstating an HSMM at all reverses the K1 lit survey §2.2 rejection on
+      five specific grounds, and that the demotion to Stage 2 is what makes the cost
+      objection survivable.
+
+  - rung: 7
+    name: onset_localisation
+    title: Onset localisation and segmented narrative (Rung 7b)
+    status: planned
+    adopted: null
+    module: null
+    ticket: T-0124
+    issue: 58
+    citation:
+      - GitHub #58, OPEN, labels ready-for-agent + blocked
+      - GitHub #51, user stories 5 and 6 (which day behaviour changed; named phases)
+    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+
+  - rung: 8
+    name: tpp_hawkes_nb
+    title: Hawkes/NB temporal point process with a time-rescaling KS test
+    status: planned
+    adopted: null
+    module: null
+    ticket: T-0125
+    issue: 59
+    citation:
+      - GitHub #59, OPEN, labels ready-for-agent + blocked
+      - >-
+        GitHub #51 ("fitted by scipy.optimize against a parametric Hawkes/NB conditional
+        intensity ... it does not require the intensity to be neural")
+      - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2 (tpp_rescaled_ks)
+    contradicts:
+      - >-
+        06-requirements-v2.md §E bans a "neural TPP" and STATE.md's deferral list calls Rung
+        8 "neural TPP (Rung 8)". Per #51 this rung is NOT neural — the neural intensity is
+        the separate conditional ticket T-0132 below — so §E does not bite. STATE.md's
+        wording is stale and should be corrected.
+    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+
+  # ─── Conditional on a decision nobody has made in this tree ────────────────
+  - rung: 5
+    name: mil_gated_attention
+    title: Gated-attention MIL (Ilse et al., ICML 2018)
+    status: conditional
+    adopted: null
+    module: null
+    ticket: T-0131
+    issue: 65
+    citation:
+      - 'GitHub #65, OPEN, label `conditional`, title "(needs ADR-V3-001 reversed)"'
+      - GitHub #51 ("Gated-attention MIL is the upgrade and it requires the torch decision")
+    reason: >-
+      Needs autograd. CLAUDE.md rejects torch and transformers and the machine is CPU-only
+      with four cores. Unblocks only if ADR-V3-001 is reversed, and #51 records that the
+      reversal is NOT recommended inside this window.
+    decided_in: GitHub #51, "The torch decision is made once, in the open, and the recommendation is no."
+    gap: >-
+      ADR-V3-001 has no file in this tree — `grep -rn ADR-V3-001` returns nothing. The
+      status rests on the issue label and #51's prose, not on a readable ADR.
+
+  - rung: 8
+    name: tpp_neural_intensity
+    title: Neural conditional intensity for Rung 8
+    status: conditional
+    adopted: null
+    module: null
+    ticket: T-0132
+    issue: 66
+    citation:
+      - 'GitHub #66, OPEN, label `conditional`, title "(needs ADR-V3-001 reversed)"'
+      - GitHub #51 ("A neural intensity is the upgrade and it requires the torch decision")
+    reason: Same autograd/torch gate as T-0131. Explicitly banned by 06-requirements-v2.md §E while the ADR stands.
+    decided_in: GitHub #51, ADR-V3-001 (recommendation, no).
+    gap: ADR-V3-001 has no file in this tree.
