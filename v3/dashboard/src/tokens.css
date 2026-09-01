@@ -1,0 +1,285 @@
+/* RAKSHAK v3 — token layer, built on Tailwind v4's CSS-first theming.
+   Every value below is read from Razorpay's real Blade design system
+   (razorpay/blade on GitHub — packages/blade/src/tokens/global/*.ts and
+   theme/bladeTheme.ts), not guessed from memory. Where a value differs from
+   Blade it is called out in the comment beside it. See the dashboard report
+   for the full token-by-token mapping.
+
+   Blade's own font pairing is Inter (text) + TASA Orbiter (heading) — TASA
+   Orbiter is a licensed face with no public CDN distribution, so display
+   type uses Inter Tight (same designer lineage as Inter, a legitimate
+   substitute) instead. Everything else — the chromatic scale (azure/emerald/
+   crimson/cider/sapphire), the 12-step spacing scale, the 9-step radius
+   scale, the desktop type scale, the three-level elevation system, and the
+   entrance/exit easings — is Blade's actual shipped values. */
+@import "tailwindcss";
+
+@theme {
+  /* ---- spacing: Blade's own 0–11 scale, not Tailwind's 4px multiplier --- */
+  --spacing-0: 0px;
+  --spacing-1: 2px;
+  --spacing-2: 4px;
+  --spacing-3: 8px;
+  --spacing-4: 12px;
+  --spacing-5: 16px;
+  --spacing-6: 20px;
+  --spacing-7: 24px;
+  --spacing-8: 32px;
+  --spacing-9: 40px;
+  --spacing-10: 48px;
+  --spacing-11: 56px;
+
+  /* ---- radius: Blade's border.radius scale ------------------------------ */
+  --radius-none: 0px;
+  --radius-2xs: 2px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- type: Inter (Blade's text face) + Inter Tight standing in for
+     Blade's licensed TASA Orbiter heading face; JetBrains Mono for every
+     numeric/hash value, so digits are always tabular. --------------------- */
+  --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Inter Tight", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  /* Blade's onDesktop fontSize/lineHeight pairs (global/typography.ts) */
+  --text-2xs: 10px;
+  --text-2xs--line-height: 13px;
+  --text-xs: 12px;
+  --text-xs--line-height: 17px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 24px;
+  --text-xl: 20px;
+  --text-xl--line-height: 26px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 32px;
+  --text-3xl--line-height: 38px;
+  --text-4xl: 40px;
+  --text-4xl--line-height: 46px;
+  --text-5xl: 48px;
+  --text-5xl--line-height: 56px;
+  --text-6xl: 56px;
+  --text-6xl--line-height: 64px;
+
+  /* ---- motion: Blade's entrance/exit easings and duration steps -------- */
+  --ease-entrance: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.17, 0, 1, 1);
+  --duration-2xquick: 80ms;
+  --duration-xquick: 160ms;
+  --duration-quick: 200ms;
+  --duration-moderate: 280ms;
+  --duration-xmoderate: 360ms;
+  --duration-gentle: 480ms;
+
+  /* ---- semantic colors, indirected through the light/dark vars below --- */
+  --color-background: var(--background);
+  --color-canvas-well: var(--well);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-ring: var(--ring);
+
+  --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
+  --color-positive-border: var(--positive-border);
+  --color-negative: var(--negative);
+  --color-negative-bg: var(--negative-bg);
+  --color-negative-border: var(--negative-border);
+  --color-notice: var(--notice);
+  --color-notice-bg: var(--notice-bg);
+  --color-notice-border: var(--notice-border);
+  --color-information: var(--information);
+  --color-information-bg: var(--information-bg);
+  --color-information-border: var(--information-border);
+}
+
+/* ============================================================================
+   Light (default) — Blade onLight: surface.background.gray + chromatic 600s.
+   ========================================================================== */
+:root {
+  --background: hsl(0 0% 97%); /* blueGrayLight 50/100 */
+  --well: hsl(204 8% 95%);
+  --card: hsl(0 0% 100%); /* blueGrayLight 0 */
+  --card-foreground: hsl(0 0% 2%);
+  --foreground: hsl(0 0% 2%); /* blueGrayLight 1300 */
+  /* Blade's own 700/500 pairing lands under 4.5:1 for small text on white,
+     so this steps both one stop darker — blueGrayLight 800/700 — which keeps
+     the hierarchy and clears AA. The only two places this panel departs from
+     Blade's literal value, and it departs toward Blade's own scale. */
+  --muted-foreground: hsl(206 9% 34%); /* blueGrayLight 800 */
+  --faint: hsl(204 9% 42%); /* blueGrayLight 700 */
+  --border: hsl(204 8% 88%); /* blueGrayLight 200, "subtle" */
+  --border-strong: hsl(203 8% 80%); /* blueGrayLight 300, "normal" */
+
+  --primary: hsl(218 89% 51%); /* azure 500 */
+  --primary-foreground: hsl(0 0% 100%);
+  --primary-text: hsl(218 89% 51%); /* azure 500 */
+  --ring: hsl(218 89% 51%);
+
+  --positive: hsl(150 100% 23%); /* emerald 700, on-light text */
+  --positive-bg: hsl(150 39% 93%); /* emerald 50 */
+  --positive-border: hsl(150 38% 72%); /* emerald 200 */
+  --negative: hsl(4 85% 36%); /* crimson 700 */
+  --negative-bg: hsl(5 75% 97%); /* crimson 50 */
+  --negative-border: hsl(5 76% 85%); /* crimson 200 */
+  --notice: hsl(25 100% 34%); /* cider 800 — cider 700 is 4.21:1 on cider 50 */
+  --notice-bg: hsl(23 100% 97%); /* cider 50 */
+  --notice-border: hsl(25 100% 82%); /* cider 200 */
+  --information: hsl(200 100% 33%); /* sapphire 700 */
+  --information-bg: hsl(198 85% 95%); /* sapphire 50 */
+  --information-border: hsl(200 83% 79%); /* sapphire 200 */
+
+  --shadow-low: 0px 2px 4px 0px hsl(200 10% 18% / 0.06);
+  --shadow-mid: 0px 16px 12px 0px hsl(200 10% 18% / 0.06);
+  --shadow-high: 0px 8px 24px -4px hsl(200 10% 18% / 0.06);
+
+  color-scheme: light;
+}
+
+/* ============================================================================
+   Dark — Blade onDark: surface.background.gray + chromatic 400s (the
+   brighter step Blade itself substitutes for text/icon-on-dark legibility).
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: hsl(210 4% 11%); /* blueGrayDark 1300 */
+    --well: hsl(210 5% 8%); /* blueGrayDark 1200 */
+    --card: hsl(210 6% 13%); /* blueGrayDark 1100, "intense" pops lighter */
+    --card-foreground: hsl(0 0% 100%);
+    --foreground: hsl(0 0% 100%); /* blueGrayDark 0 */
+    --muted-foreground: hsl(210 3% 69%); /* blueGrayDark 300 */
+    --faint: hsl(210 3% 60%); /* blueGrayDark 400 — 500 is 4.33:1 on the card */
+    --border: hsl(216 4% 24%); /* blueGrayDark 800, "subtle" */
+    --border-strong: hsl(210 4% 47%); /* blueGrayDark 600, "normal" */
+
+    --primary: hsl(218 100% 63%); /* azure 400, punchier on dark */
+    --primary-foreground: hsl(0 0% 100%);
+    --primary-text: hsl(217 100% 73%); /* azure 300 */
+    --ring: hsl(217 100% 73%);
+
+    --positive: hsl(150 48% 44%); /* emerald 400 */
+    --positive-bg: hsla(150, 100%, 28%, 0.16);
+    --positive-border: hsla(150, 100%, 28%, 0.35);
+    --negative: hsl(5 76% 63%); /* crimson 400 */
+    --negative-bg: hsla(4, 85%, 44%, 0.16);
+    --negative-border: hsla(4, 85%, 44%, 0.35);
+    --notice: hsl(22 100% 63%); /* cider 400 */
+    --notice-bg: hsla(25, 100%, 44%, 0.16);
+    --notice-border: hsla(25, 100%, 44%, 0.35);
+    --information: hsl(199 83% 58%); /* sapphire 400 */
+    --information-bg: hsla(200, 100%, 41%, 0.16);
+    --information-border: hsla(200, 100%, 41%, 0.35);
+
+    --shadow-low: 0px 2px 4px 0px hsl(0 0% 0% / 0.32);
+    --shadow-mid: 0px 2px 8px 0px hsl(0 0% 0% / 0.32);
+    --shadow-high: 0px 8px 24px -4px hsl(0 0% 0% / 0.32);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: hsl(210 4% 11%);
+  --well: hsl(210 5% 8%);
+  --card: hsl(210 6% 13%);
+  --card-foreground: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 100%);
+  --muted-foreground: hsl(210 3% 69%);
+  --faint: hsl(210 3% 60%);
+  --border: hsl(216 4% 24%);
+  --border-strong: hsl(210 4% 47%);
+  --primary: hsl(218 100% 63%);
+  --primary-foreground: hsl(0 0% 100%);
+  --primary-text: hsl(217 100% 73%);
+  --ring: hsl(217 100% 73%);
+  --positive: hsl(150 48% 44%);
+  --positive-bg: hsla(150, 100%, 28%, 0.16);
+  --positive-border: hsla(150, 100%, 28%, 0.35);
+  --negative: hsl(5 76% 63%);
+  --negative-bg: hsla(4, 85%, 44%, 0.16);
+  --negative-border: hsla(4, 85%, 44%, 0.35);
+  --notice: hsl(22 100% 63%);
+  --notice-bg: hsla(25, 100%, 44%, 0.16);
+  --notice-border: hsla(25, 100%, 44%, 0.35);
+  --information: hsl(199 83% 58%);
+  --information-bg: hsla(200, 100%, 41%, 0.16);
+  --information-border: hsla(200, 100%, 41%, 0.35);
+  --shadow-low: 0px 2px 4px 0px hsl(0 0% 0% / 0.32);
+  --shadow-mid: 0px 2px 8px 0px hsl(0 0% 0% / 0.32);
+  --shadow-high: 0px 8px 24px -4px hsl(0 0% 0% / 0.32);
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   Base
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every numeric/hash value is tabular — the column-to-column comparisons
+   this panel exists for (seed spreads, PR-AUC, sha prefixes) break the
+   instant digits aren't monospaced-width. */
+.tabular,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
