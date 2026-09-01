@@ -34,6 +34,7 @@ import polars as pl
 import typer
 
 from rakshak.eval import capacity
+from rakshak.eval import report as report_mod
 from rakshak.eval.capacity import DEFAULT_POLICY, ActionPolicy
 from rakshak.eval.lock import (
     load_lock,
@@ -174,6 +175,43 @@ def _fold_shares(config: Path) -> tuple[float, float, float]:
 @app.callback()
 def main() -> None:
     """Rakshak v2. Run ``rakshak <command> --help`` for a stage."""
+
+
+@app.command()
+def report(
+    results: Path = typer.Option(  # noqa: B008
+        RESULT_DIR, "--results", help="Directory of EvalResult JSON sidecars."
+    ),
+) -> None:
+    """Render `docs/results_v2.md` and `docs/results_v2.parquet` from the scored rows.
+
+    `eval/report.py` has existed and been tested since T-152a; only this wiring was
+    missing, so the `report` target in the Makefile invoked a command that did not exist.
+    Nothing in `make all` calls it, so CI never caught it.
+
+    The renderer refuses rather than warns if the rows disagree on provenance
+    (`eval_lock_sha`, `open_count`, `git_sha`), which is the behaviour worth preserving:
+    a results table assembled from two different harness states is worse than none.
+    """
+    rows = report_mod.read_result_dir(results)
+    if not rows:
+        raise typer.BadParameter(
+            f"no EvalResult sidecars under {results}. Run `make eval` first."
+        )
+    try:
+        target = report_mod.write_report(rows, root=ROOT, lock_path=_lock_path(ROOT))
+    except report_mod.ProvenanceError as exc:
+        raise typer.BadParameter(
+            f"the scored rows do not share one provenance, so no report was written: "
+            f"{exc}"
+        ) from exc
+    typer.echo(
+        json.dumps(
+            {"wrote": str(target), "rows": len(rows),
+             "parquet": str(ROOT / report_mod.REPORT_PARQUET)},
+            indent=2,
+        )
+    )
 
 
 @app.command()
