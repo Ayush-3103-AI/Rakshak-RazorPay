@@ -77,6 +77,7 @@ _NON_FLOAT: Final[dict[str, pl.DataType]] = {
     "eval_lock_sha": pl.String(),
     "open_count": pl.Int64(),
     "git_sha": pl.String(),
+    "label": pl.String(),
 }
 
 SCHEMA: Final[dict[str, pl.DataType]] = {
@@ -136,7 +137,7 @@ def _row_from_mapping(record: Mapping[str, Any]) -> EvalResult:
     scoring path to keep a second, poorer serialisation just for this module.
     """
     names = {f.name for f in fields(EvalResult)}
-    missing = names - set(record) - {"cost_scenario", "floor_fail"}
+    missing = names - set(record) - {"cost_scenario", "floor_fail", "label"}
     if missing:
         raise ValueError(f"not an EvalResult: missing {sorted(missing)}")
     kwargs = {k: v for k, v in record.items() if k in names}
@@ -265,8 +266,15 @@ def _table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
 
 
 def _rung_name(row: EvalResult) -> str:
+    """The rung number AND the policy that produced the row.
+
+    The number alone is not an identity: three Rung-0 floors share it, and so do the two
+    exposure arms of every scored rung. A table that renders both arms of the comparison it
+    exists to report as the same string is not reporting it.
+    """
     tag = " · **FLOOR-FAIL**" if row.floor_fail else ""
-    return f"**Rung {row.rung}**{tag}"
+    name = f" `{row.label}`" if row.label else ""
+    return f"**Rung {row.rung}**{name}{tag}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -358,17 +366,29 @@ def _floor_fail_banner(rows: Sequence[EvalResult]) -> str:
             "**No rung fails a floor.** Every rung below beats `all_pass`, `all_hold`, "
             "`random_at_K` and `volume_rank` on savings.\n"
         )
+    severe = [r for r in failed if "all_pass" in r.floor_fail]
     lines = [
         f"> # FLOOR-FAIL — {len(failed)} of {len(rows)} rows",
         ">",
-        "> Savings below the `all_pass` floor means the system **costs more than doing "
-        "nothing at all**.",
-        "> No amount of ranking quality redeems that: a rung here is not a candidate for",
-        "> adoption, whatever its PR-AUC says.",
+        "> A row here loses to **at least one** floor, and the floors it loses to are named",
+        "> per row. The count alone is not the finding; the per-row list is.",
+        ">",
+        f"> **{len(severe)} of {len(failed)} lose to `all_pass`.**",
+        "> Such a row **costs more than doing nothing at all** and no amount of ranking",
+        "> quality redeems it. Losing only",
+        "> to `volume_rank` is a milder and different statement: on this generator",
+        "> `volume_rank` is the strongest floor and is itself an exposure estimator, so a",
+        "> rung that clears every other floor and loses to that one is not value-destroying.",
+        ">",
+        "> **A floor is compared against itself in this list.** `metrics.failed_by` uses",
+        "> `savings <= floor`, so `volume_rank` ties its own floor and is reported as",
+        "> failing it. That comparison lives inside `eval_module_sha256` and is therefore",
+        "> named here rather than corrected.",
         ">",
     ]
     lines += [
-        f"> - **Rung {r.rung}** ({r.split}, `{r.cost_scenario}`) loses to: "
+        f"> - {_rung_name(r).replace(' · **FLOOR-FAIL**', '')} "
+        f"({r.split}, `{r.cost_scenario}`) loses to: "
         f"**{', '.join(r.floor_fail)}** — savings {_f(r.savings)}"
         for r in failed
     ]

@@ -11,6 +11,7 @@ one-way door and cannot overwrite a published report.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 from pathlib import Path
@@ -134,7 +135,12 @@ def test_parquet_round_trip_preserves_every_field(tmp_path: Path) -> None:
 
 
 def test_read_result_dir_tolerates_the_cli_json_sidecars(tmp_path: Path) -> None:
-    """``cli.py`` writes a dozen diagnostic keys beside the row; they are ignored."""
+    """``cli.py`` writes a dozen diagnostic keys beside the row; they are ignored.
+
+    ``label`` is the one exception and it is asserted separately below: it stopped being a
+    diagnostic and became a field, because a results table that cannot name its own rows
+    renders three Rung-0 floors and both exposure arms of every rung as the same string.
+    """
     row = make_row(rung=3)
     payload = {
         "rung": row.rung,
@@ -173,7 +179,26 @@ def test_read_result_dir_tolerates_the_cli_json_sidecars(tmp_path: Path) -> None
         "n_rows_scored": 12345,
     }
     (tmp_path / "rung3_val_seed42.json").write_text(json.dumps(payload), encoding="utf-8")
-    assert read_result_dir(tmp_path) == [row]
+    [got] = read_result_dir(tmp_path)
+    # Every diagnostic key is still ignored...
+    assert dataclasses.replace(got, label="") == row
+    # ...except `label`, which is now carried onto the row and rendered beside the number.
+    assert got.label == "rung3"
+
+
+def test_a_row_without_a_label_still_reads(tmp_path: Path) -> None:
+    """`label` is defaulted, so a sidecar written before it existed still round-trips."""
+    row = make_row(rung=2)
+    payload = {f.name: getattr(row, f.name) for f in dataclasses.fields(row)}
+    payload["recall_by_typology"] = {
+        t.value: v for t, v in row.recall_by_typology.items()
+    }
+    payload["split"] = str(row.split)
+    del payload["label"]
+    (tmp_path / "rung2_val_seed42.json").write_text(json.dumps(payload), encoding="utf-8")
+    [got] = read_result_dir(tmp_path)
+    assert got.label == ""
+    assert got == row
 
 
 # ───────────────────────────── provenance ─────────────────────────────

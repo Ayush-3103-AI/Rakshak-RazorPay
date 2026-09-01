@@ -582,6 +582,17 @@ class EvalResult:
     git_sha: str
     cost_scenario: str = "base"
     floor_fail: list[str] = field(default_factory=list)
+    #: Which policy produced this row — ``volume_rank``, ``rung3``,
+    #: ``rung2_realised_exposure``. Defaulted and last, so every existing construction is
+    #: unaffected and ``eval_module_sha256`` cannot move (``schemas.py`` is not one of the
+    #: five locked eval modules, and ``metrics.py`` is not edited to populate it).
+    #:
+    #: It exists because without it a results table cannot name its own rows. Cycle 4
+    #: rendered 65 rows in which ``all_pass``, ``random_at_k`` and ``volume_rank`` were all
+    #: "Rung 0", and the two exposure arms of every rung were both "Rung 2" — which made
+    #: the cycle's central comparison invisible in its own report. ``cli.py`` already wrote
+    #: the name beside the row; nothing consumed it.
+    label: str = ""
 
     def __post_init__(self) -> None:
         # FR-021: prevalence is always present. v1's headline was computed at 20%
