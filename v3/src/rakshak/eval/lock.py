@@ -219,6 +219,19 @@ def write_lock(
             "p99_latency_ms",
             "state_bytes_p99",
             "model_size_mb",
+            # Cycle-3 additions, declared in docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2
+            # before any of them was implemented and before any Rung 5-8 code exists.
+            # Additive: nothing above is removed or redefined (§3), and the three are
+            # inert for Rungs 0-4, which stay judged on EVAL-LOCK-CYCLE2.json.
+            #
+            # They are listed HERE, in the module, rather than typed into the lock file,
+            # because eval_module_sha256 covers lock.py: adding them to the JSON after the
+            # cycle-3 lock is sealed would need an edit to this file, which would break the
+            # very hash the lock had just recorded. That is the ordering trap §4 exists to
+            # avoid, and it is why T-0118 lands before the lock is written.
+            "false_hold_coverage",
+            "onset_localisation_error",
+            "tpp_rescaled_ks",
         ],
         "cost_asymmetry_ratios": [0.01, 0.1, 1.0, 10.0, 100.0],
         "declared_adoption_margins": DECLARED_ADOPTION_MARGINS,

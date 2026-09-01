@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Protocol
 
 import numpy as np
 
@@ -29,8 +29,12 @@ from rakshak.schemas import Action
 
 __all__ = [
     "ASYMMETRY_RATIOS",
+    "DEFAULT_DECISION",
     "DEFAULT_POLICY",
     "ActionPolicy",
+    "CapacityTopK",
+    "DecisionPolicy",
+    "DecisionRequest",
     "SweepRow",
     "expected_costs",
     "select_actions",
@@ -121,6 +125,88 @@ def select_actions(
     return chosen
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# The decision-policy seam (T-0118; pre-registration §4 step 2)
+#
+# Rung 6 is conformal risk control, which needs to *adjust* an action the selector has
+# already chosen so that the realised false-HOLD rate respects a nominal alpha. With no
+# seam, that adjustment has to be an edit inside ``select_actions`` — which would move
+# the numbers Rungs 0-4 were scored on, exactly the rescoring pre-registration §3
+# forbids. So the selector gets a name and a shape that can be wrapped instead.
+#
+# ``select_actions`` above is UNCHANGED and stays the callable everything already calls.
+# ``CapacityTopK`` forwards to it; it does not reimplement it. The one-argument shape
+# exists because a decorator that has to re-declare six positional parameters is a
+# decorator that will drift out of sync with the thing it wraps.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionRequest:
+    """Everything a decision policy is allowed to see: no labels, no Truth, no oracle.
+
+    The absence is the point. A policy handed ``y`` could condition on the answer, and the
+    resulting savings would be a measurement of the leak rather than of the policy
+    (Prime Directive 3). ``exposure_inr`` is likewise the decision layer's feature-derived
+    *estimate*, never ``true_loss_amount_inr``.
+    """
+
+    score: np.ndarray
+    day: np.ndarray
+    exposure_inr: np.ndarray
+    k: int
+    params: CostParams
+    hold_policy: ActionPolicy = DEFAULT_POLICY
+
+
+class DecisionPolicy(Protocol):
+    """PASS/REVIEW/HOLD per merchant-day, under the capacity budget.
+
+    ``name`` is not decoration: it is what appears beside the number, so a result produced
+    under a wrapped policy can never be quietly mistaken for one produced under the
+    default. A wrapper names itself in terms of what it wraps, e.g.
+    ``"crc(capacity_topk, alpha=0.05)"``.
+
+    The contract a wrapper must not break: ``decide`` returns one ``Action`` per input row
+    and emits at most ``k`` non-PASS actions on any day. A wrapper may only ever *soften*
+    an action (HOLD -> REVIEW -> PASS); promoting one can breach K, and K is the binding
+    operational constraint that makes every capacity-constrained number mean anything.
+    """
+
+    @property
+    def name(self) -> str: ...
+
+    def decide(self, request: DecisionRequest) -> np.ndarray: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CapacityTopK:
+    """The default policy: :func:`select_actions`, given a name and a wrappable shape.
+
+    Identical to calling ``select_actions`` directly, because it forwards rather than
+    reimplements. ``tests/unit/test_capacity_seam.py`` asserts that equality at a fixed
+    seed — the golden-output regression T-0118 asks for.
+    """
+
+    @property
+    def name(self) -> str:
+        return "capacity_topk"
+
+    def decide(self, request: DecisionRequest) -> np.ndarray:
+        return select_actions(
+            request.score,
+            request.day,
+            request.exposure_inr,
+            request.k,
+            request.params,
+            request.hold_policy,
+        )
+
+
+#: The unwrapped decision policy. Rungs 0-4 are scored under this and nothing else.
+DEFAULT_DECISION: Final[DecisionPolicy] = CapacityTopK()
+
+
 @dataclass(frozen=True, slots=True)
 class SweepRow:
     """One cell of the cost-asymmetry sweep: a rung's savings at one ratio."""
@@ -142,6 +228,7 @@ def sweep_cost_asymmetry(
     *,
     ratios: tuple[float, ...] = ASYMMETRY_RATIOS,
     policy: ActionPolicy = DEFAULT_POLICY,
+    decision: DecisionPolicy = DEFAULT_DECISION,
 ) -> list[SweepRow]:
     """Rank every rung at each ``false_hold_cost / fraud_loss`` ratio.
 
@@ -154,6 +241,11 @@ def sweep_cost_asymmetry(
     the window, so a ratio of 1.0 means "holding a good merchant wrongly costs about what
     one fraud costs". ``review_cost_inr`` and ``p_catch`` are held fixed: the sweep varies
     the asymmetry, not everything at once, or the result is uninterpretable.
+
+    ``decision`` defaults to the unwrapped :data:`DEFAULT_DECISION`, which forwards to
+    :func:`select_actions` — so every rung already swept keeps the number it had. A rung
+    that supplies its own policy is swept under that policy and reported under its
+    ``name``, never merged with the default's rows.
     """
     fraud_loss = loss[y == 1]
     reference = float(fraud_loss.mean()) if fraud_loss.size else 0.0
@@ -173,7 +265,19 @@ def sweep_cost_asymmetry(
         )
         scored = {
             name: savings_of_actions(
-                select_actions(score, day, exposure_inr, k, swept, policy), y, loss, swept
+                decision.decide(
+                    DecisionRequest(
+                        score=score,
+                        day=day,
+                        exposure_inr=exposure_inr,
+                        k=k,
+                        params=swept,
+                        hold_policy=policy,
+                    )
+                ),
+                y,
+                loss,
+                swept,
             )
             for name, score in scores.items()
         }

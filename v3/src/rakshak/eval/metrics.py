@@ -38,8 +38,11 @@ from rakshak.schemas import Action, EvalResult, Split, TypologyId
 __all__ = [
     "ALL_FLOORS",
     "CostParams",
+    "CoverageRow",
     "Floors",
+    "OnsetLocalisation",
     "PerfBudget",
+    "RescaledKS",
     "RungOutput",
     "Truth",
     "alert_jaccard_wow",
@@ -47,7 +50,9 @@ __all__ = [
     "build_eval_result",
     "detection_rates",
     "expected_calibration_error",
+    "false_hold_coverage",
     "floors_at_capacity",
+    "onset_localisation_error",
     "precision_recall_at_k",
     "pr_auc",
     "recall_by_typology",
@@ -56,6 +61,7 @@ __all__ = [
     "savings_of_ranking",
     "time_to_detection",
     "top_k_by_day",
+    "tpp_rescaled_ks",
 ]
 
 #: The four floors that appear on EVERY savings row (FR-021). v1 discovered `random`
@@ -639,4 +645,225 @@ def build_eval_result(
         git_sha=git_sha,
         cost_scenario=cost_scenario,
         floor_fail=floors.failed_by(savings),
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cycle-3 additions (docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2)
+#
+# Three metric names, declared in that document and implemented here with NO rung
+# attached, so EVAL-LOCK-CYCLE3.json can hash this module *after* they exist rather
+# than hard-failing on the very commit that adds them (pre-registration §4).
+#
+# Nothing above this line is redefined, removed or rescored. These three are inert for
+# Rungs 0-4, which stay judged on the cycle-2 lock exactly as before (§3).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class CoverageRow:
+    """Realised false-HOLD rate in one Mondrian stratum, against nominal ``alpha``.
+
+    ``realised`` is ``P(HOLD | not a fraud-day)`` *within the stratum*: the denominator is
+    the stratum's negative merchant-days, not all of its rows. That is the quantity a
+    conformal risk controller claims to bound, so it is the quantity measured.
+
+    ``violated`` is a plain ``realised > alpha``. There is deliberately no finite-sample
+    slack, no shrinkage toward alpha and no clamp: pre-registration §5 commits to
+    *reporting* a coverage violation, and a tolerance band wide enough to absorb one is
+    indistinguishable from suppressing it. A stratum too small to say anything carries its
+    own ``n_negatives`` so the reader can discount it themselves.
+    """
+
+    stratum: str
+    n_negatives: int
+    n_false_hold: int
+    realised: float
+    alpha: float
+    violated: bool
+
+
+def false_hold_coverage(
+    action: np.ndarray,
+    y: np.ndarray,
+    stratum: np.ndarray,
+    alpha: float,
+) -> list[CoverageRow]:
+    """Per-Mondrian-stratum realised false-HOLD rate against nominal ``alpha`` (Rung 6).
+
+    A *false HOLD* is ``action == Action.HOLD`` on a merchant-day whose label is 0 — a
+    settlement freeze on a merchant that was not drifting. Conformal risk control's claim
+    is that this rate respects ``alpha`` in **every** stratum of the Mondrian taxonomy,
+    not merely on average: a marginal guarantee that holds overall while one merchant
+    category is frozen at three times alpha is the failure stratification exists to
+    expose, so there is no aggregate row here to hide behind.
+
+    Args:
+        action: ``Action`` per merchant-day — the same array as ``RungOutput.action``.
+        y: 0/1 merchant-day label from :func:`day_labels`, already filtered by ``keep``.
+            Censored merchants have no resolved outcome and cannot be scored here.
+        stratum: the Mondrian taxonomy value per merchant-day; compared as ``str``.
+        alpha: nominal false-HOLD rate in [0, 1], e.g. 0.05.
+
+    Returns:
+        One :class:`CoverageRow` per stratum, sorted by stratum name. A stratum with no
+        negative days gets ``realised = nan`` and ``violated = False`` — there is no rate
+        to violate on a zero denominator, and reporting 0.0 there would be a fabricated
+        number of the kind :func:`pr_auc` also refuses to invent.
+    """
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError(f"alpha is a nominal error rate in [0,1]; got {alpha!r}")
+    if not len(action) == len(y) == len(stratum):
+        raise ValueError("action, y and stratum must be the same length")
+
+    labels = np.asarray([str(s) for s in np.asarray(stratum).tolist()])
+    is_negative = np.asarray(y) == 0
+    is_false_hold = is_negative & (np.asarray(action) == Action.HOLD)
+
+    rows: list[CoverageRow] = []
+    for value in sorted(set(labels.tolist())):
+        member = labels == value
+        n_neg = int((member & is_negative).sum())
+        n_fh = int((member & is_false_hold).sum())
+        realised = n_fh / n_neg if n_neg else float("nan")
+        rows.append(
+            CoverageRow(
+                stratum=value,
+                n_negatives=n_neg,
+                n_false_hold=n_fh,
+                realised=realised,
+                alpha=alpha,
+                violated=bool(n_neg) and realised > alpha,
+            )
+        )
+    return rows
+
+
+@dataclass(frozen=True, slots=True)
+class OnsetLocalisation:
+    """The signed onset-localisation error distribution (Rung 7).
+
+    ``error_days`` is ``estimated - true``, so a **negative** error is an estimate that is
+    too early and a positive one is late. The sign is kept because the two mistakes are
+    not interchangeable operationally: early attributes clean days to a drift, late writes
+    off days of real exposure as normal.
+
+    Median and IQR rather than mean and sd, because a handful of merchants where the
+    change-point search lands on the wrong side of the series drags a mean anywhere, and
+    the resulting number then describes those merchants rather than the method.
+
+    ``n_unlocalised`` are merchants that genuinely drifted but for which no change-point
+    was declared. They are counted, never silently dropped and never imputed: dropping
+    them lets a method that only fires on the easy half report a flattering IQR.
+    """
+
+    error_days: np.ndarray
+    median: float
+    q25: float
+    q75: float
+    iqr: float
+    n: int
+    n_unlocalised: int
+
+
+def onset_localisation_error(
+    estimated_onset_day: np.ndarray, true_onset_day: np.ndarray
+) -> OnsetLocalisation:
+    """Signed days between an estimated change-point and ``drift_onset_at`` (Rung 7).
+
+    Both arrays are one row per merchant and index-aligned. ``nan`` in ``true_onset_day``
+    means the merchant never drifted, so there is nothing to localise and the row is
+    dropped entirely — scoring a change-point against an onset that does not exist
+    measures a false positive, which is :func:`precision_recall_at_k`'s job, not this
+    one. ``nan`` in ``estimated_onset_day`` on a merchant that *did* drift means the
+    estimator declined to localise: dropped from the distribution, counted in
+    ``n_unlocalised``.
+
+    Quartiles use numpy's default linear interpolation; ``iqr = q75 - q25``.
+    """
+    est = np.asarray(estimated_onset_day, dtype=np.float64)
+    true = np.asarray(true_onset_day, dtype=np.float64)
+    if est.shape != true.shape:
+        raise ValueError("estimated_onset_day and true_onset_day must be the same length")
+
+    drifted = ~np.isnan(true)
+    localised = drifted & ~np.isnan(est)
+    errors = est[localised] - true[localised]
+    n_unlocalised = int(drifted.sum() - localised.sum())
+
+    if errors.size == 0:
+        nan = float("nan")
+        return OnsetLocalisation(
+            error_days=errors,
+            median=nan,
+            q25=nan,
+            q75=nan,
+            iqr=nan,
+            n=0,
+            n_unlocalised=n_unlocalised,
+        )
+    q25, median, q75 = (float(q) for q in np.percentile(errors, (25.0, 50.0, 75.0)))
+    return OnsetLocalisation(
+        error_days=errors,
+        median=median,
+        q25=q25,
+        q75=q75,
+        iqr=q75 - q25,
+        n=int(errors.size),
+        n_unlocalised=n_unlocalised,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class RescaledKS:
+    """Time-rescaling goodness-of-fit for a temporal point process (Rung 8)."""
+
+    statistic: float
+    p_value: float
+    n: int
+
+    def rejects_at(self, level: float = 0.05) -> bool:
+        """``True`` when the fit is rejected, i.e. the intensity is misspecified."""
+        return self.p_value < level
+
+
+def tpp_rescaled_ks(compensator_increments: np.ndarray) -> RescaledKS:
+    """KS statistic and p-value on time-rescaled inter-arrival times (Rung 8).
+
+    By the time-rescaling theorem, if a point process's conditional intensity
+    ``lambda(t)`` is correct then the compensator increments between consecutive events,
+    ``Lambda_k = integral over (t_{k-1}, t_k] of lambda(u) du``, are i.i.d.
+    Exponential(1), so ``u_k = 1 - exp(-Lambda_k)`` is i.i.d. Uniform(0, 1). This is a
+    one-sample KS test of that uniformity.
+
+    Taking the *increments* rather than event times plus an intensity callable is
+    deliberate: the metric then holds no opinion about the rung's parametric form, which
+    is what lets it be declared before Rung 8 exists and applied unchanged to whatever
+    intensity that rung ends up with.
+
+    A small statistic with a large p-value is a fit that has **not been rejected**, never
+    a fit that has been confirmed. Pre-registration §5: if this rejects, Rung 8's
+    intensity is misspecified and is reported as such.
+
+    Args:
+        compensator_increments: ``Lambda_k >= 0``, one per inter-arrival interval.
+
+    Returns:
+        :class:`RescaledKS`. An empty input gives ``nan`` for both, loudly, rather than a
+        p-value of 1.0 that would read as a passing fit computed on nothing.
+    """
+    lam = np.asarray(compensator_increments, dtype=np.float64)
+    if lam.size and bool((lam < 0).any()):
+        raise ValueError(
+            "compensator increments integrate a non-negative intensity and cannot be "
+            "negative; a negative one means the intensity or the integration is wrong"
+        )
+    if lam.size == 0:
+        return RescaledKS(statistic=float("nan"), p_value=float("nan"), n=0)
+
+    from scipy import stats  # local: only Rung 8 pays the scipy.stats import
+
+    result = stats.kstest(1.0 - np.exp(-lam), "uniform")
+    return RescaledKS(
+        statistic=float(result.statistic), p_value=float(result.pvalue), n=int(lam.size)
     )
