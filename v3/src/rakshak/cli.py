@@ -63,8 +63,9 @@ from rakshak.models import (
     rung4_cost,
     rung5_mil,
     rung8_realised_exposure,
+    rung9_rank_cusum,
 )
-from rakshak.schemas import Split
+from rakshak.schemas import MerchantProfile, Split
 
 app = typer.Typer(add_completion=False, help="Rakshak v2 — merchant risk sentinel.")
 
@@ -483,7 +484,12 @@ def _columns_for(rung: int) -> tuple[str, ...]:
         # different objects entirely — see rung5_mil's module docstring. The two share this
         # function only because both need a column contract that travels with the model.
         return rung5_mil.feature_columns()
-    raise ValueError(f"rung {rung} is not a trained rung; 2, 3, 4 and 5 are")
+    if rung == 9:
+        # Rung 9 is a wrapper over Rung 3 and consumes no columns of its own; it scores
+        # through Rung 3's contract. Reported as Rung 3's width so the results table does
+        # not claim a feature count that no model ever saw.
+        return rung3_cohort.feature_columns()
+    raise ValueError(f"rung {rung} is not a trained rung; 2, 3, 4, 5 and 9 are")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -830,9 +836,73 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung | rung5_mil.Tr
     )
 
 
+def _score_rung9(
+    *,
+    full: Any,
+    rows: Any,
+    seed: int,
+    root: Path,
+    boundaries: SplitBoundaries,
+) -> tuple[np.ndarray, rung9_rank_cusum.RankCusum, np.ndarray]:
+    """Rung 9's score: the incumbent's probability, blended with its rank-CUSUM accumulator.
+
+    **Rung 9 is a wrapper over Rung 3, not a new model**, so it loads Rung 3's artefact
+    rather than training anything of its own. The only fitted object is the three-parameter
+    logistic blend that turns ``(logit incumbent, accumulator)`` back into the calibrated
+    probability the decision layer contracts for, and **it is fitted on TRAIN rows only** —
+    the panel carries a row only where the merchant's fold matches the day's split, so the
+    train rows here belong to train-fold merchants on train days and share neither a
+    merchant nor a day with the split being scored.
+
+    The CUSUM itself consumes no labels at all. Three parameters against the train fold's
+    positives is inside the label budget with room to spare, which is the whole reason a
+    method that needs no labels was weighted above one that does.
+    """
+    incumbent = _load_trained(3, seed)
+    profiles = {
+        r["merchant_id"]: MerchantProfile(**r)
+        for r in pl.read_parquet(root / "profiles.parquet").to_dicts()
+    }
+
+    def channel(panel: Any) -> tuple[np.ndarray, np.ndarray]:
+        base = incumbent.predict(panel.x, panel.columns)
+        acc = rung9_rank_cusum.accumulator(
+            base,
+            panel.day,
+            panel.merchant_id,
+            rung9_rank_cusum.cohort_labels(profiles, panel.merchant_id),
+        )
+        return base, acc
+
+    train = full.select("train")
+    if train.x.shape[0] == 0:
+        raise typer.BadParameter(
+            "the panel holds no train rows, so Rung 9's blend cannot be fitted. Fitting it "
+            "on the split being scored would be self-evaluation."
+        )
+    base_tr, acc_tr = channel(train)
+    y_tr = _training_labels(
+        root,
+        np.array(sorted(set(train.merchant_id.tolist()))),
+        _epoch_end(boundaries.train[1], boundaries),
+    )
+    by_merchant = dict(
+        zip(sorted(set(train.merchant_id.tolist())), y_tr, strict=True)
+    )
+    y_rows = np.array([by_merchant[m] for m in train.merchant_id], dtype=int)
+    blend = rung9_rank_cusum.RankCusum.fit(
+        incumbent=base_tr, accumulator=acc_tr, y=y_rows
+    )
+
+    base, acc = channel(rows)
+    return blend.predict(base, acc), blend, acc
+
+
 @app.command("eval")
 def score_split(
-    rung: int = typer.Option(2, "--rung", help="0, 1, 2, 3, 4, 5 or 6."),
+    rung: int = typer.Option(
+        2, "--rung", help="0, 1, 2, 3, 4, 5, 6 or 9. Rung 9 wraps Rung 3."
+    ),
     seed: int = typer.Option(42, "--seed", help="Threaded into the random_at_k floor."),
     split: str = typer.Option("val", "--split", help="val (default) or test. "
                               "test REFUSES without RAKSHAK_UNLOCK=1."),
@@ -959,6 +1029,11 @@ def score_split(
     else:
         if rung == 1:
             score = rung1_rules.score(rows.x, rows.columns)
+        elif rung == 9:
+            score, blend, acc = _score_rung9(
+                full=full, rows=rows, seed=seed, root=root, boundaries=boundaries
+            )
+            latency_ms = float("nan")
         else:
             model = _load_trained(rung, seed)
             started = _time.perf_counter()
@@ -1024,6 +1099,23 @@ def score_split(
         git_sha=str(load_lock(ROOT, lock_path=_lock_path(ROOT))["frozen_at_git_sha"]),
     )
 
+    if rung == 9:
+        payload_extra_rung9 = {
+            "incumbent_rung": 3,
+            "cusum_k": rung9_rank_cusum.K_REFERENCE,
+            "cusum_c_max": rung9_rank_cusum.C_MAX,
+            "blend_coef_logit_incumbent": float(blend.model.coef_[0][0]),
+            "blend_coef_accumulator": float(blend.model.coef_[0][1]),
+            "blend_intercept": float(blend.model.intercept_[0]),
+            "accumulator_mean": float(np.mean(acc)),
+            "accumulator_p99": float(np.quantile(acc, 0.99)),
+            "accumulator_frac_at_cap": float(
+                np.mean(acc >= rung9_rank_cusum.C_MAX - 1e-9)
+            ),
+        }
+    else:
+        payload_extra_rung9 = {}
+
     if split == "test":
         record_open(ROOT, [rung], lock_path=_lock_path(ROOT))
         typer.echo(
@@ -1036,6 +1128,7 @@ def score_split(
         str(key): value for key, value in result.recall_by_typology.items()
     }
     payload |= {
+        **payload_extra_rung9,
         "label": label,
         "exposure_arm": exposure_arm,
         "decision_policy": decision.name if rung != 0 else "floor_actions(review_only)",

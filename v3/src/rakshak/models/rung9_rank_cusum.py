@@ -38,6 +38,7 @@ what is pinned, no autograd, no GPU, and nothing inside ``eval_module_sha256`` i
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import numpy as np
@@ -45,13 +46,19 @@ import numpy.typing as npt
 from scipy.stats import norm
 from sklearn.linear_model import LogisticRegression
 
+from rakshak.features.cohort import assign_cohorts
+from rakshak.schemas import MerchantProfile
+
 __all__ = [
     "C_MAX",
     "K_REFERENCE",
     "NORMAL_SCORE_CLIP",
     "RankCusum",
+    "accumulator",
+    "cohort_labels",
     "cross_sectional_normal_scores",
     "page_recursion",
+    "run_length",
 ]
 
 F64 = npt.NDArray[np.float64]
@@ -232,3 +239,45 @@ def run_length(accumulator: F64, day: I64, merchant: npt.NDArray[np.str_]) -> I6
         run = 0 if acc[i] <= 0.0 else run + 1
         out[i] = run
     return out
+
+
+def cohort_labels(
+    profiles: Mapping[str, MerchantProfile], merchant_id: npt.NDArray[np.str_]
+) -> npt.NDArray[np.str_]:
+    """The cohort each row is ranked inside, via the real ``assign_cohorts``.
+
+    Reuses the existing ``(mcc_group, gmv_decile, vintage_bucket)`` key and its 30-member
+    backoff chain rather than defining a second notion of "peer group". A rung that ranked
+    against a cohort nothing else in the project uses would be measuring its own definition.
+    """
+    assignment = assign_cohorts(profiles)
+    label = assignment.label
+    return np.array([label.get(m, "global") for m in merchant_id])
+
+
+def accumulator(
+    incumbent: F64,
+    day: I64,
+    merchant: npt.NDArray[np.str_],
+    cohort: npt.NDArray[np.str_],
+    *,
+    k: float = K_REFERENCE,
+    c_max: float = C_MAX,
+) -> F64:
+    """Steps 1-3 in one call: cross-sectional normal scores, then the Page recursion.
+
+    **The accumulator cold-starts at 0 on the first day each merchant appears**, and on the
+    validation split that is day 240 for every merchant, because the panel carries a row
+    only where the merchant's fold matches the day's split (``dataset`` builds it from
+    ``fold == day_split``). That is the right setting rather than a limitation: every
+    validation merchant is on equal footing, and a merchant whose drift began before the
+    window opened has no measurable in-window detection delay anyway — which is exactly the
+    point ``LIMITATIONS.md`` §8.7a makes about cycle 3.
+    """
+    return page_recursion(
+        cross_sectional_normal_scores(incumbent, day, cohort),
+        day,
+        merchant,
+        k=k,
+        c_max=c_max,
+    )

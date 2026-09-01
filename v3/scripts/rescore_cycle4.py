@@ -37,7 +37,8 @@ SEEDS = (42, 43, 44, 45, 46)
 FLOORS = ("all_pass", "random_at_k", "volume_rank")
 
 #: Rungs that go through ``select_actions`` and are therefore sensitive to the arm.
-#: Rung 1 needs no training. 5/6/7 are dispatched differently and are appended by
+#: Rung 1 needs no training and Rung 9 wraps Rung 3's artefact rather than having one of its
+#: own, so neither appears here. 5/6 are dispatched differently and are appended by
 #: ``--with-upper`` once the base ladder is down.
 TRAINED = (2, 3, 4)
 
@@ -82,7 +83,7 @@ def eval_jobs(*, with_upper: bool) -> list[Job]:
                  "--split", "val"),
                 f"eval {f} seed{s}",
             ))
-        for r in (1, *TRAINED):
+        for r in (1, *TRAINED, 9):
             for arm in ("declared", "realised"):
                 jobs.append(Job(
                     "eval",
