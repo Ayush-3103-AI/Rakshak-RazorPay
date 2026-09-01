@@ -275,6 +275,10 @@ def test_a_negative_prior_weight_is_refused() -> None:
 #: every residual stays flat. Build the G5 test around this feature first."
 P2_FEATURE = "f_auth_fail_rate_z"
 
+#: Shrunk window for test speed. The splits are scaled to it in _p2_population; the
+#: validator requires test_end_day == n_days - 1, so the two cannot drift apart again.
+N_DAYS = 100
+
 
 def _p2_population() -> tuple[Any, dict[str, MerchantProfile], dt.date, list[int]]:
     from rakshak.generator import config as gen_config
@@ -283,8 +287,22 @@ def _p2_population() -> tuple[Any, dict[str, MerchantProfile], dt.date, list[int
     cfg = gen_config.load_scenario("configs/scenario_v2.yaml")
     # prevalence=0 with the confounder layer on: nothing is drifting for a reason, so every
     # alert the detector raises is a false positive by construction. This is the G5 setup.
-    pop = dataclasses.replace(cfg.population, prevalence=0.0, n_merchants=3000, n_days=100)
-    scenario = dataclasses.replace(cfg, population=pop)
+    pop = dataclasses.replace(cfg.population, prevalence=0.0, n_merchants=3000, n_days=N_DAYS)
+    # T-0101 moved the real window to 365 days and the config validator requires
+    # test_end_day == n_days - 1. Shrinking the population without shrinking the splits left
+    # the 365-day boundaries behind a 100-day window, so this fixture raised ConfigError
+    # before it generated anything — the test was not failing, it was not running.
+    # Scale with the window so the miniature keeps the real proportions (65.75/16.44/17.81)
+    # rather than inventing new ones.
+    s = cfg.splits
+    scale = N_DAYS / cfg.population.n_days
+    splits = dataclasses.replace(
+        s,
+        train_end_day=round((s.train_end_day + 1) * scale) - 1,
+        val_end_day=round((s.val_end_day + 1) * scale) - 1,
+        test_end_day=N_DAYS - 1,
+    )
+    scenario = dataclasses.replace(cfg, population=pop, splits=splits)
     assert scenario.confounders.enabled, "the confounder layer is off; this test is vacuous"
     data = engine.generate(scenario, np.random.default_rng(11))
     profiles = {r["merchant_id"]: MerchantProfile(**r) for r in data.profiles.to_dicts()}
@@ -313,7 +331,7 @@ def _z_and_residual(data: Any, profiles: dict[str, MerchantProfile], as_of: dt.d
 @pytest.fixture(scope="module")
 def p2_epoch() -> Any:
     data, profiles, start, days = _p2_population()
-    outage = [d for d in days if d < 100][-1]
+    outage = [d for d in days if d < N_DAYS][-1]
     as_of = dt.datetime.combine(start + dt.timedelta(days=outage), dt.time.max, tzinfo=dt.UTC)
     quiet = dt.datetime.combine(
         start + dt.timedelta(days=outage - 1), dt.time.max, tzinfo=dt.UTC
