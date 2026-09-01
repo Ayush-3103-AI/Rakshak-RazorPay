@@ -894,8 +894,9 @@ Rung 2 trains in **7.6 s** on 4 cores (NFR-06 budget 20 min) and the artifact is
 
 ## 9. Cycle 4 — what the regeneration and the exposure correction actually measured
 
-Validation split, 40,000 merchants, K = 30, **five seeds on every row**, both exposure arms
-over the whole ladder, 65 scored rows, no failures. `eval_module_sha256` is `c009e38d…` —
+Validation split, 40,000 merchants, K = 30, **five seeds on every row**, both exposure arms,
+**80 scored rows — every floor and every rung**, no failures and no mixed provenance.
+The table below is the five rungs the A/B covers; Rungs 5 and 6 are in §9.9. `eval_module_sha256` is `c009e38d…` —
 byte-identical to cycle 3 — so the harness that scored the failing ladder scored this one.
 
 | policy | arm | PR-AUC | ECE | savings | P@K | R@K | d30 | Jaccard |
@@ -921,7 +922,7 @@ because the wrapper never touches a score.
 
 ### 9.1 The metric fires. That is the cycle's first result and it is unambiguous.
 
-`detection_rate_d30` is non-zero for **11 of 13 policies**, against **0 of 7** in cycle 3, and
+`detection_rate_d30` is non-zero for **13 of 16 policies**, against **0 of 7** in cycle 3, and
 it *discriminates*: `random_at_k` 0.0154, Rung 1 0.0462, Rung 2 0.0862. Cycle 3 gave every
 policy the same number because the number was a property of the calendar (§8.7a).
 
@@ -1055,3 +1056,54 @@ concentrating on exposure and it is not the rung you would ship for detection qu
   equal weight.
 - **The external anchor is still absent.** G1b/G1c/G1d/G2 SKIP because BAF is not vendored.
   Everything above is measured against a generator, and §5 is unchanged.
+
+### 9.9 Rungs 5 and 6, and the clearest evidence in the cycle that ranking is not deciding
+
+The ladder is complete: **80 rows**, every floor and every rung on cycle-4 data, no
+mixed provenance. Rungs 5 and 6 were scored last and neither has an arm-B row — see the
+limitation at the end of this section.
+
+| policy | PR-AUC | ECE | savings | P@K | R@K | alerts/day | d30 |
+|---|---|---|---|---|---|---|---|
+| **Rung 5** MIL | **0.7836** | **0.2441** | **0.0824** | 0.8533 | **0.0132** | **1.0** | 0.0000 |
+| Rung 6 conformal | 0.6692 | 0.0077 | 0.4222 | 0.6707 | 0.3124 | 15.0 | 0.0788 |
+| Rung 2 (reference) | 0.7303 | 0.0075 | 0.4276 | 0.7520 | 0.3502 | 30.0 | 0.0862 |
+
+**Rung 5 has the best PR-AUC on the entire ladder — 0.7836, above Rung 4's 0.7693 and Rung
+2's 0.7303 — and the second-worst savings of any policy that alerts at all.** It ranks
+better than everything and decides worse than almost everything.
+
+The mechanism is visible in two columns. Its ECE is **0.2441**, thirty-three times Rung 2's
+0.0075, and `capacity.py` consumes `score` as a *probability*: `benefit = 0.8·p·exposure −
+250`. A badly calibrated score makes that arithmetic meaningless, and the result is the
+`alerts_per_day` column — **Rung 5 spends 1.0 of its 30-alert budget.** Not because it was
+capped, but because on 29 days out of 30 no merchant's expected benefit clears zero. Recall@K
+is 0.0132 in consequence: it is right about the merchants it names and it names almost
+nobody.
+
+**This is the cycle's thesis in a single row.** PR-AUC and ECE are the two halves of a score's
+quality and only one of them is a ranking property. Cycle 3 read PR-AUC and savings as
+though a gap between them needed a story about the *ranker*; §8.3a found the exposure term,
+and Rung 5 shows the other term of the same product — calibration — doing the same damage
+from the opposite direction. **A rank metric cannot see either.**
+
+Rung 6 (conformal risk control) behaves as designed and costs what it was always going to
+cost: it softens HOLDs to REVIEWs, so it spends **15.0** of 30 alerts and lands at 0.4222
+savings against Rung 2's 0.4276 — it buys its coverage guarantee with about 1% of savings,
+which is a far better trade than cycle 3 recorded (§8.3's 0.2439 against 0.4131). Its d30 of
+0.0788 is third-best on the ladder. Both alphas produce identical rows, as they did in cycle
+3.
+
+**The limitation, stated rather than left to be noticed: the exposure A/B does not cover
+Rungs 5 and 6.** The `--exposure` flag acts where the scoring path calls `select_actions`;
+Rungs 5 and 6 are dispatched separately (Rung 5 scores bags of capsules over a merchant
+subsample, Rung 6 is itself a decision-policy wrapper) and never reach that call. So the A/B
+is a controlled comparison over **5 of the 7 scored rungs**, and every arm-B claim in §9.2
+and §9.3 should be read with that scope. Extending it means routing both through the
+decision-policy seam, which is a change to their dispatch and not a change to the locked
+package — a next-cycle item, not a caveat that undermines what was measured.
+
+**Rung 7 (HSMM) has no ladder row in any cycle.** It is scored by `scripts/rung7_score.py`
+into its own JSON rather than as an `EvalResult`, so it has never appeared in `ladder.json`.
+That is why `configs/rung_roster.yaml` exists, and the roster names it. It was not rescored
+on cycle-4 data and is not claimed to have been.

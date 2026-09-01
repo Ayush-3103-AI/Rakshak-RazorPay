@@ -12,6 +12,9 @@ rung3                 declared    5         0.7385         0.0074         0.4522
 rung3                 realised    5         0.7385         0.0074         0.4955         0.8864         0.4128        30.0000         0.3140         0.0738       143.9000
 rung4                 declared    5         0.7693         0.0387         0.4883         0.3582         0.1668        30.0000         0.3644         0.0585            inf
 rung4                 realised    5         0.7693         0.0387         0.5981         0.5444         0.2536        30.0000         0.3760         0.0462            inf
+rung5_mil             declared    5         0.7836         0.2441         0.0824         0.8533         0.0132         1.0000         0.3990         0.0000            inf
+rung6_crc_base2_alpha0.05declared    5         0.6692         0.0077         0.4222         0.6707         0.3124        15.0000         0.4823         0.0788       143.1000
+rung6_crc_base2_alpha0.1declared    5         0.6692         0.0077         0.4222         0.6707         0.3124        15.0000         0.4823         0.0788       143.1000
 rung9                 declared    5         0.7455         0.0061         0.4580         0.8518         0.3967        30.0000         0.3490         0.0831       136.7000
 rung9                 realised    5         0.7455         0.0061         0.4919         0.9132         0.4253        30.0000         0.2783         0.0615       151.0000
 volume_rank           declared    5         0.1428         0.4893         0.5240         0.2667         0.1242        30.0000         1.0000         0.0000            inf
@@ -21,12 +24,12 @@ THE PRE-REGISTERED QUESTIONS
 ================================================================================================
 
 1. GEOMETRY — did detection_rate_d30 become measurable?
-   YES: 11 of 13 policies score non-zero d30 (cycle 3: 0 of 7).
+   YES: 13 of 16 policies score non-zero d30 (cycle 3: 0 of 7).
       rung2 [declared]  d30=0.0862
       rung9 [declared]  d30=0.0831
+      rung6_crc_base2_alpha0.05 [declared]  d30=0.0788
+      rung6_crc_base2_alpha0.1 [declared]  d30=0.0788
       rung2 [realised]  d30=0.0769
-      rung3 [realised]  d30=0.0738
-      rung3 [declared]  d30=0.0708
 
 2. EXPOSURE — does arm B raise savings? (§7 row 3; falsifies §8.3a if not)
       rung1              declared=+0.3587  realised=+0.5224  delta=+0.1636  UP

@@ -1,7 +1,7 @@
 {
   "artifact": "ladder",
   "payload": {
-    "capacity_k": 30.0,
+    "capacity_k": null,
     "metric_keys": [
       "prevalence",
       "pr_auc",
@@ -490,7 +490,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.00628165172890085,
+          "p99_latency_ms": 0.007317572614090468,
           "pr_auc": 0.7280793937337461,
           "precision_at_k": 0.7383333333333333,
           "prevalence": 0.011950207468879669,
@@ -712,7 +712,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.00593676348550942,
+          "p99_latency_ms": 0.0051902849239266295,
           "pr_auc": 0.7379858549557606,
           "precision_at_k": 0.8833333333333333,
           "prevalence": 0.011950207468879669,
@@ -786,7 +786,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.006083871922578101,
+          "p99_latency_ms": 0.005880070816036984,
           "pr_auc": 0.7677428463254012,
           "precision_at_k": 0.3611111111111111,
           "prevalence": 0.011950207468879669,
@@ -862,7 +862,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.004921997786990018,
+          "p99_latency_ms": 0.005650467219917725,
           "pr_auc": 0.7677428463254012,
           "precision_at_k": 0.5472222222222223,
           "prevalence": 0.011950207468879669,
@@ -909,6 +909,241 @@
           "rung4_realised_exposure_val_seed44.json",
           "rung4_realised_exposure_val_seed45.json",
           "rung4_realised_exposure_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "all_hold",
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung5_mil",
+        "metrics": {
+          "alert_jaccard_wow": 0.4,
+          "alerts_per_day": 1.0,
+          "capacity_k": 1.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.24365665838326053,
+          "gap_to_oracle": 0.6707416376696681,
+          "model_size_mb": 0.5208,
+          "n_censored_dropped": 0.0,
+          "n_features": 13.0,
+          "n_merchants_scored": 160.0,
+          "n_rows_kept": 9600.0,
+          "oracle_savings": 0.2525511677438331,
+          "p99_latency_ms": 0.16017711458365133,
+          "pr_auc": 0.7838418613230874,
+          "precision_at_k": 0.85,
+          "prevalence": 0.45,
+          "recall_at_k": 0.013195342820181113,
+          "roc_auc": 0.7350524626366548,
+          "savings": 0.08315458389594743,
+          "savings_floor_all_hold": 0.7595636292618401,
+          "savings_floor_all_pass": 1.1102230246251565e-16,
+          "savings_floor_random": 0.006419987270137817,
+          "savings_floor_volume_rank": 0.12248633235816364,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 5,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung5_mil_val_seed42.json",
+          "rung5_mil_val_seed43.json",
+          "rung5_mil_val_seed44.json",
+          "rung5_mil_val_seed45.json",
+          "rung5_mil_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung6_crc_base2_alpha0.05",
+        "metrics": {
+          "alert_jaccard_wow": 0.5114064856711915,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
+          "detection_rate_d14": 0.06060606060606061,
+          "detection_rate_d30": 0.09090909090909091,
+          "detection_rate_d7": 0.02857142857142857,
+          "ece": 0.007731235365171135,
+          "gap_to_oracle": 0.5585095743503548,
+          "model_size_mb": 0.5193,
+          "n_censored_dropped": 0.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 3013.0,
+          "n_rows_kept": 180780.0,
+          "oracle_savings": 0.9476344359837592,
+          "p99_latency_ms": 0.0051408614107890035,
+          "pr_auc": 0.6666474189638165,
+          "precision_at_k": 0.6333333333333333,
+          "prevalence": 0.01261201460338533,
+          "recall_at_k": 0.2950310559006211,
+          "roc_auc": 0.9529699994850873,
+          "savings": 0.41837153050273135,
+          "savings_floor_all_hold": -9.244901232217478,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0015086453320672932,
+          "savings_floor_volume_rank": 0.5445959074635961,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 138.5
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "recall_by_typology": {
+            "R4:NaN": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.16666666666666666,
+          "R2": 0.0,
+          "R3": 0.2,
+          "R4": null,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung6_crc_base2_alpha0.05_val_seed42.json",
+          "rung6_crc_base2_alpha0.05_val_seed43.json",
+          "rung6_crc_base2_alpha0.05_val_seed44.json",
+          "rung6_crc_base2_alpha0.05_val_seed45.json",
+          "rung6_crc_base2_alpha0.05_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1"
+        ],
+        "label": "rung6_crc_base2_alpha0.1",
+        "metrics": {
+          "alert_jaccard_wow": 0.5114064856711915,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
+          "detection_rate_d14": 0.06060606060606061,
+          "detection_rate_d30": 0.09090909090909091,
+          "detection_rate_d7": 0.02857142857142857,
+          "ece": 0.007731235365171135,
+          "gap_to_oracle": 0.5585095743503548,
+          "model_size_mb": 0.5193,
+          "n_censored_dropped": 0.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 3013.0,
+          "n_rows_kept": 180780.0,
+          "oracle_savings": 0.9476344359837592,
+          "p99_latency_ms": 0.0051408614107890035,
+          "pr_auc": 0.6666474189638165,
+          "precision_at_k": 0.6333333333333333,
+          "prevalence": 0.01261201460338533,
+          "recall_at_k": 0.2950310559006211,
+          "roc_auc": 0.9529699994850873,
+          "savings": 0.41837153050273135,
+          "savings_floor_all_hold": -9.244901232217478,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0015086453320672932,
+          "savings_floor_volume_rank": 0.5445959074635961,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 138.5
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "recall_by_typology": {
+            "R4:NaN": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.16666666666666666,
+          "R2": 0.0,
+          "R3": 0.2,
+          "R4": null,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": 0.0
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung6_crc_base2_alpha0.1_val_seed42.json",
+          "rung6_crc_base2_alpha0.1_val_seed43.json",
+          "rung6_crc_base2_alpha0.1_val_seed44.json",
+          "rung6_crc_base2_alpha0.1_val_seed45.json",
+          "rung6_crc_base2_alpha0.1_val_seed46.json"
         ],
         "split": "VALIDATION"
       },
@@ -1180,11 +1415,11 @@
       },
       {
         "path": "data/v2/eval/rung2_realised_exposure_val_seed42.json",
-        "sha256": "ecec2ad338f6cc9262f73e0649faac59949a0814b5bc04997fbe2cda96db89ad"
+        "sha256": "010370578252808e0a6bb1e110f6f98346944e25f3c1286bb8e9a7081245d9fb"
       },
       {
         "path": "data/v2/eval/rung2_realised_exposure_val_seed43.json",
-        "sha256": "393829fd57fc35c33bba7ba673ec5272e943cc5dda2967e6548dccf196d6bcd4"
+        "sha256": "d998258e0d13567f0e14945b8434d97453009495de47a3e9398210b3dcf345f0"
       },
       {
         "path": "data/v2/eval/rung2_realised_exposure_val_seed44.json",
@@ -1200,11 +1435,11 @@
       },
       {
         "path": "data/v2/eval/rung2_val_seed42.json",
-        "sha256": "ca03f9842beab66e614f0df7944015764c8f087359dc0adfb268176fdfe6ca38"
+        "sha256": "a8f5d30a5f2103d20ce0dd04902fdadf8206825c9ccb7c66739c0dc405e79eea"
       },
       {
         "path": "data/v2/eval/rung2_val_seed43.json",
-        "sha256": "b5e978bc6cbe0268900f31e488c56ad44f2c5120ccbe7fc07e05e6b282017295"
+        "sha256": "582f36c8f1249675c8455c382351f5148b1597af9fac0dd3f42f6521b2de83c0"
       },
       {
         "path": "data/v2/eval/rung2_val_seed44.json",
@@ -1220,7 +1455,7 @@
       },
       {
         "path": "data/v2/eval/rung3_realised_exposure_val_seed42.json",
-        "sha256": "02e372d1fd856a1caedcaaa2bdecb6742d44f9c35768db59432e1e747094e4dd"
+        "sha256": "32bb929ad4828a89a3fd441a499ac4674534c2d9359b5b35aa61d52af672b81a"
       },
       {
         "path": "data/v2/eval/rung3_realised_exposure_val_seed43.json",
@@ -1240,11 +1475,11 @@
       },
       {
         "path": "data/v2/eval/rung3_val_seed42.json",
-        "sha256": "bc022401d7c2a570ee42039d89c44259549777a09cde24bc8cd2ae86442cbe14"
+        "sha256": "2e310e98c7c34cdfe38e128f24700d17b2dfa10d028f325a9f312fd844a27831"
       },
       {
         "path": "data/v2/eval/rung3_val_seed43.json",
-        "sha256": "0931bf751927468b94d315e75030b02496e31323d173b01ba7d390ce63385e16"
+        "sha256": "7f6586c76d016da92c8c352101eb9f255679997275fa546b99913fc4ba2c7cc8"
       },
       {
         "path": "data/v2/eval/rung3_val_seed44.json",
@@ -1260,7 +1495,7 @@
       },
       {
         "path": "data/v2/eval/rung4_realised_exposure_val_seed42.json",
-        "sha256": "3a648d5eae311f3468fd9bb15ca3bd7bc464b3e36964304142259e8020644b6d"
+        "sha256": "8bca9e8deaa25a85c45298686443b1a405b9c73846732e9cd5367acf22489209"
       },
       {
         "path": "data/v2/eval/rung4_realised_exposure_val_seed43.json",
@@ -1280,7 +1515,7 @@
       },
       {
         "path": "data/v2/eval/rung4_val_seed42.json",
-        "sha256": "b7872aa89653e9d3403d80a4392788717df825657d4b4266b9f08bf7da84eb90"
+        "sha256": "56f7f2da2e2e48741be1f94767cd6c40e077be3e76ead202a33e02b02b9a0dad"
       },
       {
         "path": "data/v2/eval/rung4_val_seed43.json",
@@ -1299,8 +1534,68 @@
         "sha256": "273bdbcecd103d4938715097e9b92ff13e506e24c5e81f15868775839bc6e53d"
       },
       {
+        "path": "data/v2/eval/rung5_mil_val_seed42.json",
+        "sha256": "174cc1108c06139fde4af89bc500b3b9e07afff4e1bc543eb8d6b7dfb56c314e"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed43.json",
+        "sha256": "64cfb4d980cbdff64cf9eceb805e4096f55b41668dbf6055320495786103ce36"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed44.json",
+        "sha256": "d232c1cd38b65ea3c3dfcf7a30f670a01d3aaf79981324a7c56c26ba3f6c91c1"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed45.json",
+        "sha256": "9af1059d8770dfad19ab773987e8a99d9bb1bc981196238b837e2016bf865e6b"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed46.json",
+        "sha256": "876dce86592c007ea42d53da879d7cb7932e8fab0f9c98d25e65a7feec54b1c7"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed42.json",
+        "sha256": "caed02f8f358e782b2b47423ba38776d7163d97f2046a294eba56ceb9fee69c5"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed43.json",
+        "sha256": "71a2e5f4866c12e7f1a40dc68c55a7acf89cfca771e930d21294ac3a08fe84da"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed44.json",
+        "sha256": "ec0fe82bad6679975f4e0a93e20bc4498d5ff883cd9dac3d5a7901fa9b5472fe"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed45.json",
+        "sha256": "524f957c8cebac1d56c0ddd83cc9c57a0a29c8934491e180aa01bc6546ce7eb8"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed46.json",
+        "sha256": "df0129a4d2cec70aa21b22c2b9c297fb18d1b39605f554c28ab9b8e30fc1d45a"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed42.json",
+        "sha256": "66b93d507e1e7674c0e736aab2824e1ef0cc5b43fd9d9a0f24726b397d8851c3"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed43.json",
+        "sha256": "f3405d8b5ee91dab3411e672fad0cfe99841b4c7bc869a2d82daabc7ba70e426"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed44.json",
+        "sha256": "9518b889cdd4431fec4f4666d44cb70a0a7d7a2169aee16805baf15e680949f9"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed45.json",
+        "sha256": "6c1cf8d32fd1da7e6da2af8efc7f06f7669a5adc1000c906a2aa1e767a12e7bc"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed46.json",
+        "sha256": "15f360c01d7d8a4489cc70a3522dac193c1d255c9a01b0b7d5d6545376db75e4"
+      },
+      {
         "path": "data/v2/eval/rung9_realised_exposure_val_seed42.json",
-        "sha256": "ca8fee8dcc284f8098c0061ae56500cc82e9b54e3c0e4b743786e875ad37792a"
+        "sha256": "27b3d8e8b14de69b05f1596789496980e90b17140fcf25fbdc41d7b85648be1b"
       },
       {
         "path": "data/v2/eval/rung9_realised_exposure_val_seed43.json",
@@ -1320,7 +1615,7 @@
       },
       {
         "path": "data/v2/eval/rung9_val_seed42.json",
-        "sha256": "1cd5da3dca0873131dbf15ef6b5b01dff0a073a7e4f4fce8a479396e7226ad13"
+        "sha256": "f44ea6a9b7521be9c67460bd9289c4b3c1e4445c048764b90eb27b498e3145f6"
       },
       {
         "path": "data/v2/eval/rung9_val_seed43.json",
@@ -1432,6 +1727,21 @@
           "rung4_val_seed44.json",
           "rung4_val_seed45.json",
           "rung4_val_seed46.json",
+          "rung5_mil_val_seed42.json",
+          "rung5_mil_val_seed43.json",
+          "rung5_mil_val_seed44.json",
+          "rung5_mil_val_seed45.json",
+          "rung5_mil_val_seed46.json",
+          "rung6_crc_base2_alpha0.05_val_seed42.json",
+          "rung6_crc_base2_alpha0.05_val_seed43.json",
+          "rung6_crc_base2_alpha0.05_val_seed44.json",
+          "rung6_crc_base2_alpha0.05_val_seed45.json",
+          "rung6_crc_base2_alpha0.05_val_seed46.json",
+          "rung6_crc_base2_alpha0.1_val_seed42.json",
+          "rung6_crc_base2_alpha0.1_val_seed43.json",
+          "rung6_crc_base2_alpha0.1_val_seed44.json",
+          "rung6_crc_base2_alpha0.1_val_seed45.json",
+          "rung6_crc_base2_alpha0.1_val_seed46.json",
           "rung9_realised_exposure_val_seed42.json",
           "rung9_realised_exposure_val_seed43.json",
           "rung9_realised_exposure_val_seed44.json",

@@ -19,8 +19,8 @@ believe — including you, in three days, when a number moves.
 | seeds | 42, 43, 44, 45, 46 |
 | capacity K | 50 reviews/day |
 | splits rendered | val |
-| prevalence | 1.20% |
-| rows | 65 |
+| prevalence | 1.20%, 1.26%, 45.00% |
+| rows | 80 |
 
 **Lock: VERIFIED.** Every recorded hash matches the tree this was rendered
 from, so the harness that produced these numbers is the harness that was
@@ -29,12 +29,12 @@ frozen before any v2 model existed.
 `open_count` is **0**: the test split has never been opened. Everything below
 is measured on train/validation, as it must be until every rung is final.
 
-> # FLOOR-FAIL — 54 of 65 rows
+> # FLOOR-FAIL — 69 of 80 rows
 >
 > A row here loses to **at least one** floor, and the floors it loses to are named
 > per row. The count alone is not the finding; the per-row list is.
 >
-> **6 of 54 lose to `all_pass`.**
+> **6 of 69 lose to `all_pass`.**
 > Such a row **costs more than doing nothing at all** and no amount of ranking
 > quality redeems it. Losing only
 > to `volume_rank` is a milder and different statement: on this generator
@@ -91,6 +91,21 @@ is measured on train/validation, as it must be until every rung is final.
 > - **Rung 4** `rung4` (val, `base`) loses to: **volume_rank** — savings 0.4811
 > - **Rung 4** `rung4` (val, `base`) loses to: **volume_rank** — savings 0.5079
 > - **Rung 4** `rung4` (val, `base`) loses to: **volume_rank** — savings 0.4961
+> - **Rung 5** `rung5_mil` (val, `base`) loses to: **all_hold, volume_rank** — savings 0.0832
+> - **Rung 5** `rung5_mil` (val, `base`) loses to: **all_hold, volume_rank** — savings 0.0749
+> - **Rung 5** `rung5_mil` (val, `base`) loses to: **all_hold, volume_rank** — savings 0.0759
+> - **Rung 5** `rung5_mil` (val, `base`) loses to: **all_hold, volume_rank** — savings 0.0919
+> - **Rung 5** `rung5_mil` (val, `base`) loses to: **all_hold, volume_rank** — savings 0.0860
+> - **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`) loses to: **volume_rank** — savings 0.3670
+> - **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`) loses to: **volume_rank** — savings 0.4184
+> - **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`) loses to: **volume_rank** — savings 0.4660
+> - **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`) loses to: **volume_rank** — savings 0.3312
+> - **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`) loses to: **volume_rank** — savings 0.5286
+> - **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`) loses to: **volume_rank** — savings 0.3670
+> - **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`) loses to: **volume_rank** — savings 0.4184
+> - **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`) loses to: **volume_rank** — savings 0.4660
+> - **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`) loses to: **volume_rank** — savings 0.3312
+> - **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`) loses to: **volume_rank** — savings 0.5286
 > - **Rung 9** `rung9_realised_exposure` (val, `base`) loses to: **volume_rank** — savings 0.5075
 > - **Rung 9** `rung9_realised_exposure` (val, `base`) loses to: **volume_rank** — savings 0.4397
 > - **Rung 9** `rung9_realised_exposure` (val, `base`) loses to: **volume_rank** — savings 0.4717
@@ -136,36 +151,51 @@ style as one that won (Prime Directive 6).
 | **Rung 1** `rung1` · **FLOOR-FAIL** | val | 1.20% | 0.2984 | **0.3587 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 61.65% | inf | 4.62% | 0.1656 | 30.0 | n/a | **FLOOR-FAIL** |
 | **Rung 1** `rung1` · **FLOOR-FAIL** | val | 1.20% | 0.2984 | **0.3587 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 61.65% | inf | 4.62% | 0.1656 | 30.0 | n/a | **FLOOR-FAIL** |
 | **Rung 1** `rung1` · **FLOOR-FAIL** | val | 1.20% | 0.2984 | **0.3587 — FLOOR-FAIL** | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 61.65% | inf | 4.62% | 0.1656 | 30.0 | n/a | **FLOOR-FAIL** |
-| **Rung 2** `rung2_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7281 | **0.5169 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 44.73% | 151.0 | 7.69% | 0.8867 | 30.0 | 0.011 | **FLOOR-FAIL** |
-| **Rung 2** `rung2_realised_exposure` | val | 1.20% | 0.7537 | 0.5359 | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 42.71% | 150.5 | 7.69% | 0.8894 | 30.0 | 0.006 | ok |
+| **Rung 2** `rung2_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7281 | **0.5169 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 44.73% | 151.0 | 7.69% | 0.8867 | 30.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 2** `rung2_realised_exposure` | val | 1.20% | 0.7537 | 0.5359 | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 42.71% | 150.5 | 7.69% | 0.8894 | 30.0 | 0.014 | ok |
 | **Rung 2** `rung2_realised_exposure` | val | 1.20% | 0.7205 | 0.5459 | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 41.63% | 151.0 | 6.15% | 0.9089 | 30.0 | 0.006 | ok |
 | **Rung 2** `rung2_realised_exposure` | val | 1.20% | 0.7025 | 0.5378 | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 42.50% | 144.5 | 7.69% | 0.8333 | 30.0 | 0.005 | ok |
 | **Rung 2** `rung2_realised_exposure` | val | 1.20% | 0.7468 | 0.5563 | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 40.52% | 139.5 | 9.23% | 0.9339 | 30.0 | 0.007 | ok |
-| **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7281 | **0.3753 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 59.87% | 146.0 | 7.69% | 0.7283 | 30.0 | 0.012 | **FLOOR-FAIL** |
-| **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7537 | **0.4359 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 53.40% | 160.5 | 7.69% | 0.7856 | 30.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7281 | **0.3753 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 59.87% | 146.0 | 7.69% | 0.7283 | 30.0 | 0.064 | **FLOOR-FAIL** |
+| **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7537 | **0.4359 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 53.40% | 160.5 | 7.69% | 0.7856 | 30.0 | 0.009 | **FLOOR-FAIL** |
 | **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7205 | **0.4569 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 51.15% | 157.0 | 7.69% | 0.7383 | 30.0 | 0.007 | **FLOOR-FAIL** |
 | **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7025 | **0.3629 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 61.20% | 162.0 | 9.23% | 0.6572 | 30.0 | 0.005 | **FLOOR-FAIL** |
 | **Rung 2** `rung2` · **FLOOR-FAIL** | val | 1.20% | 0.7468 | **0.5069 — FLOOR-FAIL** | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 45.81% | 137.0 | 10.77% | 0.8506 | 30.0 | 0.006 | **FLOOR-FAIL** |
-| **Rung 3** `rung3_realised_exposure` | val | 1.20% | 0.7541 | 0.5523 | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 40.95% | 142.0 | 9.23% | 0.9083 | 30.0 | 0.018 | ok |
-| **Rung 3** `rung3_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7141 | **0.4953 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 47.05% | 144.5 | 6.15% | 0.8756 | 30.0 | 0.006 | **FLOOR-FAIL** |
+| **Rung 3** `rung3_realised_exposure` | val | 1.20% | 0.7541 | 0.5523 | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 40.95% | 142.0 | 9.23% | 0.9083 | 30.0 | 0.005 | ok |
+| **Rung 3** `rung3_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7141 | **0.4953 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 47.05% | 144.5 | 6.15% | 0.8756 | 30.0 | 0.004 | **FLOOR-FAIL** |
 | **Rung 3** `rung3_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7380 | **0.4747 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 49.24% | 150.5 | 9.23% | 0.8889 | 30.0 | 0.008 | **FLOOR-FAIL** |
 | **Rung 3** `rung3_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7291 | **0.4680 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 49.96% | 145.0 | 6.15% | 0.8761 | 30.0 | 0.004 | **FLOOR-FAIL** |
 | **Rung 3** `rung3_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7574 | **0.4872 — FLOOR-FAIL** | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 47.91% | 137.5 | 6.15% | 0.8833 | 30.0 | 0.005 | **FLOOR-FAIL** |
 | **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7541 | **0.5100 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 45.48% | 142.0 | 9.23% | 0.8111 | 30.0 | 0.007 | **FLOOR-FAIL** |
-| **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7141 | **0.4729 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 49.44% | 152.5 | 6.15% | 0.7400 | 30.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7141 | **0.4729 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 49.44% | 152.5 | 6.15% | 0.7400 | 30.0 | 0.004 | **FLOOR-FAIL** |
 | **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7380 | **0.3984 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 57.41% | 146.5 | 9.23% | 0.7911 | 30.0 | 0.012 | **FLOOR-FAIL** |
 | **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7291 | **0.4452 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 52.40% | 152.0 | 6.15% | 0.7400 | 30.0 | 0.004 | **FLOOR-FAIL** |
 | **Rung 3** `rung3` · **FLOOR-FAIL** | val | 1.20% | 0.7574 | **0.4346 — FLOOR-FAIL** | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 53.53% | 140.0 | 4.62% | 0.8272 | 30.0 | 0.005 | **FLOOR-FAIL** |
-| **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7641 | 0.5862 | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 37.33% | inf | 4.62% | 0.5272 | 30.0 | 0.005 | ok |
+| **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7641 | 0.5862 | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 37.33% | inf | 4.62% | 0.5272 | 30.0 | 0.012 | ok |
 | **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7677 | 0.5927 | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 36.63% | inf | 4.62% | 0.5283 | 30.0 | 0.004 | ok |
 | **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7673 | 0.5927 | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 36.63% | inf | 4.62% | 0.5472 | 30.0 | 0.006 | ok |
 | **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7788 | 0.6211 | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 33.60% | inf | 4.62% | 0.5700 | 30.0 | 0.004 | ok |
 | **Rung 4** `rung4_realised_exposure` | val | 1.20% | 0.7686 | 0.5976 | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 36.11% | inf | 4.62% | 0.5494 | 30.0 | 0.006 | ok |
-| **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7641 | **0.4685 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 49.91% | inf | 4.62% | 0.3339 | 30.0 | 0.007 | **FLOOR-FAIL** |
+| **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7641 | **0.4685 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 49.91% | inf | 4.62% | 0.3339 | 30.0 | 0.004 | **FLOOR-FAIL** |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7677 | **0.4878 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 47.85% | inf | 6.15% | 0.3611 | 30.0 | 0.006 | **FLOOR-FAIL** |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7673 | **0.4811 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 48.57% | inf | 6.15% | 0.3522 | 30.0 | 0.006 | **FLOOR-FAIL** |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7788 | **0.5079 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0041 | 0.5240 | 45.70% | inf | 6.15% | 0.3744 | 30.0 | 0.008 | **FLOOR-FAIL** |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.7686 | **0.4961 — FLOOR-FAIL** | 0.0000 | -13.6984 | -0.0008 | 0.5240 | 46.96% | inf | 6.15% | 0.3694 | 30.0 | 0.006 | **FLOOR-FAIL** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7840 | **0.0832 — FLOOR-FAIL** | 0.0000 | 0.7596 | 0.0073 | 0.1225 | 67.07% | inf | 0.00% | 0.8667 | 1.0 | 0.174 | **FLOOR-FAIL** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7836 | **0.0749 — FLOOR-FAIL** | 0.0000 | 0.7596 | 0.0078 | 0.1225 | 70.33% | inf | 0.00% | 0.8333 | 1.0 | 0.160 | **FLOOR-FAIL** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7823 | **0.0759 — FLOOR-FAIL** | 0.0000 | 0.7596 | 0.0041 | 0.1225 | 69.94% | inf | 0.00% | 0.8333 | 1.0 | 0.177 | **FLOOR-FAIL** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7838 | **0.0919 — FLOOR-FAIL** | 0.0000 | 0.7596 | 0.0064 | 0.1225 | 63.63% | inf | 0.00% | 0.8500 | 1.0 | 0.160 | **FLOOR-FAIL** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7841 | **0.0860 — FLOOR-FAIL** | 0.0000 | 0.7596 | 0.0033 | 0.1225 | 65.95% | inf | 0.00% | 0.8833 | 1.0 | 0.097 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.6666 | **0.3670 — FLOOR-FAIL** | 0.0000 | -9.2449 | -0.0001 | 0.5446 | 61.27% | 162.0 | 6.06% | 0.6067 | 15.0 | 0.007 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.6900 | **0.4184 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0015 | 0.5446 | 55.85% | 131.0 | 9.09% | 0.6878 | 15.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.6654 | **0.4660 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0022 | 0.5446 | 50.83% | 138.5 | 6.06% | 0.6333 | 15.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.6328 | **0.3312 — FLOOR-FAIL** | 0.0000 | -9.2449 | -0.0002 | 0.5446 | 65.05% | 151.0 | 9.09% | 0.6000 | 15.0 | 0.008 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.6910 | **0.5286 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0017 | 0.5446 | 44.22% | 133.0 | 9.09% | 0.8256 | 15.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.6666 | **0.3670 — FLOOR-FAIL** | 0.0000 | -9.2449 | -0.0001 | 0.5446 | 61.27% | 162.0 | 6.06% | 0.6067 | 15.0 | 0.007 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.6900 | **0.4184 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0015 | 0.5446 | 55.85% | 131.0 | 9.09% | 0.6878 | 15.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.6654 | **0.4660 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0022 | 0.5446 | 50.83% | 138.5 | 6.06% | 0.6333 | 15.0 | 0.005 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.6328 | **0.3312 — FLOOR-FAIL** | 0.0000 | -9.2449 | -0.0002 | 0.5446 | 65.05% | 151.0 | 9.09% | 0.6000 | 15.0 | 0.008 | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.6910 | **0.5286 — FLOOR-FAIL** | 0.0000 | -9.2449 | 0.0017 | 0.5446 | 44.22% | 133.0 | 9.09% | 0.8256 | 15.0 | 0.005 | **FLOOR-FAIL** |
 | **Rung 9** `rung9_realised_exposure` | val | 1.20% | 0.7592 | 0.5582 | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 40.32% | 150.5 | 7.69% | 0.9356 | 30.0 | n/a | ok |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7225 | **0.5075 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0042 | 0.5240 | 45.74% | 156.5 | 4.62% | 0.9028 | 30.0 | n/a | **FLOOR-FAIL** |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.7450 | **0.4397 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0036 | 0.5240 | 52.99% | 156.5 | 7.69% | 0.9156 | 30.0 | n/a | **FLOOR-FAIL** |
@@ -237,6 +267,21 @@ uncensored positives detected within N days of `drift_onset_at`.
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.9469 | 0.0379 | 0.1640 | 4.41% | 4.55% | 0.3823 | 9716 | 0.523 |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.9478 | 0.0383 | 0.1744 | 4.41% | 4.55% | 0.3783 | 9716 | 0.523 |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | 0.9425 | 0.0390 | 0.1721 | 4.41% | 4.55% | 0.3423 | 9716 | 0.522 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7355 | 0.2445 | 0.0135 | 0.00% | 0.00% | 0.3750 | 9716 | 0.521 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7351 | 0.2458 | 0.0129 | 0.00% | 0.00% | 0.4286 | 9716 | 0.521 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7342 | 0.2429 | 0.0129 | 0.00% | 0.00% | 0.4167 | 9716 | 0.521 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7350 | 0.2436 | 0.0132 | 0.00% | 0.00% | 0.4000 | 9716 | 0.521 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | 0.7354 | 0.2437 | 0.0137 | 0.00% | 0.00% | 0.3750 | 9716 | 0.521 |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.9530 | 0.0076 | 0.2826 | 2.86% | 6.06% | 0.5114 | 9716 | 0.519 |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.9490 | 0.0079 | 0.3204 | 5.71% | 6.06% | 0.5888 | 9716 | 0.519 |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.9355 | 0.0075 | 0.2950 | 2.86% | 6.06% | 0.4865 | 9716 | 0.520 |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.9625 | 0.0081 | 0.2795 | 2.86% | 3.03% | 0.5376 | 9716 | 0.518 |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.9636 | 0.0077 | 0.3846 | 2.86% | 6.06% | 0.2872 | 9716 | 0.518 |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.9530 | 0.0076 | 0.2826 | 2.86% | 6.06% | 0.5114 | 9716 | 0.519 |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.9490 | 0.0079 | 0.3204 | 5.71% | 6.06% | 0.5888 | 9716 | 0.519 |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.9355 | 0.0075 | 0.2950 | 2.86% | 6.06% | 0.4865 | 9716 | 0.520 |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.9625 | 0.0081 | 0.2795 | 2.86% | 3.03% | 0.5376 | 9716 | 0.518 |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.9636 | 0.0077 | 0.3846 | 2.86% | 6.06% | 0.2872 | 9716 | 0.518 |
 | **Rung 9** `rung9_realised_exposure` | val | 1.20% | 0.9556 | 0.0062 | 0.4357 | 1.47% | 4.55% | 0.2173 | 9716 | n/a |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.9588 | 0.0062 | 0.4204 | 1.47% | 3.03% | 0.3519 | 9716 | n/a |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | 0.9627 | 0.0060 | 0.4264 | 1.47% | 4.55% | 0.2373 | 9716 | n/a |
@@ -312,6 +357,21 @@ front page rather than discoverable by someone who digs. Zero recall is bolded.
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | **0.0000** | **0.0000** | 0.2500 | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | 0.2000 |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | **0.0000** | **0.0000** | 0.2500 | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | 0.2000 |
 | **Rung 4** `rung4` · **FLOOR-FAIL** | val | 1.20% | **0.0000** | **0.0000** | 0.2500 | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | 0.2000 |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 5** `rung5_mil` · **FLOOR-FAIL** | val | 45.00% | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | 1.0000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.3333 | **0.0000** | **0.0000** | n/a | 1.0000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` · **FLOOR-FAIL** | val | 1.26% | 0.3333 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | 1.0000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.1667 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.3333 | **0.0000** | **0.0000** | n/a | 1.0000 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` · **FLOOR-FAIL** | val | 1.26% | 0.3333 | **0.0000** | 0.2000 | n/a | **0.0000** | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
 | **Rung 9** `rung9_realised_exposure` | val | 1.20% | **0.0000** | **0.0000** | 0.3333 | **0.0000** | 0.3333 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | **0.0000** | **0.0000** | 0.1667 | **0.0000** | 0.3333 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
 | **Rung 9** `rung9_realised_exposure` · **FLOOR-FAIL** | val | 1.20% | **0.0000** | **0.0000** | 0.3333 | **0.0000** | 0.3333 | **0.0000** | **0.0000** | **0.0000** | **0.0000** |
@@ -361,6 +421,8 @@ existed; they are read from the lock here, not restated by hand.
 | Rung 2 vs 1 | val | 1.20% | 0.2984 | 0.7468 | 150.29% | inf | **NOT ADOPTED — FLOOR-FAIL** |
 | Rung 3 vs 2 | val | 1.20% | 0.7468 | 0.7574 | 1.41% | -3.0 | **NOT ADOPTED — FLOOR-FAIL** |
 | Rung 4 vs 3 | val | 1.20% | 0.7574 | 0.7686 | 1.48% | -inf | **NOT ADOPTED — FLOOR-FAIL** |
+| Rung 5 vs 4 | val | 45.00% | 0.7686 | 0.7841 | 2.03% | n/a | **NOT ADOPTED — FLOOR-FAIL** |
+| Rung 6 vs 5 | val | 1.26% | 0.7841 | 0.6910 | -11.88% | inf | **NOT ADOPTED — FLOOR-FAIL** |
 
 **Rung 3 vs Rung 2 is the K-1 test** — the cohort-residual hypothesis on and
 off. If that relative delta is under 5%, K-1 has fired: it is written up in
@@ -426,6 +488,21 @@ Failed rungs on this run, with their numbers:
 - **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4811, below volume_rank. PR-AUC 0.7673 does not redeem it.
 - **Rung 4** (val, `base`, prevalence 1.20%): savings 0.5079, below volume_rank. PR-AUC 0.7788 does not redeem it.
 - **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4961, below volume_rank. PR-AUC 0.7686 does not redeem it.
+- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0832, below all_hold, volume_rank. PR-AUC 0.7840 does not redeem it.
+- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0749, below all_hold, volume_rank. PR-AUC 0.7836 does not redeem it.
+- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0759, below all_hold, volume_rank. PR-AUC 0.7823 does not redeem it.
+- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0919, below all_hold, volume_rank. PR-AUC 0.7838 does not redeem it.
+- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0860, below all_hold, volume_rank. PR-AUC 0.7841 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3670, below volume_rank. PR-AUC 0.6666 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4184, below volume_rank. PR-AUC 0.6900 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4660, below volume_rank. PR-AUC 0.6654 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3312, below volume_rank. PR-AUC 0.6328 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.5286, below volume_rank. PR-AUC 0.6910 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3670, below volume_rank. PR-AUC 0.6666 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4184, below volume_rank. PR-AUC 0.6900 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4660, below volume_rank. PR-AUC 0.6654 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3312, below volume_rank. PR-AUC 0.6328 does not redeem it.
+- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.5286, below volume_rank. PR-AUC 0.6910 does not redeem it.
 - **Rung 9** (val, `base`, prevalence 1.20%): savings 0.5075, below volume_rank. PR-AUC 0.7225 does not redeem it.
 - **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4397, below volume_rank. PR-AUC 0.7450 does not redeem it.
 - **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4717, below volume_rank. PR-AUC 0.7371 does not redeem it.
