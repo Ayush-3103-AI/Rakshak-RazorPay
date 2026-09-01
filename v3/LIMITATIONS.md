@@ -582,10 +582,10 @@ truth, against `true_loss_amount_inr`:
 | exposure estimator | Spearman ρ vs realised loss | Pearson r on logs |
 |---|---|---|
 | `declared_monthly_gmv` — what every rung uses | **+0.533** | +0.593 |
-| observed pre-window GMV — what `volume_rank` uses | **+0.929** | +0.938 |
+| observed pre-window GMV — what `volume_rank` uses | **+0.935** | +0.941 |
 
-The two estimators agree with each other at ρ = 0.740 over all 20,000 merchants, and the sd
-of `log(observed / declared)` is **0.661** — the declaration error the config asked for,
+The two estimators agree with each other at ρ = 0.739 over all 20,000 merchants, and the sd
+of `log(observed / declared)` is **0.657** — the declaration error the config asked for,
 realised.
 
 **At the operating point, this is the whole gap.** Ranking merchants purely by an exposure
@@ -594,12 +594,12 @@ realised fraud loss in the top K:
 
 | K | by declared GMV | by observed GMV | perfect-foresight oracle |
 |---|---|---|---|
-| **15** (the actual alert budget) | 20.51% | **37.83%** | 46.18% |
-| 50 | 56.34% | 75.34% | 78.01% |
-| 100 | 80.41% | 88.37% | 90.02% |
-| 200 | 93.81% | 97.29% | 98.06% |
+| **15** (the actual alert budget) | 20.51% | **42.73%** | 46.18% |
+| 50 | 56.34% | 75.93% | 78.01% |
+| 100 | 80.41% | 88.62% | 90.02% |
+| 200 | 93.81% | 97.28% | 98.06% |
 
-At K = 15, observed GMV alone reaches **82% of the oracle's loss capture**. Declared GMV
+At K = 15, observed GMV alone reaches **93% of the oracle's loss capture**. Declared GMV
 alone reaches 44%. `volume_rank` is not a dumb floor that happens to win: it is an exposure
 estimator with ρ = 0.93 against the quantity the savings metric integrates, and it is
 competing against rungs whose excellent `p` is being multiplied by an estimator at ρ = 0.53.
@@ -627,6 +627,15 @@ competing against rungs whose excellent `p` is being multiplied by an estimator 
    verdicts were rendered on a savings number computed through the weaker exposure estimator.
    They are not overturned here — that requires the rescore — but they are **provisional in a
    way they were not previously reported as being**, and a reader is entitled to know it.
+
+**Reproduce it:** `uv run python scripts/exposure_diagnostic.py`, which defaults to the
+cycle-3 dataset preserved at `data/_v2_cycle3_immutable`. Writing that script corrected this
+section's own first draft: the initial measurement filtered `status == "captured"` but did
+not exclude refunds, while `cli._observed_volume` — the quantity `volume_rank` is actually
+handed — excludes both. The observed-GMV column was understated as a result (ρ 0.929 and
+37.83% at K = 15, against the correct 0.935 and 42.73%). The declared column and every
+conclusion are unchanged; the gap this section is about is **wider** than first published,
+not narrower.
 
 **How this was found, stated plainly for the record.** It was not predicted by any of the
 three cycle-4 literature surveys, all of which reached for the cost-sensitive learning,

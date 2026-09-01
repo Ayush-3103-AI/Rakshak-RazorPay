@@ -355,3 +355,21 @@ the whole ladder **and explicitly not as a competing rung**, so it should never 
 a rung number. The module is `src/rakshak/models/decision_realised_exposure.py` and the
 policy names itself `realised_exposure(capacity_topk)`, which is what appears beside every
 number it produces. Rung 9 is unaffected — 9 was and is free.
+
+**2026-09-02 — §1.2's observed-GMV column was understated, and is corrected here rather
+than in place.** §1.2 above is left exactly as sealed. Its `declared_monthly_gmv` column and
+every conclusion drawn from it stand unchanged. Its *observed* GMV column does not: the
+first measurement filtered `status == "captured"` but did not exclude refunds, while
+`cli._observed_volume` — the quantity `volume_rank` is actually handed — excludes both.
+
+| quantity | as sealed in §1.2 | corrected | direction |
+|---|---|---|---|
+| Spearman ρ, observed GMV vs realised loss | +0.929 | **+0.935** | gap wider |
+| share of total loss in top K = 15, observed | 37.83% | **42.73%** | gap wider |
+
+Both moves make the exposure gap this cycle is about **larger** than the sealed document
+claims, so the correction cannot be read as rescuing a motivation that was failing. Nothing
+in §4, §5, §6 or §7 depends on either figure: every gate is stated against cycle-4 results
+that did not exist when this was sealed and still do not exist now. Reproduce with
+`uv run python scripts/exposure_diagnostic.py`; `LIMITATIONS.md` §8.3a carries the corrected
+table and the same note.
