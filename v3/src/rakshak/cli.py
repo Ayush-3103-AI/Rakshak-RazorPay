@@ -33,7 +33,8 @@ import numpy as np
 import polars as pl
 import typer
 
-from rakshak.eval.capacity import DEFAULT_POLICY, ActionPolicy, select_actions
+from rakshak.eval import capacity
+from rakshak.eval.capacity import DEFAULT_POLICY, ActionPolicy
 from rakshak.eval.lock import (
     load_lock,
     read_open_count,
@@ -61,6 +62,7 @@ from rakshak.models import (
     rung3_cohort,
     rung4_cost,
     rung5_mil,
+    rung8_realised_exposure,
 )
 from rakshak.schemas import Split
 
@@ -850,6 +852,12 @@ def score_split(
         2, "--base-rung", help="With --rung 6: which rung's decisions the conformal "
         "wrapper softens. Rung 6 is a wrapper, not a scorer — it has no score of its own."
     ),
+    exposure_arm: str = typer.Option(
+        "declared", "--exposure",
+        help="Cycle-4 A/B (PRE-REGISTRATION-CYCLE4 §4.2). 'declared' is cycle 3's wiring "
+        "and the default, so nothing changes silently; 'realised' prices the decision on "
+        "trailing-30d captured GMV via the Rung 8 wrapper."
+    ),
 ) -> None:
     """Score one rung and write a complete ``EvalResult`` row.
 
@@ -866,6 +874,10 @@ def score_split(
     """
     if split not in ("train", "val", "test"):
         raise typer.BadParameter(f"split is train/val/test; got {split!r}")
+    if exposure_arm not in ("declared", "realised"):
+        raise typer.BadParameter(
+            f"--exposure is 'declared' or 'realised'; got {exposure_arm!r}"
+        )
     drift = _guard(split, root=ROOT)  # type: ignore[arg-type]
     for line in drift:
         typer.echo(f"[lock drift, unenforced] {line}")
@@ -953,7 +965,29 @@ def score_split(
             score = model.predict(rows.x, rows.columns)
             latency_ms = (_time.perf_counter() - started) / rows.x.shape[0] * 1000.0
             model_size_mb = round(model.size_mb(_model_path(rung, seed)), 4)
-        action = select_actions(score, rows.day, exposure, k, params, policy)
+        # Cycle-4 arm B. `declared` forwards to select_actions exactly as before —
+        # test_rung8_exposure.py asserts the wrapper is a byte-identical no-op when the
+        # two exposure vectors agree, which is what makes the A/B a controlled comparison
+        # rather than two things changing at once.
+        decision = capacity.DEFAULT_DECISION
+        if exposure_arm == "realised":
+            exposure = rung8_realised_exposure.realised_exposure_inr(
+                exposure, rows.column("v_declared_ratio")
+            )
+            decision = rung8_realised_exposure.RealisedExposure(
+                inner=capacity.DEFAULT_DECISION, exposure=exposure
+            )
+            label = f"{label}_realised_exposure"
+        action = decision.decide(
+            capacity.DecisionRequest(
+                score=score,
+                day=rows.day,
+                exposure_inr=exposure,
+                k=k,
+                params=params,
+                hold_policy=policy,
+            )
+        )
 
     output = RungOutput(
         merchant_id=rows.merchant_id, day=rows.day, score=score, action=action
@@ -1003,6 +1037,8 @@ def score_split(
     }
     payload |= {
         "label": label,
+        "exposure_arm": exposure_arm,
+        "decision_policy": decision.name if rung != 0 else "floor_actions(review_only)",
         "capacity_k": k,
         "n_merchants_scored": len(merchants),
         "n_rows_scored": int(rows.x.shape[0]),
