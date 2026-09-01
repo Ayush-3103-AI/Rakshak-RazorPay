@@ -57,3 +57,12 @@ all: lint parity gen gates perf test
 
 clean:
 	rm -rf data/v2 .pytest_cache .mypy_cache .ruff_cache
+
+# ── T-0126 (#60): the v3 artefact contract. Appended; nothing above is touched. ──
+# Pure function of the committed results and lock files — no clock, no git call, no data/
+# writes — so regenerating from the same inputs is byte-identical. `make artifacts` twice
+# and `diff -r` is the acceptance criterion, and it is also tests/unit/test_artifacts_contract.py.
+.PHONY: artifacts
+
+artifacts:      ## build the committed dashboard artefacts into artifacts/
+	$(PY) -m rakshak.artifacts.build

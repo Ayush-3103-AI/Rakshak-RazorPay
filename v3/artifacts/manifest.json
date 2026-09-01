@@ -1,0 +1,40 @@
+{
+  "artifact": "manifest",
+  "payload": {
+    "artifacts": [
+      {
+        "file": null,
+        "name": "g5_confounder_null",
+        "reason": "no G5 gate output at data/v2/gates/g5_series.json; `make gates` must dump the confounder-null series before this figure exists",
+        "sha256": null,
+        "split": "NULL_RUN",
+        "status": "MISSING"
+      },
+      {
+        "file": "ladder.json",
+        "name": "ladder",
+        "reason": null,
+        "sha256": "7a906bce12928c2daa90952d123a7522aa40a18dbaac1bee9a736a8ced6d1544",
+        "split": null,
+        "status": "PRESENT"
+      },
+      {
+        "file": "lock_state.json",
+        "name": "lock_state",
+        "reason": null,
+        "sha256": "d0b4ace3a8c88529c2691e4b26cfdb986b61883a91b0dcf8334e0d7e29ae0f81",
+        "split": null,
+        "status": "PRESENT"
+      }
+    ],
+    "contract": "rakshak-v3-dashboard"
+  },
+  "provenance": {
+    "authoritative_lock": "EVAL-LOCK-CYCLE2.json",
+    "eval_lock_sha": "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b",
+    "frozen_at_git_sha": "f5a251521e8cf593ee75d9f0b06a2b703ffc35f2",
+    "open_count": 0
+  },
+  "schema_version": "v3.0.0",
+  "split": null
+}
