@@ -344,6 +344,14 @@ class LabelsConfig:
     unreported_rate: float
     #: Chargebacks on merchants that did nothing wrong.
     spurious_chargeback_rate: float
+    #: Simulation day past which a dispute is treated as never resolving. Censoring is
+    #: an artefact of where the simulation stops, not a fact about the world: a merchant
+    #: that turns bad on day 350 really does get disputed, ~103 days later, in a world
+    #: that keeps running. Setting this beyond ``population.n_days`` resolves those
+    #: labels analytically. It moves eval-side hindsight ground truth only — no
+    #: transaction is generated past the horizon, and no model may read a label before
+    #: its own ``label_available_at`` regardless. Cycle 4, 12-spec-cycle4.md seam 2.
+    label_resolution_horizon_day: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -538,6 +546,14 @@ class ScenarioConfig:
             raise ConfigError(
                 "labels.dispute_delay_days[0] must be > 0: label_available_at is strictly "
                 f"after label_event_at (schemas.Label); got {self.labels.dispute_delay_days[0]}"
+            )
+        if self.labels.label_resolution_horizon_day < self.population.n_days - 1:
+            raise ConfigError(
+                "labels.label_resolution_horizon_day "
+                f"({self.labels.label_resolution_horizon_day}) must be >= the last "
+                f"simulated day ({self.population.n_days - 1}) — a horizon inside the "
+                "transaction window would censor labels the old behaviour resolved, "
+                "which is a silent regression rather than a configuration"
             )
         if not self.mcc_groups:
             raise ConfigError("mcc_groups must define at least one group")

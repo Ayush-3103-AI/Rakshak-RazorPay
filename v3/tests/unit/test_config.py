@@ -67,17 +67,34 @@ def test_ships_config_loads(scenario: ScenarioConfig) -> None:
 
 def test_charter_section_10_parameters(scenario: ScenarioConfig) -> None:
     """Charter §10, settled 2026-08-31, population corrected by T-0101 (GitHub #34,
-    docs/RE-FREEZE-2026-08-31.md Amendment 4). A silent drift in any of these invalidates
-    every downstream number, so they are asserted rather than trusted."""
-    assert scenario.population.n_merchants == 20_000
+    docs/RE-FREEZE-2026-08-31.md Amendment 4), and amended by cycle 4
+    (project-context/12-spec-cycle4.md, pre-registered before the dataset was
+    regenerated). A silent drift in any of these invalidates every downstream number, so
+    they are asserted rather than trusted — and the two the cycle moved are stated here
+    with what they were, so the amendment is legible rather than a diff nobody reads.
+
+    CYCLE 4 amended two, and only two:
+      - ``n_merchants``          20,000 -> 40,000  (evaluation denominator)
+      - ``onset_window_max_day``    240 -> 364     (in-window onsets; the whole cycle)
+
+    Everything else holds, and the two that matter most are the ones that did NOT move:
+    ``prevalence`` stays BAF-native at 1.47% (raising it would have bought the same
+    denominator by reopening AP-06), and the capacity RATE stays 50 per 10,000. K itself
+    is not pinned here — it is derived from that rate by ``analyst_capacity``, so
+    doubling the population takes K from 100 to 200 by rule rather than by decision.
+    """
+    assert scenario.population.n_merchants == 40_000
     assert scenario.population.n_days == 365
     assert scenario.population.onset_window_min_day == 30
-    assert scenario.population.onset_window_max_day == 240
+    assert scenario.population.onset_window_max_day == 364
     assert scenario.population.prevalence == pytest.approx(0.0147)
     assert scenario.capacity.analyst_reviews_per_day == 50
     assert scenario.capacity.per_n_merchants == 10_000
-    assert scenario.analyst_capacity == 100
+    assert scenario.analyst_capacity == 200
     assert scenario.arrivals.target_fano == pytest.approx(12.25)
+    # The onset window must span to the last scored day, or the test split cannot
+    # contain an onset. This is the cycle-4 change stated as a property, not a constant.
+    assert scenario.population.onset_window_max_day == scenario.splits.test_end_day
 
 
 def test_the_horizon_leaves_room_for_the_label_pipeline(scenario: ScenarioConfig) -> None:
@@ -155,7 +172,16 @@ def _labelled_positives_in_test_fold(
         NO_TIME,
     )
     draw = emit_labels(
-        rng, scenario.labels, drift_onset_ns=onset_ns, sim_start_ns=start_ns, sim_end_ns=end_ns
+        rng,
+        scenario.labels,
+        drift_onset_ns=onset_ns,
+        sim_start_ns=start_ns,
+        sim_end_ns=end_ns,
+        # Cycle 4: measure the config that actually ships. Omitting this would measure
+        # the pre-cycle-4 censoring rule against post-cycle-4 onsets, a geometry that
+        # has never existed and never will.
+        label_resolution_ns=start_ns
+        + scenario.labels.label_resolution_horizon_day * _NS_PER_DAY,
     )
     return int(np.sum((draw.label == 1.0) & test_mask))
 
@@ -360,3 +386,189 @@ def test_missing_file_and_empty_file(tmp_path: Path) -> None:
     empty.write_text("", encoding="utf-8")
     with pytest.raises(ConfigError, match="empty"):
         load_scenario(empty)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Cycle 4 (12-spec-cycle4.md) — the in-window-onset geometry guard
+#
+# This is the check whose ABSENCE cost cycle 3 its headline metric. The guard that
+# existed counted labelled positives in the test split and passed, because a merchant
+# can carry a resolved positive label in a split without ever having *onsetted* inside
+# it. Time-to-detection is measured from onset, so a split with zero in-window onsets
+# scores 0.000 on every detection rate no matter what the model does — including for an
+# oracle. Cycle 3 had zero, in both evaluation splits, and nothing failed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _fold_of(n_merchants: int, shares: tuple[float, float, float]) -> np.ndarray:
+    """Which fold each merchant index lands in, via the real ``cli`` assigner."""
+    return np.array([_merchant_fold_t0101(f"M{i:06d}", shares) for i in range(n_merchants)])
+
+
+def _in_window_onsets(scenario: ScenarioConfig, fold: np.ndarray, seed: int) -> dict[str, int]:
+    """Per split: merchants in that split's FOLD whose drift onset falls in that split's
+    own DAY range and whose label resolves rather than censoring.
+
+    Both conditions are load-bearing. An onset in the window whose label never resolves
+    contributes no ground truth to score against, and a resolved label whose onset
+    predates the window has no measurable detection delay inside it.
+
+    Like ``_labelled_positives_in_test_fold``, this runs the real ``assign_typologies``
+    and ``emit_labels`` and generates no transactions: which merchants turn, when, and
+    whether the label resolves is decided entirely by those two functions.
+    """
+    rng = np.random.default_rng(seed)
+    n = scenario.population.n_merchants
+    a = assign_typologies(rng, n, scenario.population.prevalence, scenario.typologies)
+    start = datetime.fromisoformat(scenario.population.start_date).replace(tzinfo=UTC)
+    start_ns = int(start.timestamp()) * 1_000_000_000
+    onset_ns = np.where(
+        a.is_fraud, start_ns + a.onset_day.astype(np.int64) * _NS_PER_DAY, NO_TIME
+    )
+    draw = emit_labels(
+        rng,
+        scenario.labels,
+        drift_onset_ns=onset_ns,
+        sim_start_ns=start_ns,
+        sim_end_ns=start_ns + scenario.population.n_days * _NS_PER_DAY,
+        label_resolution_ns=start_ns
+        + scenario.labels.label_resolution_horizon_day * _NS_PER_DAY,
+    )
+    resolved = draw.label == 1.0
+    sp = scenario.splits
+    windows = {
+        "val": (sp.train_end_day + 1, sp.val_end_day),
+        "test": (sp.val_end_day + 1, sp.test_end_day),
+    }
+    return {
+        name: int(
+            (
+                a.is_fraud
+                & (a.onset_day >= lo)
+                & (a.onset_day <= hi)
+                & (fold == name)
+                & resolved
+            ).sum()
+        )
+        for name, (lo, hi) in windows.items()
+    }
+
+
+#: Floors, per seed, not in expectation across seeds. Measured over the five locked
+#: seeds on the shipped cycle-4 config: val 7-14 (mean 10.4), test 3-11 (mean 6.4). The
+#: floors sit below the observed minima with a little headroom, because the property
+#: being guarded is "the metric CAN fire", not "the metric is well powered" — it is
+#: not, and LIMITATIONS.md says so with the standard error. On the cycle-3 config
+#: (onsets confined to days 30-240) both counts are exactly 0 and this fails, which is
+#: the entire reason it exists.
+_MIN_IN_WINDOW_ONSETS = {"val": 5, "test": 2}
+
+
+def test_every_evaluated_split_contains_in_window_drift_onsets(
+    scenario: ScenarioConfig,
+) -> None:
+    """Cycle 4: each evaluated split must contain merchants that turn bad INSIDE it.
+
+    Without this, ``detection_rate_d7`` / ``d14`` / ``d30`` and ``ttd_median_days`` are
+    not measurements of a model — they are measurements of the split geometry, and they
+    read 0.000 for an oracle just as readily as for a coin flip.
+    """
+    shares = (
+        scenario.splits.merchant_fold_train,
+        scenario.splits.merchant_fold_val,
+        scenario.splits.merchant_fold_test,
+    )
+    fold = _fold_of(scenario.population.n_merchants, shares)
+    for seed in CYCLE2_SEEDS:
+        counts = _in_window_onsets(scenario, fold, seed)
+        for split, floor in _MIN_IN_WINDOW_ONSETS.items():
+            assert counts[split] >= floor, (
+                f"seed {seed}: only {counts[split]} merchants in the {split} fold have a "
+                f"drift onset inside the {split} window with a label that resolves "
+                f"(floor {floor}). Time-to-detection is measured from onset, so this "
+                f"split cannot render a verdict on latency for any model."
+            )
+
+
+def test_d7_is_reachable_at_all_in_the_validation_window(scenario: ScenarioConfig) -> None:
+    """The narrowest form of the cycle-3 defect, asserted directly.
+
+    ``detection_rate_d7`` counts merchants flagged within 7 days of their own onset. A
+    merchant whose onset precedes the window by more than 7 days can never contribute,
+    however early in the window it is flagged. Cycle 3's realised maximum onset was day
+    217 against a window opening on day 240, so the achievable d7 was identically zero
+    and 0.000 was reported as a model failure for four rungs and three floors.
+    """
+    pop = scenario.population
+    val_open = scenario.splits.train_end_day + 1
+    assert pop.onset_window_max_day >= val_open + 7, (
+        f"onsets are confined to day <= {pop.onset_window_max_day} while the validation "
+        f"window opens on day {val_open}: no merchant can be flagged within 7 days of "
+        f"its own onset inside the window, so detection_rate_d7 is 0.000 by "
+        f"construction and says nothing about any model."
+    )
+
+
+def test_label_resolution_horizon_defaults_to_the_previous_behaviour() -> None:
+    """The cycle-4 generator change is backward-compatible, asserted rather than claimed.
+
+    Omitting ``label_resolution_ns`` must reproduce the pre-cycle-4 rule exactly
+    (censor when ``label_available_at`` exceeds the simulation end), and passing
+    ``sim_end_ns`` explicitly must be indistinguishable from omitting it.
+    """
+    scenario = load_scenario(CONFIG_PATH)
+    start_ns = 0
+    end_ns = 365 * _NS_PER_DAY
+    onset = np.array([300 * _NS_PER_DAY] * 400 + [NO_TIME] * 100, dtype=np.int64)
+
+    def draw(res: int | None) -> Any:
+        return emit_labels(
+            np.random.default_rng(7),
+            scenario.labels,
+            drift_onset_ns=onset,
+            sim_start_ns=start_ns,
+            sim_end_ns=end_ns,
+            label_resolution_ns=res,
+        )
+
+    omitted, explicit = draw(None), draw(end_ns)
+    assert np.array_equal(omitted.is_censored, explicit.is_censored)
+    assert np.array_equal(
+        np.nan_to_num(omitted.label, nan=-1.0), np.nan_to_num(explicit.label, nan=-1.0)
+    )
+
+    # And the horizon does what it is for: a day-300 onset, whose label needs ~103 days
+    # on average to become available, censors against a day-365 simulation end and
+    # resolves against a distant horizon.
+    extended = draw(start_ns + 500 * _NS_PER_DAY)
+    assert int(omitted.is_censored.sum()) > int(extended.is_censored.sum()), (
+        "extending the resolution horizon past the transaction horizon must resolve "
+        "labels that the simulation end would have censored; it resolved none"
+    )
+    # Not zero, and that is correct rather than a slack threshold: the delay is
+    # Exp(mean 21) + U(45, 120), so a day-300 onset has an unbounded right tail and a
+    # few draws exceed day 500 however far the horizon is pushed. Censoring is reduced
+    # to the tail of the delay distribution, which is a fact about disputes; it is no
+    # longer an artefact of where the simulation happened to stop, which was not.
+    assert int(extended.is_censored.sum()) < int(omitted.is_censored.sum()) // 10
+
+
+def test_label_invariant_holds_under_the_extended_horizon() -> None:
+    """``label_available_at > label_event_at >= drift_onset_at``, still, past the
+    transaction horizon. The horizon moves *when a dispute is deemed unresolvable*; it
+    must not move any timestamp."""
+    scenario = load_scenario(CONFIG_PATH)
+    onset_day = np.arange(0, 365, dtype=np.int64)
+    onset = onset_day * _NS_PER_DAY
+    d = emit_labels(
+        np.random.default_rng(11),
+        scenario.labels,
+        drift_onset_ns=onset,
+        sim_start_ns=0,
+        sim_end_ns=365 * _NS_PER_DAY,
+        label_resolution_ns=500 * _NS_PER_DAY,
+    )
+    has = d.label_event_ns != NO_TIME
+    assert has.any()
+    assert np.all(d.label_available_ns[has] > d.label_event_ns[has])
+    assert np.all(d.label_event_ns[has] >= onset[has])

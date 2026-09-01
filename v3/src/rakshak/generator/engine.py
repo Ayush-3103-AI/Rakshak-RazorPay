@@ -525,6 +525,8 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
         drift_onset_ns=drift_onset_ns,
         sim_start_ns=start_ns,
         sim_end_ns=end_ns,
+        label_resolution_ns=start_ns
+        + config.labels.label_resolution_horizon_day * NS_PER_DAY,
     )
 
     post_onset = np.arange(n_days)[None, :] >= assignment.onset_day[:, None]

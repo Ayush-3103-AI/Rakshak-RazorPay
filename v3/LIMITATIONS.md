@@ -583,6 +583,11 @@ it. The refusal is asserted in `tests/unit/test_rungs_0_1.py` rather than worked
 
 ### 8.7 Nothing detects anything quickly. Median TTD is infinite for every rung.
 
+> **Superseded in its reading, not in its numbers — see §8.7a immediately below.** This
+> section reports a zero as a model failure. The zero was unreachable by construction: no
+> policy, including a perfect oracle, could have scored above it. The numbers stand; the
+> conclusion drawn from them does not.
+
 Detection rate at day 7 and at day 14 is **0.000 for every rung and every floor**. The best
 day-30 rate is 0.118 (Rungs 2 and 3). Median TTD is `inf` across the board, which means more
 than half of the scoreable positives are never alerted on inside a 30-day window at K = 9.
@@ -591,6 +596,70 @@ day-30-eligible members in the validation fold and are `nan`, not 0.
 
 Charter §2 makes TTD an equal-standing win condition. On this measurement it does not
 discriminate between rungs at all, because no rung achieves a finite median.
+
+### 8.7a CORRECTION — nothing *could* detect anything quickly. The metric was unreachable by construction.
+
+§8.7 above is preserved unedited because it is what was reported, and it is wrong in the
+way that matters most: it reads a zero as a fact about the models. It is a fact about the
+split geometry, and it would have read 0.000 for a perfect oracle.
+
+**The arithmetic, which depends on no model and can be checked without running anything.**
+Time-to-detection is measured from a merchant's own `drift_onset_at`. Drift onsets were
+confined by `configs/scenario_v2.yaml` to days 30–240 for every typology. The validation
+window opens on day 240 and the test window on day 300. So for any merchant, the earliest
+achievable TTD is `240 − onset`, and a detection rate at day *d* can only fire for merchants
+with `onset ≥ 240 − d`.
+
+Measured on the committed cycle-3 ground truth (`data/v2/ground_truth.parquet`, 20,000
+merchants, seed 42) — 294 fraud merchants, onset **min 30, median 108.5, max 217**:
+
+| metric | needs onset ≥ | fraud merchants qualifying | achievable value |
+|---|---|---|---|
+| `detection_rate_d7` | 233 | **0 of 294** | 0.000, for anything |
+| `detection_rate_d14` | 226 | **0 of 294** | 0.000, for anything |
+| `detection_rate_d30` | 210 | **4 of 294** | ~0.014 platform-wide, before the 15% merchant fold and the censoring filter take their cut |
+
+The minimum achievable TTD over the whole population was **23 days** (the single day-217
+onset) and the median achievable TTD was **131.5 days**. The `ttd_median_days` of 161–163
+reported for Rungs 2, 3 and 6 is therefore not a latency measurement at all: it is the
+distance from a typical onset to the day the scoring window opened, plus a small model-
+dependent remainder. It carries almost no information about any model, and the fact that
+three rungs landed within 2 days of each other on it is the tell.
+
+**An oracle that alerted on every merchant on the first day of the window scores exactly
+0.000 on d7 and d14.** So did every rung and every floor — including `volume_rank`, which
+alerts on the same K merchants every day and would have caught any in-window onset it
+happened to be sitting on. Seven policies of seven scored identically, which is what a
+metric looks like when it is measuring the calendar rather than the policy.
+
+**Consequences that stand regardless of anything cycle 4 does:**
+
+1. **Charter §2 makes TTD an equal-standing win condition, and the ladder has never rendered
+   a verdict on it.** Any claim of the form "no rung improves detection latency" is
+   unsupported by this evaluation, in either direction.
+2. **The charter's adoption margin has a second clause that was never live.** Gate D.1 admits
+   a rung on ≥10% relative PR-AUC **or** ≥3 days median TTD. The second disjunct could not
+   fire for any rung, so every adoption decision in §8.2 and §8.5 was made on PR-AUC alone.
+   That does not change those verdicts — the PR-AUC margins were assessed on their own — but
+   a reader is entitled to know the door was shut, not merely unopened.
+3. **Modelling work aimed at latency could not have been evaluated.** Multiple-instance
+   learning, conformal risk control and the HSMM would each have scored d7 = 0.000 on this
+   data whatever they did, and Rungs 5, 6 and 7 did.
+4. **The existing geometry guard passed and should have.** `test_test_split_has_enough_
+   labelled_positives_per_seed` counts *labelled positives in a split*, and a merchant can
+   carry a resolved positive label in a split without having onsetted inside it. That is
+   precisely the gap. Cycle 4 adds the sibling assertion —
+   `test_every_evaluated_split_contains_in_window_drift_onsets` — which counts in-window
+   onsets instead. Pointed at the cycle-3 config it returns **0 for every one of the five
+   locked seeds, in both evaluation splits**, and goes red; pointed at the cycle-4 config it
+   returns 7–14 (validation) and 3–11 (test) and goes green. It is checked in both
+   directions rather than only the passing one.
+
+**This defect is measurement, not modelling, and the fix is to the data rather than to the
+harness.** `src/rakshak/eval/` is not edited: `time_to_detection` and `detection_rates` were
+correct as written and start discriminating the moment the data contains in-window onsets.
+The enforced `eval_module_sha256` is therefore byte-identical between cycle 3 and cycle 4,
+which is what makes "we only moved the data" checkable rather than asserted.
 
 ### 8.8 Three registered features are effectively constant on real generator output
 

@@ -79,12 +79,18 @@ def emit_labels(
     drift_onset_ns: I64,
     sim_start_ns: int,
     sim_end_ns: int,
+    label_resolution_ns: int | None = None,
 ) -> LabelDraw:
     """Draw a label state per merchant.
 
     ``drift_onset_ns`` is ``NO_TIME`` for merchants that never turned. Everything is
     vectorised over the population: 10,000 merchants is one draw per distribution, not
     10,000 branches.
+
+    ``label_resolution_ns`` is the instant past which a dispute is deemed never to
+    resolve. It defaults to ``sim_end_ns``, which is exactly the previous behaviour —
+    the cycle-4 change is provably backward-compatible when the argument is omitted, and
+    ``tests/unit/test_labels.py`` asserts that rather than asserting it in prose.
     """
     n = drift_onset_ns.size
     is_fraud = drift_onset_ns != NO_TIME
@@ -122,7 +128,8 @@ def emit_labels(
     event_ns = np.where(disputed, ev, NO_TIME)
     available_ns = np.where(disputed, av, NO_TIME)
 
-    censored = disputed & (av > sim_end_ns)
+    resolution_ns = sim_end_ns if label_resolution_ns is None else label_resolution_ns
+    censored = disputed & (av > resolution_ns)
     is_censored = censored
 
     label = np.where(disputed & ~censored, 1.0, 0.0)
