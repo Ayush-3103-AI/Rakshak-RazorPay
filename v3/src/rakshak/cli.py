@@ -68,12 +68,12 @@ ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = Path("data/v2/models")
 RESULT_DIR = Path("data/v2/eval")
 
-#: **The cycle-2 lock.** `EVAL-LOCK.json` pins `split_boundaries` to the 180-day geometry,
-#: so the T-0101-corrected 20,000 x 365-day window (docs/RE-FREEZE-2026-08-31.md
-#: Amendment 4) needs its own lock. Lock 1 stays committed, untouched, `open_count: 0`
-#: intact. `eval_module_sha256` is byte-identical across the two — verified in
-#: tests/unit/test_lock.py — because the harness did not change, only the window and the
-#: population it is pointed at.
+#: Background on why more than one lock exists: `EVAL-LOCK.json` pins `split_boundaries` to
+#: the 180-day geometry, so the T-0101-corrected 20,000 x 365-day window
+#: (docs/RE-FREEZE-2026-08-31.md Amendment 4) needed its own lock. Cycle 1 stays committed,
+#: untouched, `open_count: 0` intact. `eval_module_sha256` was byte-identical across those
+#: two because the harness did not change, only the window and the population it is pointed
+#: at — which is exactly why the staleness below went unnoticed for two cycles.
 def _lock_path(root: Path = ROOT) -> Path:
     """The lock that governs right now, resolved from the supersession chain.
 
@@ -491,6 +491,11 @@ def features(
         None, "--last-day", help="Final epoch to materialise. Defaults to the last "
         "VALIDATION day; the test split cannot be materialised from here at all."
     ),
+    workers: int = typer.Option(
+        1, "--workers", min=1, help="Processes to replay merchant chunks on. 1 is the "
+        "serial walk and the default; the panel is identical at any worker count "
+        "(tests/unit/test_dataset_parallel.py), only faster."
+    ),
 ) -> None:
     """Materialise the (merchant-day x feature) panel every rung trains and scores on."""
     shares = _fold_shares(config)
@@ -500,6 +505,7 @@ def features(
         boundaries=_boundaries(config),
         fold_fn=lambda m: _merchant_fold_t0101(m, shares),
         last_day=last_day,
+        workers=workers,
         echo=typer.echo,
     )
     summary["seed"] = seed

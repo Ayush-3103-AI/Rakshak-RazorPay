@@ -17,6 +17,12 @@ merchants, so a merchant-major walk keeps one ``MerchantState`` hot instead of t
 thousand, and the cross-merchant step (the cohort residual) is done afterwards on the
 finished value cube, vectorised per epoch.
 
+That same independence is the only reason ``workers`` exists: the replay is dispatched
+over contiguous merchant chunks and reassembled **by merchant, never by completion**, so
+the row order — and therefore the panel's content hash, which gate G3 compares — does not
+depend on how the pool happened to schedule. The residual layer stays in the parent,
+after the cube is whole, because it is the one step that reads across merchants.
+
 **The test split is not materialised.** ``last_day`` defaults to the last validation day,
 so no event after it is ever read and no epoch after it is ever evaluated. That is a
 stronger guarantee than remembering not to look: the rows do not exist.
@@ -29,9 +35,13 @@ quarantine.
 from __future__ import annotations
 
 import time as _time
+from collections import deque
 from collections.abc import Callable, Iterator
+from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
+from itertools import islice
+from multiprocessing import get_context
 from pathlib import Path
 from typing import Any
 
@@ -180,6 +190,92 @@ def _merchant_blocks_batched(
         yield from _merchant_blocks(frame)
 
 
+#: Merchants per parallel task. Small enough that ``workers`` collected batches and the
+#: results in flight stay well inside this machine's RAM (one chunk's events is ~80 MB,
+#: its cube slice ~8 MB); large enough that the per-task profile load and parquet scan
+#: disappear — the stream is written merchant-major, so row-group pruning makes a
+#: chunk's scan ~0.2 s against the full 1.4 GB file.
+PARALLEL_CHUNK = 250
+
+
+def _replay_chunk(
+    task: tuple[Path, tuple[str, ...], tuple[datetime, ...]],
+) -> tuple[np.ndarray, np.ndarray, list[int], int]:
+    """Replay one contiguous merchant chunk into its own slice of the cube.
+
+    This is the body of the serial walk with a subset of merchants in it, and it is a pure
+    function of its arguments: ``registry.REGISTRY`` holds stateless singletons and the
+    mutable part of a replay is ``MerchantState``, which is per merchant and never read by
+    another one. That independence is what makes the dispatch below legal — the
+    cross-merchant step (the cohort residual) is not in here, it is done afterwards on the
+    finished cube.
+
+    Top level, and picklable in and out, because Windows spawns rather than forks.
+    """
+    root, merchants, as_ofs = task
+    profiles = load_profiles(root)
+    tier1.load_profiles(profiles)
+    specs = [registry.REGISTRY[name] for name in registry.ORDER]
+    index = {m: i for i, m in enumerate(merchants)}
+
+    cube = np.zeros((len(merchants), len(as_ofs), len(specs)), dtype=np.float32)
+    active = np.zeros((len(merchants), len(as_ofs)), dtype=bool)
+    state_bytes: list[int] = []
+    seen = 0
+    for merchant_id, block in _merchant_blocks_batched(
+        root / "transactions.parquet", as_ofs[-1], list(merchants)
+    ):
+        row = index[merchant_id]
+        state = MerchantState(merchant_id=merchant_id, profile=profiles[merchant_id])
+        events = block.iter_rows(named=True)
+        pending: Transaction | None = None
+        for d, as_of in enumerate(as_ofs):
+            while True:
+                if pending is None:
+                    nxt = next(events, None)
+                    if nxt is None:
+                        break
+                    pending = _to_transaction(nxt)
+                if pending.event_time > as_of:
+                    break
+                for spec in specs:
+                    spec.update(spec.state_of(state), pending)
+                seen += 1
+                active[row, d] = True
+                pending = None
+            if d and active[row, d - 1]:
+                active[row, d] = True
+            cube[row, d, :] = [spec.value(spec.state_of(state), as_of) for spec in specs]
+        state_bytes.append(state.nbytes())
+    return cube, active, state_bytes, seen
+
+
+def _replay_results(
+    tasks: list[tuple[Path, tuple[str, ...], tuple[datetime, ...]]], workers: int
+) -> Iterator[tuple[np.ndarray, np.ndarray, list[int], int]]:
+    """Chunk results **in task order**, whatever order the workers finish in.
+
+    Row order is the determinism contract (G3 hashes the panel), so reassembly is by
+    merchant, never by completion. ``workers=1`` runs in-process — no pool, no pickling,
+    the serial path exactly as it was. Above that, at most ``2 * workers`` chunks are ever
+    in flight, so the results waiting to be consumed cannot grow to a second copy of the
+    cube and take the machine down.
+    """
+    if workers <= 1:
+        yield from map(_replay_chunk, tasks)
+        return
+    with ProcessPoolExecutor(max_workers=workers, mp_context=get_context("spawn")) as pool:
+        queued = iter(tasks)
+        flight: deque[Future[tuple[np.ndarray, np.ndarray, list[int], int]]] = deque(
+            pool.submit(_replay_chunk, t) for t in islice(queued, 2 * workers)
+        )
+        while flight:
+            done = flight.popleft()
+            for t in islice(queued, 1):
+                flight.append(pool.submit(_replay_chunk, t))
+            yield done.result()
+
+
 @dataclass(frozen=True, slots=True)
 class Panel:
     """The materialised feature matrix, plus the identifiers every metric needs.
@@ -248,6 +344,7 @@ def materialise(
     boundaries: SplitBoundaries = DEFAULT_BOUNDARIES,
     fold_fn: Callable[[str], Split] | None = None,
     last_day: int | None = None,
+    workers: int = 1,
     echo: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Replay the event stream and write the ``(merchant-day x feature)`` panel.
@@ -262,6 +359,12 @@ def materialise(
     which ``merchant_fold()`` cannot express since it derives its shares from
     ``boundaries`` itself; ``cli.py`` supplies a sibling function instead of this module
     editing ``eval/splits.py`` to add a second ratio to it.
+
+    ``workers`` spreads the replay over processes, one contiguous merchant chunk at a
+    time. It defaults to 1 — the serial walk, unchanged, and still the path that has to
+    stay reachable — because this panel is what every rung's numbers are about.
+    ``tests/unit/test_dataset_parallel.py`` holds any worker count to the serial panel,
+    row hash included.
     """
     horizon = boundaries.val[1] if last_day is None else last_day
     if horizon >= boundaries.test[0]:
@@ -273,13 +376,11 @@ def materialise(
 
     profiles = load_profiles(root)
     tier1.load_profiles(profiles)
-    specs = [registry.REGISTRY[name] for name in registry.ORDER]
     base = base_columns()
     residual = residual_columns()
     resid_index = np.array([base.index(n[len(RESIDUAL_PREFIX) :]) for n in residual])
 
     merchants = sorted(profiles)
-    index = {m: i for i, m in enumerate(merchants)}
     days = list(range(horizon + 1))
     as_ofs = [end_of_day(boundaries.origin + timedelta(days=d)) for d in days]
 
@@ -289,34 +390,25 @@ def materialise(
     active = np.zeros((len(merchants), len(days)), dtype=bool)
     state_bytes: list[int] = []
 
+    # Serial keeps the batch size it has always had; a parallel run needs the smaller
+    # chunk so that `workers` collected batches fit in RAM at once.
+    size = MERCHANT_BATCH if workers <= 1 else PARALLEL_CHUNK
+    chunks = [tuple(merchants[i : i + size]) for i in range(0, len(merchants), size)]
+    frozen_as_ofs = tuple(as_ofs)
+    tasks = [(root, chunk, frozen_as_ofs) for chunk in chunks]
+
     started = _time.perf_counter()
     seen = 0
-    for merchant_id, block in _merchant_blocks_batched(
-        root / "transactions.parquet", as_ofs[-1], merchants
+    row = 0
+    for chunk, (c_cube, c_active, c_bytes, c_seen) in zip(
+        chunks, _replay_results(tasks, workers), strict=True
     ):
-        row = index[merchant_id]
-        state = MerchantState(merchant_id=merchant_id, profile=profiles[merchant_id])
-        events = block.iter_rows(named=True)
-        pending: Transaction | None = None
-        for d, as_of in enumerate(as_ofs):
-            while True:
-                if pending is None:
-                    nxt = next(events, None)
-                    if nxt is None:
-                        break
-                    pending = _to_transaction(nxt)
-                if pending.event_time > as_of:
-                    break
-                for spec in specs:
-                    spec.update(spec.state_of(state), pending)
-                seen += 1
-                active[row, d] = True
-                pending = None
-            if d and active[row, d - 1]:
-                active[row, d] = True
-            cube[row, d, :] = [spec.value(spec.state_of(state), as_of) for spec in specs]
-        state_bytes.append(state.nbytes())
-        if echo is not None and row % 1000 == 0:
+        cube[row : row + len(chunk)] = c_cube
+        active[row : row + len(chunk)] = c_active
+        state_bytes.extend(c_bytes)
+        seen += c_seen
+        row += len(chunk)
+        if echo is not None:
             echo(
                 f"  {row}/{len(merchants)} merchants, {seen:,} events, "
                 f"{_time.perf_counter() - started:.0f}s"
@@ -362,6 +454,7 @@ def materialise(
         "epochs": len(days),
         "last_day": horizon,
         "events_replayed": seen,
+        "workers": workers,
         "seconds": round(_time.perf_counter() - started, 1),
         "base_features": len(base),
         "residual_features": len(residual),
