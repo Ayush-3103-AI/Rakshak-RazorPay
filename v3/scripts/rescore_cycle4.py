@@ -64,13 +64,30 @@ def _py() -> tuple[str, ...]:
     return (sys.executable, "-m", "rakshak.cli")
 
 
-def train_jobs() -> list[Job]:
-    return [
-        Job("train", (*_py(), "train", "--rung", str(r), "--seed", str(s)),
-            f"train rung{r} seed{s}")
-        for r in TRAINED
-        for s in SEEDS
-    ]
+def train_jobs(*, skip_existing: bool = False) -> list[Job]:
+    """One training job per (rung, seed).
+
+    ``skip_existing`` drops a job whose artefact is already on disk. It exists because
+    training is the memory-hungry phase: at 3 concurrent processes on 16 GB, 7 of 15 jobs
+    died with `ArrayMemoryError` — `dataset.load_panel` materialises the whole panel as
+    float64 (2.24 GiB) before selecting a split. Re-running the whole phase at lower
+    concurrency would retrain the 8 that survived, which is an hour spent reproducing files
+    that already exist.
+
+    **It is opt-in, and it must stay opt-in.** A skip is only safe when the existing
+    artefact was trained on the *current* panel; silently reusing a stale model is exactly
+    how a ladder ends up with mixed-provenance rows. Use it to resume an interrupted run,
+    never to start one.
+    """
+    jobs = []
+    models = ROOT / "data" / "v2" / "models"
+    for r in TRAINED:
+        for s in SEEDS:
+            if skip_existing and (models / f"rung{r}_seed{s}.txt").exists():
+                continue
+            jobs.append(Job("train", (*_py(), "train", "--rung", str(r), "--seed", str(s)),
+                            f"train rung{r} seed{s}"))
+    return jobs
 
 
 def eval_jobs(*, with_upper: bool) -> list[Job]:
@@ -103,19 +120,25 @@ def eval_jobs(*, with_upper: bool) -> list[Job]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--jobs", type=int, default=3,
-                    help="Concurrent processes. Training is memory-hungry; 3 is safe on "
-                         "16 GB. Evaluation is lighter.")
+    ap.add_argument("--jobs", type=int, default=2,
+                    help="Concurrent processes. MEASURED: 3 is NOT safe on 16 GB — it "
+                         "killed 7 of 15 training jobs with ArrayMemoryError, because "
+                         "dataset.load_panel materialises the panel as float64 (2.24 GiB) "
+                         "per process before selecting anything. 2 is the tested ceiling.")
     ap.add_argument("--plan", action="store_true", help="Print the matrix and exit.")
     ap.add_argument("--skip-train", action="store_true",
                     help="Models already trained on cycle-4 data.")
+    ap.add_argument("--skip-existing", action="store_true",
+                    help="Resume: drop training jobs whose artefact is already on disk. "
+                         "Only safe when those artefacts were trained on the CURRENT "
+                         "panel; see train_jobs().")
     ap.add_argument("--with-upper", action="store_true",
                     help="Also rescore Rungs 5 and 6.")
     args = ap.parse_args()
 
     phases: list[tuple[str, list[Job]]] = []
     if not args.skip_train:
-        phases.append(("TRAIN", train_jobs()))
+        phases.append(("TRAIN", train_jobs(skip_existing=args.skip_existing)))
     phases.append(("EVAL", eval_jobs(with_upper=args.with_upper)))
 
     if args.plan:
