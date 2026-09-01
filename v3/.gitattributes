@@ -1,0 +1,31 @@
+# T-0021's autocrlf trap, carried into v3.
+#
+# The rules in ../.gitattributes are path-relative to THAT file, so `results/*.json`
+# there covers ver-2/results/ and never reaches into v3/. Everything under v3/ was
+# therefore `eol: unspecified`.
+#
+# Measured at 54e3f10 rather than assumed:
+#
+#   file                     blob        working tree
+#   artifacts/*.json         LF          LF            -- fine, no defect
+#   EVAL-LOCK.json           LF (CR=0)   CRLF (CR=81)  -- inflated on checkout
+#
+# So the artefacts were never broken: canonical_bytes() builds LF text and build.py
+# uses write_bytes(), which does no platform translation. The rule below is a guard,
+# not a repair -- it keeps a future checkout on a core.autocrlf=true machine from
+# inflating them out from under tests/unit/test_artifacts_contract.py, which compares
+# the committed bytes against what `make artifacts` regenerates. Green on the machine
+# that wrote them and red on a fresh clone is the K-5 failure mode.
+artifacts/*.json text eol=lf
+
+# The sealed locks ARE inflated in the working tree today: blob LF, checkout CRLF.
+# Nothing currently hashes the lock JSON itself -- eval_module_sha256 covers the .py
+# modules -- so this is latent rather than active, and no committed number depends on
+# it. It is still worth closing: anything that later hashes a lock file would get one
+# answer on Windows and another on Linux, and on a file whose whole purpose is to be
+# byte-checkable that reads as tampering.
+#
+# This changes NO committed byte. The blobs are already LF, so `eol=lf` only affects
+# what checkout writes into the working tree; it needs no renormalise and it does not
+# rewrite the sealed blobs. open_count stays 0 on both.
+EVAL-LOCK*.json text eol=lf
