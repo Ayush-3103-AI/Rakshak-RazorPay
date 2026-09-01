@@ -1,4 +1,12 @@
-"""Rung 8 — price the decision on exposure the merchant *realised*, not the one it declared.
+"""Price the decision on the exposure a merchant *realised*, not the one it declared.
+
+**This carries no rung number, deliberately.** ``configs/rung_roster.yaml`` already assigns
+Rung 8 to ``tpp_hawkes_nb``, and more to the point
+``docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`` §4.2 registers this as a controlled
+decision-policy A/B run over the *whole* ladder rather than as a competing rung. Numbering
+it would have put two different things under one heading, which is how a results table ends
+up comparing two quantities that share a column name. See the dated note at the foot of the
+pre-registration recording the rename.
 
 Pre-registered in ``docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`` §4.2, before this file
 existed. The evidence is ``LIMITATIONS.md`` §8.3a and it is worth restating, because this

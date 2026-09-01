@@ -56,13 +56,13 @@ from rakshak.generator.config import ScenarioConfig, load_scenario
 from rakshak.generator.engine import generate
 from rakshak.models import (
     dataset,
+    decision_realised_exposure,
     rung0_floors,
     rung1_rules,
     rung2_lgbm,
     rung3_cohort,
     rung4_cost,
     rung5_mil,
-    rung8_realised_exposure,
     rung9_rank_cusum,
 )
 from rakshak.schemas import MerchantProfile, Split
@@ -1046,10 +1046,10 @@ def score_split(
         # rather than two things changing at once.
         decision = capacity.DEFAULT_DECISION
         if exposure_arm == "realised":
-            exposure = rung8_realised_exposure.realised_exposure_inr(
+            exposure = decision_realised_exposure.realised_exposure_inr(
                 exposure, rows.column("v_declared_ratio")
             )
-            decision = rung8_realised_exposure.RealisedExposure(
+            decision = decision_realised_exposure.RealisedExposure(
                 inner=capacity.DEFAULT_DECISION, exposure=exposure
             )
             label = f"{label}_realised_exposure"

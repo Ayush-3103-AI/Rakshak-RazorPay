@@ -23,7 +23,7 @@ from rakshak.eval.capacity import (
     DecisionRequest,
     select_actions,
 )
-from rakshak.models.rung8_realised_exposure import (
+from rakshak.models.decision_realised_exposure import (
     RealisedExposure,
     realised_exposure_inr,
 )

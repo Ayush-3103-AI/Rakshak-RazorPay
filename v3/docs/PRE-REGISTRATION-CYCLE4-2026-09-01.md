@@ -338,3 +338,20 @@ Stated so that each is a claim rather than a hope.
 arm A, then `volume_rank` was winning because the window was stationary, and the exposure
 finding — while still true as arithmetic — was not what was deciding the comparison. That is
 a hypothesis this cycle can support but not establish, and the report must write it as such.
+
+---
+
+## 8. Clerical corrections after sealing
+
+Recorded rather than silently applied. **Neither changes a method, a gate, a threshold or a
+number**; both are naming. Anything that did change one of those would be a new
+pre-registration, not a note.
+
+**2026-09-02 — the exposure wrapper is not "Rung 8".** §4.2 above and the paragraph at the
+head of this document refer to `rung8_realised_exposure.py`. That filename was wrong on two
+counts. `configs/rung_roster.yaml` already assigns Rung 8 to `tpp_hawkes_nb` (T-0125, #59),
+so the number was taken; and §4.2 itself registers this as a decision-policy A/B run over
+the whole ladder **and explicitly not as a competing rung**, so it should never have carried
+a rung number. The module is `src/rakshak/models/decision_realised_exposure.py` and the
+policy names itself `realised_exposure(capacity_topk)`, which is what appears beside every
+number it produces. Rung 9 is unaffected — 9 was and is free.
