@@ -170,12 +170,20 @@ pinned to a population the manifest has left twice; that is an amendment and is 
 `budget_for`'s docstring.
 
 **1. `tests/unit/test_cohort.py::test_what_the_cohort_residual_actually_does_under_p2` is
-RED and was red before cycle 4 began.** Measured 0.3677 against a bar of `raw × 0.85` =
+the ONLY red test in the tree, and it therefore blocks `make all` at the `test` stage.**
+Everything else is green: `ruff` and `mypy --strict` clean on 49 source files, `tests/parity`
+94 passed 1 xfailed, `tests/perf` green with NFR-10 measured at 215.3 s against a 1,460 s
+derived budget, `tests/gates` 20 passed 4 skipped. It was red before cycle 4 began. Measured 0.3677 against a bar of `raw × 0.85` =
 0.3647 — a 14.3% alert-rate reduction against a claimed >15%. Identical numbers before and
 after the cycle-4 config change, verified by stashing. The threshold was set on a different
 population and has drifted. **Not weakened to go green**; it needs either a re-derived
 threshold or an acknowledgement that the claim is now 14%, and that is a decision, not a
 patch.
+
+**Until that decision is made `make all` cannot pass, and no claim that it does should be
+written anywhere.** This is the last thing between the tree and K-5 being genuinely retired
+rather than recorded as retired — §9.10 records how long the other two stages spent failing
+unnoticed.
 
 **2. `configs/rung_roster.yaml` carries a `known_gap` and two `gap` fields saying
 `ADR-V3-001` has no file.** It now does — `docs/adr/ADR-V3-001-no-autograd.md`. The roster
