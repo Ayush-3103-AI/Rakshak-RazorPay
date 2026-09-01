@@ -158,6 +158,17 @@ carried defects below are the shortest list of things worth fixing first.
 
 ## Carried defects with no owner
 
+**0. `make all` had TWO red stages and K-5 was recorded green throughout.** `parity` errored
+inside a fixture (a 45-day miniature against unscaled 365-day splits — pytest reports that as
+ERROR, not FAILED, so the two tier-2 parity tests never ran); `perf` asserted the manifest is
+exactly 10,000 × 180, which stopped being true at T-0101. **Both had been failing since the
+horizon moved, a cycle and a half ago.** Both are now fixed and `LIMITATIONS.md` §9.10 records
+what made them easy to miss — including that `tests/unit/test_cohort.py` hit the identical
+fixture bug at T-0101, fixed it, and left a comment that never travelled to the parity copy.
+NFR-10's budget is now **derived from the population at the rate the NFR quotes** rather than
+pinned to a population the manifest has left twice; that is an amendment and is argued for in
+`budget_for`'s docstring.
+
 **1. `tests/unit/test_cohort.py::test_what_the_cohort_residual_actually_does_under_p2` is
 RED and was red before cycle 4 began.** Measured 0.3677 against a bar of `raw × 0.85` =
 0.3647 — a 14.3% alert-rate reduction against a claimed >15%. Identical numbers before and

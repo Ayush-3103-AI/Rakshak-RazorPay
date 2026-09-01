@@ -1107,3 +1107,54 @@ package — a next-cycle item, not a caveat that undermines what was measured.
 into its own JSON rather than as an `EvalResult`, so it has never appeared in `ladder.json`.
 That is why `configs/rung_roster.yaml` exists, and the roster names it. It was not rescored
 on cycle-4 data and is not claimed to have been.
+
+### 9.10 `make all` had two red stages, and K-5 was recorded as green throughout
+
+`make all` is `lint parity gen gates perf test`. It is the project's single most-repeated
+promise — *"`make all` must pass from a clean `git clone` on a fresh env. The v1 build's
+single biggest disqualification risk was `make eval` not reproducing on a clean checkout"* —
+and the risk register carries it as **K-5, status PARTIAL, retired by "CI job ✅"**.
+
+**Two of its six stages were failing, and had been since T-0101 moved the horizon from 180
+to 365 days — a cycle and a half.**
+
+| stage | defect | how it presented |
+|---|---|---|
+| `parity` | `tests/parity/test_tier2_parity.py` shrinks the scenario to 45 days without scaling the splits, so `ScenarioConfig`'s `test_end_day == n_days - 1` check raised **inside the fixture** | pytest **ERROR**, not FAILED — the two tier-2 parity tests never ran at all |
+| `perf` | `tests/perf/test_gen_budget.py` asserted the manifest is exactly 10,000 × 180, which stopped being true at T-0101 (20,000 × 365) and again in cycle 4 (40,000 × 365) | a plain assertion failure, at the top of a `@pytest.mark.slow` test |
+
+Neither is a performance or correctness regression. Both are **guards that went stale when
+the population moved and then failed closed**, which is the good failure mode — but a guard
+that fails closed and is not noticed is indistinguishable from one that was never written.
+
+**Three things made them easy to miss, and they are worth naming separately.**
+
+1. **A fixture error reads as ERROR, not FAILED**, and a summary line of dots ending in
+   `2 errors` does not look like a broken build the way `2 failed` does.
+2. **`tests/unit/test_cohort.py` hit the identical fixture bug at T-0101, fixed it, and left
+   a comment explaining exactly why** — *"Shrinking the population without shrinking the
+   splits left the 365-day boundaries behind a 100-day window… the test was not failing, it
+   was not running."* The parity copy of the same pattern was never updated. The knowledge
+   existed in the repo, in prose, next to the fix, and did not travel.
+3. **`make report` was never wired at all** (§ the logbook's surprise 9), and `make all` does
+   not call `report` — so a third documented command was broken in a way `make all` could not
+   have caught even if it were green.
+
+**What was done.** The parity fixture now scales its splits with its window, as the cohort
+one does. NFR-10's budget is **derived from the shipped population at the rate the NFR
+quotes** — 180 s per 10,000 × 180 is a seconds-per-merchant-day figure, and the test applies
+it rather than pinning a population the manifest has moved away from twice. At 40,000 × 365
+that gives a budget of **1,460 s**; the observed run is **~660 s**, roughly 2.2× inside.
+
+**That change is an amendment and is flagged as one.** Refusing to measure a different
+population against a fixed budget was correct; refusing forever is not, because the
+requirement's intent — that the dataset stays cheap enough that people actually rebuild it —
+is a *rate*, and holding the number fixed abandons that intent the moment the population
+changes. The reasoning is written into `budget_for`'s docstring where the next person will
+find it, not only here.
+
+**K-5's status should be read as PARTIAL for a reason it was not previously carrying:** not
+"the CI job exists but the pipeline is incomplete", but "the CI job exists, runs six stages,
+and two of them have been failing since the horizon moved". Whether CI was green depends on
+whether it deselects `@pytest.mark.slow`; `pyproject.toml`'s `addopts` is `-q
+--strict-markers`, with no `-m "not slow"`, so a default invocation runs them.
