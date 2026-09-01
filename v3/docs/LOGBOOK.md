@@ -493,3 +493,46 @@ Numbers:     3.5x at 8 workers, sub-linear and measured with the live job compet
              smaller chunk offsets the worker count.
 
 Next:        Use `--workers` for the next materialisation: a re-run, a second seed, cycle 3.
+
+---
+
+## PERF-corr | Correction to the PERF entry's throughput number
+Date:        2026-09-01  ·  Session:  2
+Status:      CORRECTION. The entry above stands as written (append-only); this supersedes
+             its throughput figure only. Everything else in it is unaffected.
+
+Wrong:       "Steady state is ~196s per 1,000 merchants (~12,000 events/s), about 8x
+             faster [than 1,503s]." That was generalised from the merchants 3000-7000
+             stretch. It is a ~5x anomaly against every other bucket, with identical event
+             counts per bucket, and it has no explanation — recorded as unexplained rather
+             than given a story.
+
+Right:       Uncontended rate is **~1,000-1,150s per 1,000 merchants (~2,400 events/s)**,
+             measured on a quiet box with only the materialiser running:
+
+               8000   5761s
+               9000   7060s   (+1299)  contended by a concurrent pytest run
+              10000   8204s   (+1144)  clean
+              11000   9211s   (+1007)  clean
+
+             Full run ≈ **5h20m**, not 8.3h and not 40m. ETA ~15:30 on 2026-09-01.
+
+What this   The contention finding SURVIVES but is demoted: 1299s against ~1075s is a real
+does to     ~20% penalty from running a test suite alongside, not the dominant term it was
+the story:  claimed to be. "Throughput is governed by free RAM, not cores" is still the
+             right operational rule — available physical was 3,011 MB with only the
+             materialiser resident — but it explains a fifth of the variance, not all of it.
+
+Consequence: The parallel path is NOT usable at full geometry today. Projected peak for
+             20,000 merchants at 8 workers is ~3.2 GB against 3,011 MB available. It has
+             only ever executed at 800 merchants. An OOM would cost the whole run rather
+             than the ~70 minutes a restart would save, and the freeze is 2026-09-03 with
+             ~36 hours of slack. Serial finishes. `--workers 6` next time, not 8 — the
+             parent's cube alone is 1.2 GB at full geometry and worker count is the cheap
+             thing to trade away.
+
+Surprised:   Three estimates of the same quantity in one session — 8.3h, 40m, 5h20m — two
+             of them wrong and both wrong because a rate was extrapolated from one window
+             of a log without checking whether that window was representative. The
+             equivalence proof, which was measured rather than extrapolated, needed no
+             correction.
