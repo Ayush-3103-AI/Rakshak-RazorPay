@@ -1,6 +1,6 @@
 # Cycle 4 — the metric could not fire, and the floor was winning on exposure
 
-**Status:** steps 1–5 of 8 done; ladder rescore in flight · **Session:** 2026-09-01/02
+**Status:** COMPLETE — all 8 protocol steps · **Session:** 2026-09-01/02
 **Loaded:** `STATE.md`, `12-spec-cycle4.md`, `LIMITATIONS.md` §8, `eval/capacity.py`,
 `generator/labels.py`, `generator/config.py`, `models/rung0_floors.py`,
 `features/tier1.py::DeclaredRatio`, `configs/rung_roster.yaml`, surveys `13a`/`13b`/`13c`
@@ -102,6 +102,53 @@ to `float32` would shift the low-order bits of every feature, so models trained 
 change and models trained after it would not be comparable — and a ladder with
 mixed-provenance rows is the thing this cycle exists to avoid. It is a one-line change for a
 cycle that begins with a clean rescore, and it belongs in the next one.
+
+**8. The results table could not name its own rows, and nobody had noticed because nothing
+had ever needed it to.** `EvalResult` carries `rung: int` and no name. That was survivable
+while one policy owned each rung number — until cycle 4 put three floors under Rung 0 and
+both exposure arms under every scored rung, and `make report` rendered 65 rows in which the
+cycle's *central comparison* appeared as two identical strings. `cli.py` had been writing
+`label` beside every row since the beginning and nothing consumed it. The fix was a
+defaulted field, and the check that mattered was that `eval_module_sha256` did not move —
+`schemas.py` is not one of the five locked modules and `metrics.py` was not edited.
+
+**9. And `make report` had never worked at all.** The target invoked a `report` command that
+did not exist in `cli.py`; T-152a's logbook recorded the wiring as "Lane D's" and nobody
+picked it up. `make all` does not call `report`, so the clean-clone CI job never caught it.
+The renderer of the project's graded results artefact was unreachable from its documented
+command for two cycles. Three lines of typer.
+
+**10. `make all` was running one stage short, and had been for a while.** `tests/parity`
+shrinks the scenario to 45 days without scaling the splits, so the config validator's
+`test_end_day == n_days - 1` raised inside the *fixture* — which pytest reports as ERROR
+rather than FAILED, and which is much easier to skim past in a summary line.
+`tests/unit/test_cohort.py` hit precisely this when T-0101 moved the horizon to 365 days,
+fixed it, and left a comment explaining why; the parity copy of the same pattern was never
+updated. `parity` is a stage of `make all`, so **K-5 — the clean-clone risk that most nearly
+disqualified v1 — has been partially unguarded** while the board recorded it as green.
+
+**11. Sealing a fourth lock turned two unrelated tests red.** `_chain()` in the artefact
+contract copies every real `EVAL-LOCK*.json` into a temp root and then overwrites cycle 3
+with a synthetic lock. Correct while cycle 3 was newest; sealing `EVAL-LOCK-CYCLE4.json`
+meant cycle 4 was copied too, superseded the synthetic lock, became live, and a row written
+against the synthetic hash correctly read as stale. **The fixture was wrong, not the
+assertion** — a distinction worth pausing on, because the fast move is to relax the
+assertion. The tell was that neither the tests nor the code beneath them had changed.
+
+**12. Three of the cycle's defects were in my own pre-registration, and the artifact caught
+all three.** The savings gate was anchored to `0.7017` — the *cycle-3* floor plus 0.10 — a
+number this cycle invalidated by moving the floor to 0.5240. Rung 9's primary gate named a
+paired McNemar test over per-merchant detection outcomes the harness does not emit, so it
+cannot be computed at all. And §1.2's observed-GMV figures omitted the refund filter that
+`_observed_volume` actually applies.
+
+Each was reported rather than repaired-in-place: the savings gate stands as written and
+FAILS, with the comparison it *meant* to make labelled POST-HOC beside it; Rung 9 is not
+adopted because a gate that cannot be evaluated has not been met; and the sealed §1.2 keeps
+its text with a dated note carrying both values. **The temptation in all three cases was to
+re-anchor, substitute, or silently correct — and each would have produced a better-looking
+result from a document that had stopped constraining anything.** That is the whole reason to
+write one.
 
 ## Broke
 
