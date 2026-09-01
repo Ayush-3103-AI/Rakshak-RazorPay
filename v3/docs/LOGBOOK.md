@@ -724,3 +724,58 @@ Next:        T-0116 (open the test split, once) and T-0117 (report). Both findin
              validation-side and stand independent of the test split. The report's headline
              is now written for it: the central hypothesis is falsified, and the ladder's own
              floor beats the ladder.
+
+---
+
+## FIX | Two red tests from the rung 5/6/7 lane, and a property test that was testing the repo
+Date:        2026-09-01  ·  Session:  2
+Status:      DONE. Both agent-introduced failures closed. Two PRE-EXISTING reds left red,
+             deliberately — see below.
+
+Built:       `src/rakshak/score_rung7.py`. Rung 7's runner moved out of `explain/`, which it
+             should never have entered: it fits the HSMM, so it imports
+             `rakshak.models.rung7_hsmm`, and
+             `test_explain_registry.py::test_the_explain_package_does_not_import_the_models_package`
+             refuses that from anywhere under `explain/`. The file was split along the line
+             the wall already draws — explainer behind it, runner outside it, beside
+             `score_rung5.py` and `score_rung6.py` where the eval side is allowed to see
+             both halves. `explain/hsmm_onset.py` keeps `HsmmOnsetExplainer` and
+             `first_change_point`, which need a **decoder**, not the HSMM class, and now
+             take one structurally as a `Decoder` Protocol. `STATE_NAMES` is injected by the
+             runner rather than imported, for the same reason.
+
+Verified:    No number moved. The estimator, the fit pool, the pool RNG seed (20260901) and
+             the artifact schema are byte-for-byte what they were; the refactor is a move
+             plus a Protocol. `ruff` and `mypy --strict` clean over 47 source files.
+
+Surprised:   **`test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused` was not
+             testing the property in its own name.** It read the LIVE `data/v2/eval/` and
+             asserted every row came back `cycles == [1, 2]` — which silently encoded
+             "nothing in this repo has been scored under cycle 3 yet". True the day it was
+             written; false the moment Rungs 2-6 were rescored under cycle 3. **So the test
+             failed for the repo doing exactly what cycle 3 was sealed to let it do.** The
+             assertion was about the directory's contents wearing the costume of an
+             assertion about the chain.
+
+             Same family as T-120's parity finding and T-0121b's dead fixture, and the third
+             instance this cycle: a check whose subject quietly became something other than
+             what its name says. The fix is a controlled results dir, like its two siblings
+             already used, plus a separate live-dir test asserting the weaker thing the live
+             dir IS entitled to assert — that no committed row has drifted off the chain
+             entirely, whichever cycle it belongs to.
+
+Decided:     **Two pre-existing reds NOT touched, and neither is mine to close.**
+             1. `test_cohort.py::test_what_the_cohort_residual_actually_does_under_p2` —
+                red before this lane started, documented in T-0121b, missing a 15% bar by
+                0.7pp. Relaxing 0.85 -> 0.86 is the move this project forbids.
+             2. `tests/parity/test_tier2_parity.py` — two ERRORS, not failures: the fixture
+                shrinks the population to 45 days and leaves the 365-day split boundaries
+                behind, so `ConfigError` fires before anything runs. **It has not executed
+                since the geometry moved.** Identical to T-0121b's defect. Repairing the
+                fixture may expose a real parity failure, which is a finding needing the
+                lead two days from freeze — raised, not patched around.
+
+Numbers:     `tests/unit` + `tests/parity`: 2 failures remaining, both pre-existing, 0 from
+             this lane. Wall tests green (30 passed).
+
+Next:        The parity fixture (defect 2 above) needs an owner before T-0116.

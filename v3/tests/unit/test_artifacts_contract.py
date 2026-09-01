@@ -692,7 +692,6 @@ def _chain(tmp_path: Path, *, cycle3_sha: str) -> Path:
     return root
 
 
-@has_results
 def test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused(tmp_path: Path) -> None:
     """The cycle-3 pre-registration, as a test.
 
@@ -700,16 +699,30 @@ def test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused(tmp_path:
     are judged on the cycle-2 lock exactly as before."* Refusing those rows the moment
     cycle 3 seals would turn that written commitment into a broken build, so a row is
     checked against the whole chain rather than against the live lock alone.
+
+    **Reads a controlled results dir, not ``RESULTS_DIR``.** It used to read the live one
+    and assert every row came back ``cycles == [1, 2]``, which silently encoded "nothing in
+    this repo has been scored under cycle 3 yet". That was true the day it was written and
+    stopped being true the moment Rungs 2-6 were rescored under cycle 3 — so the test
+    failed for the repo doing exactly what the cycle was sealed for. A property test that
+    inverts when unrelated work lands is testing the repo's contents, not the property.
+    The live rows keep their own guard, in
+    :func:`test_every_committed_row_matches_some_lock_in_the_chain` below.
     """
     root = _chain(tmp_path, cycle3_sha="3" * 64)
+    results = tmp_path / "eval"
+    results.mkdir()
+    # Cycle 2's real sha. Cycle 1 re-sealed unchanged, so it names BOTH locks — which is
+    # what makes this the row the pre-registration is about: superseded, still legible.
+    superseded = json.loads(
+        (REPO_ROOT / "EVAL-LOCK-CYCLE2.json").read_text(encoding="utf-8")
+    )["eval_module_sha256"]
+    row = _row("val", eval_lock_sha=superseded)
+    del row["_source"], row["_seed"]
+    (results / "rung2_val_seed42.json").write_text(json.dumps(row), encoding="utf-8")
+
     out = tmp_path / "out"
-    build_all(
-        root,
-        results_dir=RESULTS_DIR,
-        g5_path=REPO_ROOT / "data/v2/gates/g5_series.json",
-        roster_path=REPO_ROOT / DEFAULT_ROSTER_PATH,
-        out_dir=out,
-    )
+    build_all(root, results_dir=results, out_dir=out)
     prov = json.loads((out / "ladder.json").read_text(encoding="utf-8"))["provenance"]
 
     assert prov["authoritative_lock"] == "EVAL-LOCK-CYCLE3.json"
@@ -717,11 +730,35 @@ def test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused(tmp_path:
     assert prov["results_are_current"] is False, (
         "rows scored under cycle 2 must not read as current once cycle 3 is live"
     )
-    for entry in prov["results_scored_under"].values():
-        # Cycle 2 re-sealed the harness unchanged, so this sha names BOTH locks. Naming one
-        # of them would be a guess about which freeze a number belongs to.
-        assert entry["cycles"] == [1, 2]
-        assert entry["is_authoritative_lock"] is False
+    entry = prov["results_scored_under"][superseded]
+    # Cycle 2 re-sealed the harness unchanged, so this sha names BOTH locks. Naming one
+    # of them would be a guess about which freeze a number belongs to.
+    assert entry["cycles"] == [1, 2]
+    assert entry["is_authoritative_lock"] is False
+
+
+@has_results
+def test_every_committed_row_matches_some_lock_in_the_chain(tmp_path: Path) -> None:
+    """What the live results dir is actually entitled to assert, against the REAL chain.
+
+    Not which cycle each row belongs to — that moves legitimately every time a rung is
+    rescored — but that no committed row has drifted off the chain entirely. That is the
+    hard refusal ``_results_provenance`` exists to make, checked here against the locks as
+    they really are rather than against a synthetic head.
+    """
+    out = tmp_path / "out"
+    build_all(
+        REPO_ROOT,
+        results_dir=RESULTS_DIR,
+        g5_path=REPO_ROOT / "data/v2/gates/g5_series.json",
+        roster_path=REPO_ROOT / DEFAULT_ROSTER_PATH,
+        out_dir=out,
+    )
+    prov = json.loads((out / "ladder.json").read_text(encoding="utf-8"))["provenance"]
+    assert prov["results_scored_under"], "the live results dir produced no rows at all"
+    for sha, entry in prov["results_scored_under"].items():
+        assert entry["cycles"], f"row sha {sha} matches no lock in the chain"
+        assert entry["sources"]
         assert entry["sources"]
 
 

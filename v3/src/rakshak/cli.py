@@ -1067,9 +1067,9 @@ def explain(
     for line in drift:
         typer.echo(f"[lock drift, unenforced] {line}")
 
-    from rakshak.explain import hsmm_onset
+    from rakshak import score_rung7
 
-    hsmm_onset.measure(
+    score_rung7.measure(
         seeds=tuple(int(s) for s in seeds.split(",")),
         fit_pool_size=fit_pool_size,
         n_iter=n_iter,
