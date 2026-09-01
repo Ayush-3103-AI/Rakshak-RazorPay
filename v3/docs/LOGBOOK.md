@@ -536,3 +536,70 @@ Surprised:   Three estimates of the same quantity in one session — 8.3h, 40m, 
              of a log without checking whether that window was representative. The
              equivalence proof, which was measured rather than extrapolated, needed no
              correction.
+
+---
+
+## PANEL | The v3 feature panel, and NFR-04 measured at 2.37x its budget
+Date:        2026-09-01  ·  Session:  2  ·  Duration:  4h38m wall
+Status:      DONE — the panel exists. **NFR-04 IS VIOLATED and is reported, not fixed.**
+
+Built:       `data/v2/features.parquet`, 264 MB, materialised from the streamed 20,000 ×
+             365 dataset at the pre-registered geometry.
+
+Verified:    3,070,800 rows · 20,000 merchants · 300 epochs · `last_day: 299` ·
+             50,334,951 events replayed · 16,694.1s · 28 base + 21 residual features.
+             `rows_by_split: {train: 2,888,640, val: 182,160}` — **no test rows.** The
+             materialiser defaults `last_day` to the last VALIDATION day and refuses the
+             test split from this entry point, so days 300-364 were never replayed.
+             `RAKSHAK_UNLOCK` never set; `open_count` still 0 on all three locks.
+
+Surprised:   **`state_bytes_p99 = 9,716 B` against NFR-04's 4,096 B budget.**
+
+             | | bytes |
+             |---|---|
+             | NFR-04 budget (`STATE_BYTES_BUDGET`) | 4,096 |
+             | **Declared** total, summed over the register | 3,968 |
+             | **Measured** packed p99 over 20,000 merchants | **9,716** |
+
+             The import-time guard in `features/registry.py` passes, because it checks the
+             sum of each feature's **declared** `state_bytes` — 3,968, comfortably under.
+             `MerchantState.nbytes()` returns `len(pack(self))`, the actual packed wire
+             format, and its own docstring names this exact scenario: *"the registry checks
+             declared state_bytes at import so the budget fails at startup; this measures
+             what the declaration promised, so a feature that quietly outgrows its
+             declaration is caught in tests/perf/."*
+
+             **The mechanism the code anticipated has fired.** The declarations were
+             honest; the features outgrew them, and nothing between import and here
+             compares the two. A guard that validates a declaration rather than a
+             measurement passes precisely when the declaration is the thing that is wrong.
+
+Broke:       Nothing crashed. That is the point — this is a silent 2.37x overrun that no
+             gate, no import guard and no unit test caught, surfacing only because
+             `materialise()` happens to record a p99 in its summary.
+
+Decided:     **Not fixed, not tuned, not shrunk.** Under Prime Directive 5 a rung is adopted
+             only if it beats the previous rung by the declared margin **AND meets the
+             compute NFRs**. So this is not a footnote to the ladder — it is an open
+             adoption question hanging over EVERY rung scored on this panel, before a single
+             rung has been scored. Shrinking a feature's state now, after the panel exists
+             and before any rung is scored, would change the numbers every rung is about to
+             be judged on. That is the lead's call with a re-materialisation, not a patch.
+
+             It also converges with two findings already logged:
+             - **T-0119**: `capsules_as_of` is unbounded — `payer_is_new` and
+               `device_shared_payers` need per-merchant/per-device sets growing with
+               distinct payers and devices.
+             - **T-0120**: those are the same two quantities T-122 cut from the T2 register
+               as too large for NFR-04, and Rung 5 is therefore not servable under NFR-04
+               as it stands.
+             Three independent routes to the same conclusion: **the state budget is the
+             binding constraint on this design, and the register is already over it.**
+
+Numbers:     panel 3,070,800 × 49 features · 50,334,951 events · 16,694.1s (4h38m) ·
+             264,159,658 bytes · `state_bytes_p99` **9,716 B** vs 4,096 B budget (2.37x) ·
+             declared 3,968 B. Validation split only; no test-split number exists.
+
+Next:        Rungs 0-4 rescored on this panel, then T-0114 (the K-1 test). The NFR-04
+             overrun needs a lead decision BEFORE adoption is claimed for any rung — the
+             margin and the NFR are two separate clauses of Prime Directive 5 and both bind.
