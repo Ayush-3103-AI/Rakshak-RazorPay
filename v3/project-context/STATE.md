@@ -1,150 +1,158 @@
 <!-- HEAD
 FILE:     STATE.md
 PHASE:    resume point
-UPDATED:  2026-08-31
+UPDATED:  2026-09-02
 STATUS:   live — update at the end of EVERY session
-SUMMARY:  The resume point for Rakshak v2. Read this first, every session, before anything
-          else. It names the current block, the next ticket, and the exact files that ticket
-          needs. Nothing else should be loaded speculatively.
-OPEN:     charter §10 confirmed. Two spec defects raised by Lane A are unresolved — see below.
+SUMMARY:  The resume point for Rakshak v3. Read this first, every session, before anything
+          else. It names the current cycle, what is running, and the exact next action.
+          Nothing else should be loaded speculatively.
+OPEN:     The cycle-4 regeneration is IN FLIGHT. Two findings are banked and committed and
+          do not depend on it landing.
 -->
 
-# STATE — Rakshak v2
+# STATE — Rakshak, cycle 4
 
-**Cycle:** v2 · **Phase:** 5 (execute) · **Blocks 1–5 COMPLETE**
-**Next:** Lane D (model rungs) · **Window closes:** 3 Sep 2026 (freeze), submission 5 Sep
+**Cycle:** 4 · **Phase:** 5 (execute) · **Freeze:** 3 Sep 2026 · **Submission:** 5 Sep
 
 ---
 
 ## Where things stand
 
-**Sixteen tickets are done: T-100…T-102, T-110…T-116, T-120…T-122, T-130…T-133.**
-Three lanes ran in parallel and are merged.
+**Cycle 3 is complete and tagged `cycle3-ladder-immutable`.** Its numbers are frozen.
+Cycle 4 is regenerating the dataset underneath the same harness.
 
-Gate across the whole tree: `ruff` clean, `mypy --strict` clean (27 source files),
-**402 passed, 2 skipped, 2 xfailed.**
+**Cycle-4 protocol** (`project-context/12-spec-cycle4.md`), steps 1–5 of 8 done:
 
-- **The generator is fixed and frozen-in-practice.** 10,000 merchants × 180 days →
-  14.82M transactions in 53 s, 366 MB parquet. Realised population Fano **12.371** against
-  a 12.25 ± 1.0 target.
-- **The eval harness is FROZEN.** `EVAL-LOCK.json` is committed at `0a7172c` with
-  `open_count: 0`, frozen at tree `b4bb2ab`, **before any v2 model exists**. That ordering
-  is the whole claim.
-- **The feature layer is built.** 28 features, both runners each, max parity difference
-  1.871e-11.
-
-v1 is complete and frozen at tag `v1-frozen`. Its numbers are immutable.
-
----
-
-## §10 assumptions — CONFIRMED 2026-08-31
-
-Freeze **3 Sep**, submission **5 Sep** · v2 in its own tree at `ver-2/v3/`, v1 at tag
-`v1-frozen` · **10,000 merchants × 180 days** · **K = 50 reviews/day per 10,000 merchants**.
-
----
-
-## Next action — Lane D, and it is serial
-
-| Ticket | Depends on | Status |
+| # | step | status |
 |---|---|---|
-| **T-140** Rung 0 floors + Rung 1 rules | T-133 ✅ | **next** |
-| **T-141** Rung 2 LightGBM — the bar | T-140, T-120 ✅ | after |
-| **T-142** Rung 3 + cohort residual ⚠️ **the K-1 test** | T-141, T-121 ✅ | after |
-| **T-143** Rung 4 cost-in-loss | T-142 | P2, cut first |
-| **T-150** perf budgets | T-142 | parallel with T-143 |
-| **T-151** ⚠️ **OPEN THE TEST SPLIT — ONE-WAY DOOR** | T-150, every rung final | **not delegated** |
-| **T-152** report, LIMITATIONS, clean clone | T-151 | last |
+| 1 | tag the cycle-3 ladder immutable | ✅ `cycle3-ladder-immutable` |
+| 2 | write the survey, no code during it | ✅ three surveys, `13a` / `13b` / `13c`, ran in parallel |
+| 3 | pre-register cycle 4 | ✅ `docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`, committed `2ee6972` |
+| 4 | seal the lock, recording the previous as superseded | ✅ `EVAL-LOCK-CYCLE4.json`, `open_count: 0` |
+| 5 | regenerate the dataset | ⏳ **IN FLIGHT** — 40,000 × 365, ~2.7 GB |
+| 6 | rescore the full ladder, every floor and every rung | ☐ next |
+| 7 | implement and score the new rung | ☐ Rung 8 built; Rung 9 is cuttable |
+| 8 | open the test split, once, only if the §5 gate is met | ☐ **not delegated** |
 
-**T-142 is where charter K-1 gets its verdict.** Not T-121 — that clause was amended
-(see BOARD.md, dated) because it was arithmetically unreachable. If the Rung 3 vs Rung 2
-validation delta is under 5% relative, **K-1 has fired: write it in `LIMITATIONS.md` with
-the number and do NOT add features to rescue it.** A clean falsification is the result.
+Gate across the tree: `ruff` clean, `mypy --strict` clean (48 source files).
+
+---
+
+## The two findings. Both are committed and neither depends on the regeneration.
+
+**1. Time-to-detection was never measurable** (`LIMITATIONS.md` §8.7a). `detection_rate_d7`
+/ `d14` / `d30` read 0.000 for every rung *and every floor* in cycle 3 because drift onsets
+were confined to days 30–240 while the validation window opens on day 240. Verified against
+the committed ground truth: 294 fraud merchants, onset max 217. d7 needed onset ≥ 233 —
+**0 of 294 qualified**. An oracle scores 0.000 too. §8.7 is preserved unedited with a
+pointer; the numbers stand, the conclusion drawn from them does not.
+
+**2. `volume_rank` wins on exposure, not on detection** (`LIMITATIONS.md` §8.3a). At the
+same K, Rung 3 beats `volume_rank` on precision@K (0.869 vs 0.571) **and** recall@K (0.315
+vs 0.195) **and** calibration (ECE 0.0077 vs 0.4866) and still loses 27% on savings. No
+ranking-quality hypothesis produces that. `capacity.py` already ranks by expected rupees;
+it was ranking on `p_declared_monthly_gmv` — the *declared* figure, corrupted by the
+generator at σ = 0.55 — while `volume_rank` ranks on observed GMV and `true_loss` is
+`loss_fraction × post-onset realised GMV`. Against realised loss: declared ρ = **0.533**,
+observed ρ = **0.929**. At K = 15, exposure alone captures 20.5% of total loss when
+declared, 37.8% when observed, against an oracle's 46.2%.
+
+**Every savings verdict in §8.2–§8.5 was rendered through the weaker estimator**, including
+the cut of Rung 4. Not overturned — provisional, in a way they were not previously reported
+as being. The rescore is what settles them.
+
+---
+
+## Next action
+
+**Step 6 — rescore the full ladder on cycle-4 data, both exposure arms, five seeds.**
+
+```
+make features                      # ~70 min at --workers 10; the long pole
+make gates                         # G1-G5 must be green before any model trains
+uv run python -m rakshak.cli train --rung 2 --seed 42   # ... 43 44 45 46, then rung 3, 4
+uv run python -m rakshak.cli eval  --rung R --seed S --exposure declared
+uv run python -m rakshak.cli eval  --rung R --seed S --exposure realised
+```
+
+`--exposure declared` is the default and reproduces cycle 3's wiring exactly
+(`test_the_wrapper_is_a_no_op_when_the_exposures_agree` asserts byte-identity). Arm B is
+the pre-registered comparison. **Both arms, every rung, or the comparison is not
+controlled.**
 
 ---
 
 ## The three things that must not slip
 
-1. ~~EVAL-LOCK written before any model trains~~ — **done, T-133, committed `0a7172c`.**
-2. **The test split opens exactly once**, in T-151, after every rung is final.
-3. **`make all` passes from a clean clone** by T-152. Currently
-   `all: lint parity gen gates test`; `features` and `perf` still to be appended.
+1. ~~EVAL-LOCK written before any model trains~~ — done, twice. `eval_module_sha256` is
+   `c009e38d…` in **both** the cycle-3 and cycle-4 locks, byte-identical. **If that hash
+   ever differs, the cycle's central claim is broken and the pre-registration is void.**
+2. **The test split opens exactly once**, in step 8, and only if all four conditions in
+   `PRE-REGISTRATION-CYCLE4` §5 hold. It has been opened **zero** times.
+3. `cli.py` must call **both** `require_unlocked_or_refuse(split)` and `verify_lock()`
+   before any scoring path. The primitive refuses on anything but the literal string `"1"`.
 
 ---
 
-## Carry-forwards — items with an owner named, none of them optional
+## Declared in advance, so it cannot be discovered conveniently later
 
-**1. `cli.py` must call BOTH `require_unlocked_or_refuse(split)` and `verify_lock()` before
-any scoring path. Owner: Lane D.** Lane C built and tested the primitive but could not wire
-it — `cli.py` is Lane A's file and only has a `gen` subcommand today. The primitive refuses
-on anything but the literal string `"1"`: `"true"`, `"yes"`, `"TRUE"` all refuse. **This is
-the guard on the one-way door and nothing else guards it.**
-
-**2. `configs/scenario_v2.yaml` is missing two blocks the harness already depends on.**
-- `p_catch` is used by the §2 cost matrix, absent from §8 and from the YAML. Standing in as
-  a `CostParams` default of **0.80**. Belongs under `costs:`.
-- §4's HOLD thresholds are spec'd as config with no `decision:` block. Defaults **0.90 /
-  ₹25,000** named on `ActionPolicy`.
-Both are code defaults impersonating config, which is the "no magic numbers in `src/`" rule
-being bent. Fix when Lane D touches the decision path.
-
-**3. Two unresolved spec defects in `08-generator-v2-spec.md`, raised by Lane A, not patched
-around:**
-- §8's `P6_macro: {amplitude: 0.15}` is incompatible with §7's `mean |z| > 1.0` gate. At
-  Fano 12.25 a 15% relative shift is |z| ≈ 0.1. §4's own table already states effects in
-  sigma, so confounder magnitudes were made sigma-valued. **§8 should say sigma, or §7's
-  threshold should drop.**
-- §4 never says what window the sigma is read over, **and it changes the answer by 20×**.
-  Each event is currently read over its own duration. §4 should say so explicitly.
-
-**4. `verify_lock(strict=True)` should now be called from T-116**, since the generator has
-landed. Only `eval_module_sha256` is a hard fail today; strict promotes all three.
+- **The spec's test-fold yield estimate was wrong and the correction is pre-registered.**
+  `12-spec-cycle4.md` predicted 13 in-window onsets in the test fold; measured 9.0, of which
+  6.4 resolve. Confirmed analytically, not seed noise.
+- **R2 and R9 — 25% of the fraud mix — have zero probability of onsetting in either
+  evaluation window.** The affine rescale preserves relative position, so only R6 reaches
+  day 364. R2 is the slow-ramp bust-out *v1 failed on*. Per-typology latency for R2 and R9
+  is structurally uncomputable in cycle 4 and **must be reported as absent, not as zero.**
+  Not patched around: widening those windows makes two typologies easier than their peers,
+  which the spec rejected.
+- **Floors are priced REVIEW-only (₹250/error); rungs are priced on their own actions,
+  which may HOLD (₹8,250/error).** A 33× asymmetry. `savings_of_ranking`'s docstring claims
+  the comparison differs only in the score vector — true floor-vs-floor, false
+  floor-vs-rung. Fixing it means editing the locked eval package, so it is named and the
+  hash is left alone.
+- **The cycle-3 ladder was single-seed.** Every four-decimal number in it, including the
+  0.6017 floor cycle 4 is measured against, is weaker than it looks. Cycle 4 scores all five.
+- **INSEPARABLE is a pre-declared, acceptable outcome for Rung 9.** ~10 evaluable merchants,
+  ±13 pp standard error. A rung that does not clear its gate is reported as not adopted and
+  is **not tuned to rescue it.**
 
 ---
 
-## Live risk register
+## Carried defects with no owner
 
-| Risk | Status | Retired by |
-|---|---|---|
-| Generator is fiction; models measure the generator | **PARTIAL — G2 absent, not green** | needs BAF vendored |
-| Cohort-residual hypothesis is wrong (charter K-1) | **OPEN — and G5 says the premise may not hold** | T-142, then T-151 |
-| Cannot separate platform drift from fraud (K-4) | **OPEN — raw detector passed G5 too** | T-151 vs Rungs 2/3 |
-| Features are not online-computable | **RETIRED** | T-102 ✅, T-120 ✅, G4b ✅ on real data |
-| `make eval` does not reproduce on clean clone (K-5) | PARTIAL | CI job ✅, T-152 |
-| 48 hours is not enough for Lanes A–E | OPEN | scope cut order, charter §8 |
+**1. `tests/unit/test_cohort.py::test_what_the_cohort_residual_actually_does_under_p2` is
+RED and was red before cycle 4 began.** Measured 0.3677 against a bar of `raw × 0.85` =
+0.3647 — a 14.3% alert-rate reduction against a claimed >15%. Identical numbers before and
+after the cycle-4 config change, verified by stashing. The threshold was set on a different
+population and has drifted. **Not weakened to go green**; it needs either a re-derived
+threshold or an acknowledgement that the claim is now 14%, and that is a decision, not a
+patch.
 
-**Read `LIMITATIONS.md` §5 and §6 before writing any claim about the gates.** The external
-anchor is absent rather than green, and G5 currently passes for the raw detector too — so
-the demo premise the project was built around does not hold on this generator as it stands.
+**2. `configs/rung_roster.yaml` carries a `known_gap` and two `gap` fields saying
+`ADR-V3-001` has no file.** It now does — `docs/adr/ADR-V3-001-no-autograd.md`. The roster
+should cite that path when it is next regenerated.
 
----
-
-## Carried out of Block 1 — read before touching the store or a timestamp
-
-The tz-aware-UTC-nanosecond convention is not self-enforcing. duckdb renders `TIMESTAMPTZ`
-in the session timezone (`EventStore.__init__` pins `SET TimeZone='UTC'`, and
-`_as_contract_dtypes()` coerces every returned column — **do not add a duckdb read path that
-bypasses it**), and Windows has no system tz database, which is why `tzdata` is pinned.
+**3. The stale deferral list.** `00-charter-v2.md` §8, `06-requirements-v2.md` §E and this
+file's own predecessor all said Rungs 5–8 must not be started. GitHub #51 reversed that
+explicitly and they were built. The three documents have not been updated to match.
 
 ---
 
 ## Session log pointer
 
-`docs/logbook/T-*.md` — one file per ticket: built / surprised / broke. The surprise field is
-the one that matters. The three most valuable so far:
+`docs/logbook/T-*.md` — one file per ticket: built / surprised / broke. The surprise field
+is the one that matters. The three most valuable, still:
 
-- **T-111** — drawing counts at a flat `F_nb` over a *composed* intensity gave a realised
-  Fano of 15.11, because the variance of the intensity adds to the count variance. The unit
-  tests could not have caught it; they isolate the process at constant intensity. G1 did.
-- **T-113** — the R2 assertion took four attempts and three of them produced a number that
-  looked like a finding about R2 and was a finding about overdispersion (8.46σ → 0.66σ). At
-  Fano 12.25, almost every naive statistic measures the arrival process.
+- **T-111** — a flat `F_nb` over a *composed* intensity gave a realised Fano of 15.11,
+  because the variance of the intensity adds to the count variance. Unit tests could not
+  have caught it; they isolate the process at constant intensity. G1 did.
 - **T-120** — parity stayed green while every baseline was empty. **Parity says two runners
   agree; it never says they agree about something meaningful.**
-
----
-
-## Deferred (do not start)
-
-MIL (Rung 5), conformal risk control (Rung 6), HSMM-NB (Rung 7), neural TPP (Rung 8), any
-GNN, any UI.
+- **Cycle 4** — three literature surveys, run in parallel across quickest-change detection,
+  delayed-feedback/PU learning and the cost/decision layer, and **none of them predicted the
+  finding.** It came from reading `capacity.py` to answer a question one survey raised —
+  does the decision layer rank by probability or by expected value — finding it already
+  ranked by expected value, and realising that left exactly one place for the difference to
+  live. The surveys were still worth their cost: 13c reached the same mechanism
+  independently by tracing source, which is what turned one reading of the code into a
+  finding two methods agree on.
