@@ -506,6 +506,11 @@ it is in the table.
 
 ### 8.3 `volume_rank` is not a dumb floor on this generator, and every rung fails against it
 
+> **The two readings offered below were both under-supported — see §8.3a, which
+> measures the actual mechanism.** The gap is the exposure estimator the decision
+> layer is handed, not the rungs' detection: `declared_monthly_gmv` tracks realised
+> loss at Spearman 0.53, the observed GMV `volume_rank` uses tracks it at 0.93.
+
 | policy | savings |
 |---|---|
 | `all_pass` | 0.00000 |
@@ -530,6 +535,106 @@ Two readings, and this lane cannot settle between them: either the generator mak
 legible in volume alone, or a supervised model with 8 positives cannot recover what a size
 ranking gets for free. Both are worth stating; the first is a criticism of the generator and
 belongs next to §5's.
+
+### 8.3a Why `volume_rank` wins, measured: the rungs' exposure estimate, not their detection
+
+§8.3 records that every rung is FLOOR-FAIL on savings against `volume_rank` and offers two
+readings without settling between them — either the generator makes fraud too legible in
+volume alone, or a supervised model with too few positives cannot recover what a size
+ranking gets for free. **Neither is what is happening, and the evidence for a third reading
+is in the committed cycle-3 artefacts.**
+
+Start from the numbers that do not fit either reading. On the validation split at seed 42:
+
+| policy | PR-AUC | ECE | precision@K | recall@K | alerts/day | savings |
+|---|---|---|---|---|---|---|
+| `volume_rank` | 0.2169 | 0.4866 | 0.5714 | 0.1951 | 15 | **0.6017** |
+| Rung 3 | 0.8578 | 0.0077 | **0.8688** | **0.3150** | 15 | 0.4354 |
+
+Rung 3 alerts on the same number of merchants per day, catches **61% more fraud merchants**
+(recall@K 0.3150 vs 0.1951) at **52% higher precision**, and is **63× better calibrated**
+(ECE 0.0077 vs 0.4866). It still loses on rupees by 27%. A model that finds more fraud, more
+precisely, at the same alert budget, and saves less money is not being beaten on detection.
+It is being beaten on **how much each caught merchant is worth**, and that is a different
+term in the same product.
+
+**The decision layer already ranks by expected rupees, not by probability.**
+`eval/capacity.py::select_actions` ranks merchant-days by
+`benefit = cost_pass − min(cost_review, cost_hold)`, which expands to
+`0.8 · p · exposure_inr − 250` in the REVIEW branch. So the ranking is
+`p × exposure`, exactly as the cost-sensitive literature prescribes. The obvious
+intervention — "rank by expected value instead of by probability" — was already in place
+before cycle 3 was scored, and is not available as an improvement.
+
+**What differs between the two policies is the exposure estimator, and only that.**
+
+- The rungs reach the decision layer with `exposure_inr = p_declared_monthly_gmv`
+  (`cli.py:688`) — the monthly GMV the merchant **declared at onboarding**. The generator
+  corrupts that figure deliberately: `declaration_error_sigma: 0.55`, a lognormal spread of
+  declared against actual, and the config comments say why — the gap between declared and
+  actual *is* the signal feature F1 exists to read.
+- `volume_rank` ranks on the merchant's **observed captured GMV over the scored window**, an
+  event-stream quantity (`models/rung0_floors.py`, module docstring).
+
+Measured over the 294 fraud merchants carrying a real loss in the committed cycle-3 ground
+truth, against `true_loss_amount_inr`:
+
+| exposure estimator | Spearman ρ vs realised loss | Pearson r on logs |
+|---|---|---|
+| `declared_monthly_gmv` — what every rung uses | **+0.533** | +0.593 |
+| observed pre-window GMV — what `volume_rank` uses | **+0.929** | +0.938 |
+
+The two estimators agree with each other at ρ = 0.740 over all 20,000 merchants, and the sd
+of `log(observed / declared)` is **0.661** — the declaration error the config asked for,
+realised.
+
+**At the operating point, this is the whole gap.** Ranking merchants purely by an exposure
+estimate, with no fraud probability involved at all, captures this share of the total
+realised fraud loss in the top K:
+
+| K | by declared GMV | by observed GMV | perfect-foresight oracle |
+|---|---|---|---|
+| **15** (the actual alert budget) | 20.51% | **37.83%** | 46.18% |
+| 50 | 56.34% | 75.34% | 78.01% |
+| 100 | 80.41% | 88.37% | 90.02% |
+| 200 | 93.81% | 97.29% | 98.06% |
+
+At K = 15, observed GMV alone reaches **82% of the oracle's loss capture**. Declared GMV
+alone reaches 44%. `volume_rank` is not a dumb floor that happens to win: it is an exposure
+estimator with ρ = 0.93 against the quantity the savings metric integrates, and it is
+competing against rungs whose excellent `p` is being multiplied by an estimator at ρ = 0.53.
+
+**Consequences, and the last one is uncomfortable:**
+
+1. **§8.3's two readings are both under-supported by this evidence.** The generator's
+   volume/fraud confound is real and stays a stated limitation, but it is not what decided
+   this comparison — the confound would have to explain how a policy with *lower* recall and
+   *lower* precision saves *more*, and it does not.
+2. **This is a defect in harness wiring, not a modelling result.** `exposure_inr` is supplied
+   in `cli.py`, outside the hash-locked `eval/` package, and the decision layer prices
+   whatever it is handed. Handing it the least accurate of the two available estimators was a
+   choice nobody made deliberately, and it silently taxed every rung on the ladder.
+3. **The fix needs no model, no labels, no dependency and no eval-package edit.** Trailing
+   observed GMV is an online-computable per-merchant quantity — Prime Directive 4's own
+   standard — and `volume_rank` already demonstrates it is admissible point-in-time under the
+   leakage gate.
+4. **Every savings number in §8.3, §8.4 and §8.5 was measured under the weaker estimator**,
+   so they understate what the rungs' ranking is worth. They are not being restated here —
+   the cycle-3 ladder is tagged `cycle3-ladder-immutable` and its numbers stand as recorded.
+   Cycle 4 rescores the whole ladder and the comparison is the point.
+5. **The adoption verdicts do not automatically survive.** §8.5 cut Rung 4 (cost-in-loss) as a
+   clean negative on savings, and §8.2 recorded that Rung 3's savings margin was negative. Both
+   verdicts were rendered on a savings number computed through the weaker exposure estimator.
+   They are not overturned here — that requires the rescore — but they are **provisional in a
+   way they were not previously reported as being**, and a reader is entitled to know it.
+
+**How this was found, stated plainly for the record.** It was not predicted by any of the
+three cycle-4 literature surveys, all of which reached for the cost-sensitive learning,
+calibration and budgeted-allocation literatures. It came from reading `capacity.py` to answer
+a question one survey raised — whether the decision layer ranks by probability or by expected
+value — and finding that it ranks by expected value, which made the exposure term the only
+remaining place the difference could live. The measurement above was then a direct check of
+that single hypothesis on data that already existed.
 
 ### 8.4 The static rule engine out-ranks LightGBM by 5×, and loses on everything else
 
