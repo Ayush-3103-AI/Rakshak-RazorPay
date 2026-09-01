@@ -665,15 +665,26 @@ def test_the_committed_artifacts_are_what_this_generator_produces(tmp_path: Path
 
 
 def _chain(tmp_path: Path, *, cycle3_sha: str) -> Path:
-    """The real locks plus a synthetic cycle 3 that MOVES the enforced hash.
+    """The real locks up to cycle 2, plus a synthetic cycle 3 that MOVES the enforced hash.
 
     Copied from the real files rather than written from scratch so the fixture cannot drift
     from the shape the real locks have, and always into ``tmp_path`` — this package must
-    never author a lock, and ``EVAL-LOCK-CYCLE3.json`` is the lead's to seal.
+    never author a lock, and the real cycle locks are the lead's to seal.
+
+    **Only locks below the synthetic one are copied, and that is load-bearing.** This helper
+    originally copied every ``EVAL-LOCK*.json`` in the repo, which was correct while cycle 3
+    was the newest. When ``EVAL-LOCK-CYCLE4.json`` was sealed it began being copied too,
+    superseded the synthetic cycle 3, and became the live lock — so a row written against
+    the synthetic hash correctly read as stale and two tests turned red without either the
+    tests or the code under them changing. The fixture, not the assertion, was wrong: it
+    means "the chain this synthetic lock sits at the head of".
     """
     root = tmp_path / "root"
     root.mkdir()
     for path in REPO_ROOT.glob("EVAL-LOCK*.json"):
+        body = json.loads(path.read_text(encoding="utf-8"))
+        if int(body.get("cycle", 1)) >= 3:
+            continue
         (root / path.name).write_bytes(path.read_bytes())
     body = json.loads((root / "EVAL-LOCK-CYCLE2.json").read_text(encoding="utf-8"))
     (root / "EVAL-LOCK-CYCLE3.json").write_text(

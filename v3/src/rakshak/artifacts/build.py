@@ -99,7 +99,20 @@ LOCK_HASH_KEYS: Final = (
 #: Every float field on ``EvalResult``, derived from the dataclass so that a metric added
 #: upstream reaches the dashboard without this file being edited.
 _NON_METRIC: Final = frozenset(
-    {"rung", "split", "recall_by_typology", "floor_fail", "eval_lock_sha", "git_sha", "open_count"}
+    {
+        "rung",
+        "split",
+        "recall_by_typology",
+        "floor_fail",
+        "eval_lock_sha",
+        "git_sha",
+        "open_count",
+        # `label` is the policy's name, not a measurement. METRIC_KEYS is derived from
+        # EvalResult's fields precisely so a metric added upstream reaches the dashboard
+        # without editing this file — which means a non-metric added upstream must be
+        # excluded here, or the ladder publishes a string in a float column.
+        "label",
+    }
 )
 METRIC_KEYS: Final[tuple[str, ...]] = tuple(
     f.name for f in fields(EvalResult) if f.name not in _NON_METRIC and f.name != "cost_scenario"

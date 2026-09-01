@@ -179,8 +179,26 @@ def generated() -> Any:
     from rakshak.generator import engine
 
     cfg = gen_config.load_scenario("configs/scenario_v2.yaml")
-    pop = dataclasses.replace(cfg.population, n_merchants=60, n_days=45)
-    data = engine.generate(dataclasses.replace(cfg, population=pop), np.random.default_rng(3))
+    n_days = 45
+    pop = dataclasses.replace(cfg.population, n_merchants=60, n_days=n_days)
+    # The validator requires `splits.test_end_day == population.n_days - 1`, so shrinking
+    # the horizon without shrinking the splits leaves the real 365-day boundaries behind a
+    # 45-day window and raises ConfigError before a single event is generated — the fixture
+    # errors and these tests do not run at all, which reads as an error rather than as a
+    # failure and is easy to skim past. `tests/unit/test_cohort.py` hit exactly this and
+    # fixed it there; this copy was left behind. Scale with the window so the miniature
+    # keeps the real proportions rather than inventing new ones.
+    s = cfg.splits
+    scale = n_days / cfg.population.n_days
+    splits = dataclasses.replace(
+        s,
+        train_end_day=round((s.train_end_day + 1) * scale) - 1,
+        val_end_day=round((s.val_end_day + 1) * scale) - 1,
+        test_end_day=n_days - 1,
+    )
+    data = engine.generate(
+        dataclasses.replace(cfg, population=pop, splits=splits), np.random.default_rng(3)
+    )
     profiles = {r["merchant_id"]: MerchantProfile(**r) for r in data.profiles.to_dicts()}
     tier1.load_profiles(profiles)
     return data, profiles
