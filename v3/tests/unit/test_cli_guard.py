@@ -21,10 +21,12 @@ What is asserted here:
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from rakshak import cli
@@ -126,3 +128,47 @@ def test_the_real_lock_still_verifies_and_the_door_has_not_been_opened() -> None
     drift = verify_lock(cli.ROOT)
     assert {d.key for d in drift} <= {"generator_module_sha256", "scenario_config_sha256"}
     assert read_open_count(cli.ROOT) == 0
+
+
+# ── the sidecar guard: fitted state must not vanish on reload ────────────────
+
+
+def _write_sidecar(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, extra: dict) -> None:
+    body = {
+        "rung": 5, "seed": 42, "train_as_of_day": 239,
+        "columns": ["a", "b"], "n_columns": 2,
+        "n_train_rows": 10, "n_train_positive_rows": 1,
+        "n_train_positive_merchants": 1, "train_seconds": 0.1,
+        "model_size_mb": 0.01, "hparams": {}, "label_coverage_at_train_boundary": {},
+        **extra,
+    }
+    side = tmp_path / "sidecar.json"
+    side.write_text(json.dumps(body), encoding="utf-8")
+    monkeypatch.setattr(cli, "_sidecar_path", lambda rung, seed: side)
+
+
+def test_a_sidecar_carrying_unreconstructed_state_refuses_to_load(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Rung 5 fits `pooling` and `tau`; TrainedRung has nowhere to put them.
+
+    Without this, the reload returns a rung scoring with the DEFAULT pooling while every
+    label, filename and log line still says Rung 5 — a wrong number that looks entirely
+    ordinary and raises nowhere, because a bare TrainedRung is perfectly valid.
+    """
+    _write_sidecar(tmp_path, monkeypatch, {"pooling": "lse", "tau": 3.0})
+    with pytest.raises(typer.BadParameter, match="pooling"):
+        cli._load_trained(5, 42)
+
+
+def test_the_guard_does_not_fire_on_the_sidecar_train_actually_writes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The negative control. A guard that rejects everything would pass the test above
+    while breaking rungs 2-4, so this pins the exact key set `train` emits today."""
+    _write_sidecar(tmp_path, monkeypatch, {})
+    monkeypatch.setattr(cli, "_model_path", lambda rung, seed: tmp_path / "absent.txt")
+    # Gets past the guard and fails later, on the missing booster — which is the point.
+    with pytest.raises(Exception) as exc:
+        cli._load_trained(5, 42)
+    assert not isinstance(exc.value, typer.BadParameter), exc.value

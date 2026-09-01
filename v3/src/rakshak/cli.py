@@ -27,7 +27,7 @@ import time as _time
 from datetime import UTC, datetime, time, timedelta
 from hashlib import blake2b
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import numpy as np
 import polars as pl
@@ -599,11 +599,61 @@ def train(
     typer.echo(json.dumps(summary, indent=2))
 
 
+#: Everything ``_load_trained`` below actually reads back out of a sidecar. A saved rung is
+#: reconstructed from these keys and nothing else, so a key written at train time and absent
+#: here is state that is silently dropped on reload.
+_SIDECAR_RECONSTRUCTED: Final = frozenset(
+    {
+        "columns",
+        "hparams",
+        "n_train_rows",
+        "n_train_positive_rows",
+        "n_train_positive_merchants",
+        "train_seconds",
+    }
+)
+
+#: Written for provenance and deliberately not reconstructed — they describe the run or are
+#: derivable from what is, so rebuilding the model without them loses nothing. Kept as an
+#: explicit list rather than an "ignore the rest" rule: the whole point is that a NEW key
+#: nobody has classified stops the reload instead of vanishing from it.
+_SIDECAR_PROVENANCE_ONLY: Final = frozenset(
+    {
+        "rung",
+        "seed",
+        "train_as_of_day",
+        "n_columns",
+        "model_size_mb",
+        "label_coverage_at_train_boundary",
+    }
+)
+
+
 def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung:
+    """Rebuild a trained rung from its booster file and sidecar.
+
+    **Refuses a sidecar carrying state it cannot rebuild.** Rung 5 (T-0120) fits a
+    ``pooling`` and a ``tau`` at train time; ``TrainedRung`` has nowhere to put them, so a
+    reload would return a rung that scores with the *default* pooling while every label,
+    filename and log line still called it Rung 5. That is a wrong number that looks
+    entirely ordinary — the failure mode this project is built to refuse — and it would not
+    raise anywhere, because a bare ``TrainedRung`` is perfectly valid.
+
+    So the check is on the sidecar, not on the rung number: any future rung that saves
+    fitted state hits it too, without anyone remembering to come back here.
+    """
     import lightgbm as lgb
 
     path = _model_path(rung, seed)
     sidecar = json.loads(_sidecar_path(rung, seed).read_text(encoding="utf-8"))
+    dropped = set(sidecar) - _SIDECAR_RECONSTRUCTED - _SIDECAR_PROVENANCE_ONLY
+    if dropped:
+        raise typer.BadParameter(
+            f"rung {rung} seed {seed}: the sidecar carries {sorted(dropped)}, which "
+            f"_load_trained does not reconstruct. Reloading would return a rung missing "
+            f"that fitted state and score with defaults under the right name. Extend "
+            f"_load_trained and _SIDECAR_RECONSTRUCTED together, or do not persist it."
+        )
     return rung2_lgbm.TrainedRung(
         rung=rung,
         booster=lgb.Booster(model_file=str(path)),
