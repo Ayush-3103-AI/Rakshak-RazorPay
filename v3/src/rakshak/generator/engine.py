@@ -27,13 +27,16 @@ detail that is already public in the fraud-detection literature.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 import polars as pl
+import pyarrow.parquet as pq
 
 from rakshak.generator import personas as personas_mod
 from rakshak.generator.arrivals import (
@@ -82,16 +85,50 @@ INSTRUMENT_ORDER = list(Instrument)
 
 TABLES = ("transactions", "profiles", "payouts", "labels", "ground_truth")
 
+#: Target rows per transaction block. The transaction table is built, hashed and written
+#: one merchant-contiguous block at a time and never materialised whole, because at the
+#: pre-registered 20,000 x 365 geometry the whole frame is ~19 GB of polars string views
+#: on a 16 GB box. Blocks are cut on merchant boundaries and ``merchant_id`` is a
+#: zero-padded fixed-width string, so lexicographic merchant order equals numeric merchant
+#: order and concatenating the blocks in order reproduces the whole-frame sort exactly --
+#: which is what makes this a memory change and not a data change.
+_BLOCK_ROWS = 2_000_000
 
-@dataclass(frozen=True, slots=True)
+
+@dataclass(frozen=True)
 class GeneratedData:
-    """The five tables, as polars frames conforming to the schemas in ``schemas.py``."""
+    """The five tables, as polars frames conforming to the schemas in ``schemas.py``.
 
-    transactions: pl.DataFrame
+    Four of them are small enough to hold. ``transactions`` is not: 20,000 merchants x
+    365 days is ~72M rows and ~19 GB once polars has laid out the string columns, so it
+    is carried as ``blocks`` -- a factory that replays the table in merchant-contiguous
+    pieces on demand. ``write`` and ``sha256`` consume it one block at a time and never
+    hold more than one; the ``transactions`` property materialises the whole thing for
+    the tests and the gates, which run at a geometry where that is affordable.
+    """
+
+    blocks: Callable[[], Iterator[pl.DataFrame]]
+    n_transactions: int
     profiles: pl.DataFrame
     payouts: pl.DataFrame
     labels: pl.DataFrame
     ground_truth: pl.DataFrame
+
+    @cached_property
+    def transactions(self) -> pl.DataFrame:
+        """The whole transaction table. Only touch this at a geometry that fits in RAM."""
+        frames = list(self.blocks())
+        if not frames:
+            return pl.DataFrame(schema=TRANSACTION_SCHEMA)
+        return pl.concat(frames, rechunk=True)
+
+    @property
+    def row_counts(self) -> dict[str, int]:
+        """Rows per table, without materialising ``transactions``."""
+        return {
+            name: self.n_transactions if name == "transactions" else getattr(self, name).height
+            for name in TABLES
+        }
 
     def write(self, root: Path | str) -> dict[str, Path]:
         """Write one parquet per table. ``ground_truth`` and ``labels`` land in the same
@@ -102,9 +139,32 @@ class GeneratedData:
         paths = {}
         for name in TABLES:
             path = out / f"{name}.parquet"
-            getattr(self, name).write_parquet(path)
+            if name == "transactions":
+                self._write_transactions(path)
+            else:
+                getattr(self, name).write_parquet(path)
             paths[name] = path
         return paths
+
+    def _write_transactions(self, path: Path) -> None:
+        """Stream the transaction blocks into one parquet, one row group per block.
+
+        pyarrow rather than ``DataFrame.write_parquet`` only because polars has no
+        append: the row values and their order are exactly what a whole-frame write
+        would have produced, and the result is one ordinary parquet file either way.
+        """
+        writer: pq.ParquetWriter | None = None
+        try:
+            for block in self.blocks():
+                table = block.to_arrow()
+                if writer is None:
+                    writer = pq.ParquetWriter(path, table.schema, compression="zstd")
+                writer.write_table(table)
+        finally:
+            if writer is not None:
+                writer.close()
+        if writer is None:
+            pl.DataFrame(schema=TRANSACTION_SCHEMA).write_parquet(path)
 
     def sha256(self) -> str:
         """A content hash over all five tables. Gate G3 compares two runs on this.
@@ -112,9 +172,22 @@ class GeneratedData:
         Hashing the frames rather than the parquet files is deliberate: parquet embeds a
         writer version and can vary its compression blocks, so file bytes would report
         RED for reasons that have nothing to do with an unseeded RNG.
+
+        ``hash_rows`` is row-local, so feeding it the transaction blocks in order gives
+        byte-identical input to feeding it the concatenated frame. Asserted in
+        ``tests/unit/test_generator_memory.py``.
         """
         digest = hashlib.sha256()
-        for name in TABLES:
+        digest.update(b"transactions")
+        schema_written = False
+        for block in self.blocks():
+            if not schema_written:
+                digest.update(str(block.schema).encode())
+                schema_written = True
+            digest.update(block.hash_rows().to_numpy().tobytes())
+        if not schema_written:
+            digest.update(str(pl.DataFrame(schema=TRANSACTION_SCHEMA).schema).encode())
+        for name in TABLES[1:]:
             frame: pl.DataFrame = getattr(self, name)
             digest.update(name.encode())
             digest.update(str(frame.schema).encode())
@@ -247,6 +320,7 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     t_merchant = (md // n_days).astype(np.int64)
     t_day = (md % n_days).astype(np.int64)
     t_progress = progress.ravel()[md]
+    del md
 
     offsets = np.concatenate(([0], np.cumsum(flat)[:-1]))
     rank = np.arange(total, dtype=np.int64) - np.repeat(offsets, flat)
@@ -263,6 +337,7 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
         rank=rank,
         group_n=group_n,
     )
+    del rank, group_n
 
     # ── Hawkes self-excitation, for the bursty typologies only ───────────────
     child_parent, child_secs = _hawkes_children(
@@ -283,6 +358,7 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     round_hit = rng.random(total) < t_round[m_of] * t_progress
     amount = np.where(round_hit, rng.choice(round_values, size=total), amount)
     amount = np.maximum(np.round(amount), 1.0)
+    del mu_t, sigma_t, micro_hit, round_hit
 
     instrument = _draw_instruments(
         rng,
@@ -303,6 +379,7 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
         1.0,
     )
     is_cnp = rng.random(total) < cnp_p
+    del cnp_p
 
     fail_p = np.clip(
         fail_rate[m_of]
@@ -314,9 +391,11 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     u_status = rng.random(total)
     failed = u_status < fail_p
     pending = (~failed) & (u_status < fail_p + marks.pending_rate)
+    del u_status
 
     bin_pool_size = np.where(t_progress > 0.0, t_bin_pool[m_of], float(marks.bin_pool_global))
     bin_id = (rng.random(total) * bin_pool_size).astype(np.int64)
+    del bin_pool_size
 
     payer_id = _draw_payers(
         rng,
@@ -345,6 +424,7 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     if drift_hit.any():
         picks = rng.integers(0, drift_codes.size, size=int(drift_hit.sum()))
         txn_mcc[drift_hit] = drift_codes[picks]
+    del drift_hit
 
     event_ns = start_ns + t_day * NS_PER_DAY + (secs * 1e9).astype(np.int64)
 
@@ -353,49 +433,46 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     # That is what makes f_retry_burst_rate and f_auth_fail_rate_z separate R3 from a
     # merchant that simply got busier.
     n_child = child_parent.size
+    # Guarded, not computed-then-discarded: these are ``rng`` draws, and whether a
+    # zero-length draw advances the bit generator is not a thing this file should have an
+    # opinion about. The old code only reached them when there were children.
     if n_child:
         child_ns = (
-            start_ns
-            + t_day[child_parent] * NS_PER_DAY
-            + (child_secs * 1e9).astype(np.int64)
+            start_ns + t_day[child_parent] * NS_PER_DAY + (child_secs * 1e9).astype(np.int64)
         )
         child_amount = np.maximum(
             np.round(rng.uniform(1.0, marks.micro_amount_max, size=n_child)), 1.0
         )
         child_failed = rng.random(n_child) < 0.5 + 0.5 * fail_p[child_parent]
-        merged = _MarkArrays(
-            merchant=np.concatenate([t_merchant, t_merchant[child_parent]]),
-            day=np.concatenate([t_day, t_day[child_parent]]),
-            event_ns=np.concatenate([event_ns, child_ns]),
-            amount=np.concatenate([amount, child_amount]),
-            instrument=np.concatenate([instrument, instrument[child_parent]]),
-            is_cnp=np.concatenate([is_cnp, is_cnp[child_parent]]),
-            failed=np.concatenate([failed, child_failed]),
-            pending=np.concatenate([pending, np.zeros(n_child, dtype=bool)]),
-            bin_id=np.concatenate([bin_id, bin_id[child_parent]]),
-            payer_id=np.concatenate([payer_id, payer_id[child_parent]]),
-            device_id=np.concatenate([device_id, device_id[child_parent]]),
-            ip_id=np.concatenate([ip_id, ip_id[child_parent]]),
-            mcc=np.concatenate([txn_mcc, txn_mcc[child_parent]]),
-            progress=np.concatenate([t_progress, t_progress[child_parent]]),
-        )
-    else:
-        merged = _MarkArrays(
-            merchant=t_merchant,
-            day=t_day,
-            event_ns=event_ns,
-            amount=amount,
-            instrument=instrument,
-            is_cnp=is_cnp,
-            failed=failed,
-            pending=pending,
-            bin_id=bin_id,
-            payer_id=payer_id,
-            device_id=device_id,
-            ip_id=ip_id,
-            mcc=txn_mcc,
-            progress=t_progress,
-        )
+
+    merged = _MarkArrays(
+        merchant=t_merchant,
+        day=t_day,
+        event_ns=event_ns,
+        amount=amount,
+        instrument=instrument,
+        is_cnp=is_cnp,
+        failed=failed,
+        pending=pending,
+        bin_id=bin_id,
+        payer_id=payer_id,
+        device_id=device_id,
+        ip_id=ip_id,
+        mcc=txn_mcc,
+        progress=t_progress,
+    )
+    # Every per-transaction array is now reachable through ``merged``, and only through
+    # ``merged`` once these names are gone. That is not tidiness: at 20,000 x 365 the
+    # mark stream is ~5.6 GB, and a second live reference to any column is what turns the
+    # child append below into a second whole copy of it.
+    del t_merchant, t_day, m_of, event_ns, amount, instrument, is_cnp, failed, pending
+    del bin_id, payer_id, device_id, ip_id, txn_mcc, t_progress
+    del secs, flat, offsets, counts, lam, shape, typ_mult, fail_p
+
+    if n_child:
+        _append_children(merged, child_parent, child_ns, child_amount, child_failed)
+        del child_ns, child_amount, child_failed
+    del child_parent, child_secs
 
     # ── refunds ──────────────────────────────────────────────────────────────
     refunds = _draw_refunds(
@@ -409,7 +486,8 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
         end_ns=end_ns,
     )
 
-    transactions = _build_transaction_frame(config, merged, refunds, n)
+    def transaction_blocks() -> Iterator[pl.DataFrame]:
+        return _transaction_blocks(config, merged, refunds, n)
 
     # ── settlement and payouts ───────────────────────────────────────────────
     net = np.where(merged.failed | merged.pending, 0.0, merged.amount)
@@ -504,7 +582,8 @@ def generate(config: ScenarioConfig, rng: np.random.Generator) -> GeneratedData:
     ).select(list(GROUND_TRUTH_SCHEMA))
 
     return GeneratedData(
-        transactions=transactions,
+        blocks=transaction_blocks,
+        n_transactions=int(merged.merchant.size + refunds.parent.size),
         profiles=profiles,
         payouts=payouts,
         labels=labels,
@@ -878,12 +957,127 @@ def _draw_refunds(
     )
 
 
-def _build_transaction_frame(
+def _transaction_blocks(
     config: ScenarioConfig, marks_arr: _MarkArrays, refunds: _Refunds, n_merchants: int
+) -> Iterator[pl.DataFrame]:
+    """The transaction table, in merchant-contiguous blocks, in merchant order.
+
+    Each block is sorted on the same key as the whole frame was, and the blocks partition
+    the merchants in ascending order, so ``pl.concat`` of the blocks is row-for-row the
+    frame the single whole-population sort used to produce. ``event_id`` is derived from
+    the row's position in the *unsplit* stream, which is why the global row indices are
+    threaded through rather than recomputed per block.
+    """
+    n_base = int(marks_arr.merchant.size)
+    per_merchant = max(1.0, (n_base + refunds.parent.size) / max(n_merchants, 1))
+    block = max(1, int(_BLOCK_ROWS / per_merchant))
+    for m0 in range(0, n_merchants, block):
+        m1 = m0 + block
+        base_rows = np.flatnonzero((marks_arr.merchant >= m0) & (marks_arr.merchant < m1))
+        ref_rows = np.flatnonzero((refunds.merchant >= m0) & (refunds.merchant < m1))
+        if base_rows.size == 0 and ref_rows.size == 0:
+            continue
+        # A refund carries its capture's merchant, so its parent is always inside the
+        # same merchant block -- which is what lets the block be built in isolation. The
+        # equality below is that assumption, checked rather than asserted in a comment.
+        parent_rows = refunds.parent[ref_rows]
+        parent_local = np.searchsorted(base_rows, parent_rows)
+        if parent_local.size and not np.array_equal(base_rows[parent_local], parent_rows):
+            raise AssertionError(
+                f"merchant block [{m0}, {m1}) contains a refund whose capture is outside "
+                "it; the block decomposition assumes a refund never crosses merchants"
+            )
+        yield _build_transaction_frame(
+            config,
+            _take_marks(marks_arr, base_rows),
+            _take_refunds(refunds, ref_rows, parent_local),
+            base_rows,
+            n_base + ref_rows,
+            parent_rows,
+        )
+
+
+def _append_children(
+    a: _MarkArrays, parent: I64, event_ns: I64, amount: F64, failed: B1
+) -> None:
+    """Append the Hawkes retry burst to a mark stream, in place, field by field.
+
+    Children inherit the parent's payer, device, instrument and MCC -- a retry burst is
+    the same actor trying again -- but are micro-amount and overwhelmingly declined. That
+    is what makes ``f_retry_burst_rate`` and ``f_auth_fail_rate_z`` separate R3 from a
+    merchant that simply got busier.
+
+    In place, one field at a time, because the obvious version -- a fresh ``_MarkArrays``
+    built from fourteen ``np.concatenate`` calls -- holds two complete copies of the mark
+    stream at once. Reassigning the attribute drops the old array immediately, so the
+    overshoot is one column rather than the whole table.
+    """
+    n = parent.size
+    a.merchant = np.concatenate([a.merchant, a.merchant[parent]])
+    a.day = np.concatenate([a.day, a.day[parent]])
+    a.event_ns = np.concatenate([a.event_ns, event_ns])
+    a.amount = np.concatenate([a.amount, amount])
+    a.instrument = np.concatenate([a.instrument, a.instrument[parent]])
+    a.is_cnp = np.concatenate([a.is_cnp, a.is_cnp[parent]])
+    a.failed = np.concatenate([a.failed, failed])
+    a.pending = np.concatenate([a.pending, np.zeros(n, dtype=bool)])
+    a.bin_id = np.concatenate([a.bin_id, a.bin_id[parent]])
+    a.payer_id = np.concatenate([a.payer_id, a.payer_id[parent]])
+    a.device_id = np.concatenate([a.device_id, a.device_id[parent]])
+    a.ip_id = np.concatenate([a.ip_id, a.ip_id[parent]])
+    a.mcc = np.concatenate([a.mcc, a.mcc[parent]])
+    a.progress = np.concatenate([a.progress, a.progress[parent]])
+
+
+def _take_marks(a: _MarkArrays, idx: I64) -> _MarkArrays:
+    """The subset of a mark stream at ``idx``, field by field."""
+    return _MarkArrays(
+        merchant=a.merchant[idx],
+        day=a.day[idx],
+        event_ns=a.event_ns[idx],
+        amount=a.amount[idx],
+        instrument=a.instrument[idx],
+        is_cnp=a.is_cnp[idx],
+        failed=a.failed[idx],
+        pending=a.pending[idx],
+        bin_id=a.bin_id[idx],
+        payer_id=a.payer_id[idx],
+        device_id=a.device_id[idx],
+        ip_id=a.ip_id[idx],
+        mcc=a.mcc[idx],
+        progress=a.progress[idx],
+    )
+
+
+def _take_refunds(r: _Refunds, idx: I64, parent_local: I64) -> _Refunds:
+    """The subset of a refund stream at ``idx``, re-based onto a block.
+
+    ``parent`` becomes an index into the *block's* mark arrays, because that is what the
+    inherited marks (instrument, BIN, payer, device, MCC) are looked up through. The
+    global parent row -- the one ``refund_of`` names an ``event_id`` from -- is threaded
+    separately.
+    """
+    return _Refunds(
+        parent=parent_local,
+        merchant=r.merchant[idx],
+        day=r.day[idx],
+        event_ns=r.event_ns[idx],
+        amount=r.amount[idx],
+    )
+
+
+def _build_transaction_frame(
+    config: ScenarioConfig,
+    marks_arr: _MarkArrays,
+    refunds: _Refunds,
+    base_rows: I64,
+    ref_rows: I64,
+    refund_parent_rows: I64,
 ) -> pl.DataFrame:
     marks = config.marks
     n_base = marks_arr.merchant.size
     n_ref = refunds.parent.size
+    row = np.concatenate([base_rows, ref_rows])
 
     merchant = np.concatenate([marks_arr.merchant, refunds.merchant])
     event_ns = np.concatenate([marks_arr.event_ns, refunds.event_ns])
@@ -912,13 +1106,13 @@ def _build_transaction_frame(
     # row index rather than drawing keeps f_decline_entropy well spread without consuming
     # a 12M-element random draw for a field nothing measures the *distribution* of.
     codes = np.array(marks.decline_codes, dtype=object)
-    slot = np.arange(n_base + n_ref, dtype=np.int64) % codes.size
+    slot = row % codes.size
     decline_code = np.full(n_base + n_ref, None, dtype=object)
     decline_code[failed] = codes[slot[failed]]
 
     frame = pl.DataFrame(
         {
-            "row": np.arange(n_base + n_ref, dtype=np.int64),
+            "row": row,
             "merchant": merchant,
             "payer": payer_id,
             "event_time": _ts(event_ns),
@@ -935,7 +1129,7 @@ def _build_transaction_frame(
             "mcc": pl.Series(mcc.tolist(), dtype=pl.String),
             "is_refund": is_refund,
             "refund_parent": np.concatenate(
-                [np.full(n_base, -1, dtype=np.int64), refunds.parent]
+                [np.full(n_base, -1, dtype=np.int64), refund_parent_rows]
             ),
             "decline_code": pl.Series(decline_code.tolist(), dtype=pl.String),
         }

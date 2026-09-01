@@ -199,7 +199,7 @@ def gen(
         "prevalence": scenario.population.prevalence,
         "confounders_enabled": scenario.confounders.enabled,
         "analyst_capacity_k": scenario.analyst_capacity,
-        "rows": {name: getattr(data, name).height for name in paths},
+        "rows": {name: data.row_counts[name] for name in paths},
         "content_sha256": data.sha256(),
     }
     (Path(out) / "run_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

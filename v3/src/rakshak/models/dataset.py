@@ -150,6 +150,36 @@ def _merchant_blocks(frame: pl.DataFrame) -> Iterator[tuple[str, pl.DataFrame]]:
         yield str(ids[lo]), frame.slice(int(lo), int(hi - lo))
 
 
+#: Merchants per scan pass. See ``_merchant_blocks_batched``.
+MERCHANT_BATCH = 2_000
+
+
+def _merchant_blocks_batched(
+    path: Path, as_of_max: datetime, merchants: list[str], batch: int = MERCHANT_BATCH
+) -> Iterator[tuple[str, pl.DataFrame]]:
+    """``_merchant_blocks``, but reading the stream a merchant-batch at a time.
+
+    Collecting the whole in-window stream at once was fine at cycle 1's 10,000 x 180
+    (12.9M rows). At the T-0101 geometry (20,000 x 365; ~50M rows in the 0-299 window,
+    six of them string columns) it commits well over this machine's 16 GB and thrashes
+    the pagefile, so the replay never finishes. Per-merchant state never interacts across
+    merchants, so the stream can be read in batches instead: peak memory is one batch,
+    at the cost of one parquet scan per batch.
+
+    Order is identical to the unbatched walk — ``merchants`` is sorted and each batch is
+    sorted merchant-major — so the panel this produces is the same panel.
+    """
+    for start in range(0, len(merchants), batch):
+        chunk = merchants[start : start + batch]
+        frame = (
+            pl.scan_parquet(path)
+            .filter((pl.col("event_time") <= as_of_max) & pl.col("merchant_id").is_in(chunk))
+            .sort(["merchant_id", "event_time", "event_id"])
+            .collect()
+        )
+        yield from _merchant_blocks(frame)
+
+
 @dataclass(frozen=True, slots=True)
 class Panel:
     """The materialised feature matrix, plus the identifiers every metric needs.
@@ -259,15 +289,11 @@ def materialise(
     active = np.zeros((len(merchants), len(days)), dtype=bool)
     state_bytes: list[int] = []
 
-    frame = (
-        pl.scan_parquet(root / "transactions.parquet")
-        .filter(pl.col("event_time") <= as_ofs[-1])
-        .sort(["merchant_id", "event_time", "event_id"])
-        .collect()
-    )
     started = _time.perf_counter()
     seen = 0
-    for merchant_id, block in _merchant_blocks(frame):
+    for merchant_id, block in _merchant_blocks_batched(
+        root / "transactions.parquet", as_ofs[-1], merchants
+    ):
         row = index[merchant_id]
         state = MerchantState(merchant_id=merchant_id, profile=profiles[merchant_id])
         events = block.iter_rows(named=True)
