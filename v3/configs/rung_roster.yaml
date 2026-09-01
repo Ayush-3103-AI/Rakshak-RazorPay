@@ -27,13 +27,13 @@ schema: rung_roster/v1
 # The set the emitter and the contract validate against. UNVERIFIED is uppercase so it is
 # impossible to skim past.
 statuses:
-  - 'planned # ticket exists, not started'
-  - 'built # code in the tree, no EvalResult row of its own'
-  - 'scored # has rows under data/v2/eval/, therefore appears in ladder.json'
-  - 'cut # was live at some point, then dropped, with a reason and a decision site'
-  - 'deferred # explicitly out of scope, with a reason and a decision site'
-  - 'conditional # gated on a decision that has not been made'
-  - 'UNVERIFIED # the documents disagree or are silent — DO NOT render as fact'
+  - planned  # ticket exists, not started
+  - built  # code in the tree, no EvalResult row of its own
+  - scored  # has rows under data/v2/eval/, therefore appears in ladder.json
+  - cut  # was live at some point, then dropped, with a reason and a decision site
+  - deferred  # explicitly out of scope, with a reason and a decision site
+  - conditional  # gated on a decision that has not been made
+  - UNVERIFIED  # the documents disagree or are silent — DO NOT render as fact
 
 source:
   derived_by: T-0130 lane (artefacts), from committed documents only

@@ -36,43 +36,44 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
           "all_pass",
+          "random_at_k",
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "all_pass",
         "metrics": {
           "alert_jaccard_wow": null,
           "alerts_per_day": 0.0,
-          "capacity_k": 9.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
           "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.00996483001172333,
-          "gap_to_oracle": 0.9999999999999999,
+          "ece": 0.013517969007583251,
+          "gap_to_oracle": 1.0,
           "model_size_mb": null,
-          "n_censored_dropped": 510.0,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
           "p99_latency_ms": null,
-          "pr_auc": 0.00996483001172333,
+          "pr_auc": 0.013517969007583251,
           "precision_at_k": null,
-          "prevalence": 0.00996483001172333,
+          "prevalence": 0.013517969007583251,
           "recall_at_k": 0.0,
           "roc_auc": 0.5,
-          "savings": 1.1102230246251565e-16,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
+          "savings": 0.0,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.001017948124361956,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 1,
@@ -91,9 +92,6 @@
             "NaN": 1
           },
           "recall_by_typology": {
-            "R6:NaN": 1,
-            "R7:NaN": 1,
-            "R8:NaN": 1,
             "R9:NaN": 1
           },
           "ttd_median_days": {
@@ -107,9 +105,9 @@
           "R3": 0.0,
           "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 0,
@@ -125,44 +123,43 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
-          "all_pass",
           "random_at_k",
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "random_at_k",
         "metrics": {
-          "alert_jaccard_wow": 0.011384304517140897,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
+          "alert_jaccard_wow": 0.015906887972015324,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
           "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.49075777956737376,
-          "gap_to_oracle": 1.002279963708919,
+          "ece": 0.4867808063143157,
+          "gap_to_oracle": 0.9969740506596676,
           "model_size_mb": null,
-          "n_censored_dropped": 510.0,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
           "p99_latency_ms": null,
-          "pr_auc": 0.010478662728863157,
-          "precision_at_k": 0.011235955056179775,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.0058823529411764705,
-          "roc_auc": 0.4976058463645967,
-          "savings": -0.0020872623704895066,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": 0.0030928876709287456,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
+          "pr_auc": 0.01360127732513345,
+          "precision_at_k": 0.015555555555555555,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.005691056910569106,
+          "roc_auc": 0.5014372835239047,
+          "savings": 0.002749788965041855,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.003691144415038261,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 1,
@@ -175,9 +172,6 @@
             "NaN": 1
           },
           "recall_by_typology": {
-            "R6:NaN": 1,
-            "R7:NaN": 1,
-            "R8:NaN": 1,
             "R9:NaN": 1
           },
           "ttd_median_days": {
@@ -191,9 +185,9 @@
           "R3": 0.0,
           "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 0,
@@ -206,49 +200,47 @@
         "split": "VALIDATION"
       },
       {
-        "beats_all_floors": false,
+        "beats_all_floors": true,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
-        "floor_fail": [
-          "volume_rank"
-        ],
+        "floor_fail": [],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "volume_rank",
         "metrics": {
           "alert_jaccard_wow": 1.0,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
           "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.4889482064898151,
-          "gap_to_oracle": 0.814316334457018,
+          "ece": 0.4866190293818142,
+          "gap_to_oracle": 0.33789371937957974,
           "model_size_mb": null,
-          "n_censored_dropped": 510.0,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
           "p99_latency_ms": null,
-          "pr_auc": 0.03143429814225289,
-          "precision_at_k": 0.1111111111111111,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.058823529411764705,
-          "roc_auc": 0.6858217532128305,
-          "savings": 0.16998977939266535,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
+          "pr_auc": 0.21689648072948195,
+          "precision_at_k": 0.5714285714285714,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.1951219512195122,
+          "roc_auc": 0.7043090517803574,
+          "savings": 0.6016797835534564,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.001017948124361956,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 1,
-        "n_seeds_floor_fail": 1,
+        "n_seeds_floor_fail": 0,
         "non_finite": {
           "model_size_mb": {
             "NaN": 1
@@ -257,9 +249,6 @@
             "NaN": 1
           },
           "recall_by_typology": {
-            "R6:NaN": 1,
-            "R7:NaN": 1,
-            "R8:NaN": 1,
             "R9:NaN": 1
           },
           "ttd_median_days": {
@@ -273,9 +262,9 @@
           "R3": 0.0,
           "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 0,
@@ -291,44 +280,42 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
-          "all_pass",
-          "random_at_k",
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "rung1",
         "metrics": {
-          "alert_jaccard_wow": 0.1251994737288855,
-          "alerts_per_day": 1.0,
-          "capacity_k": 1.0,
+          "alert_jaccard_wow": 0.2326167916912894,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
           "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.010531582637596466,
-          "gap_to_oracle": 1.0050372876887181,
+          "ece": 0.018367421838622756,
+          "gap_to_oracle": 0.8737796802541522,
           "model_size_mb": null,
-          "n_censored_dropped": 0.0,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 207.0,
-          "n_rows_kept": 24840.0,
-          "oracle_savings": 0.9645836614267521,
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
           "p99_latency_ms": null,
-          "pr_auc": 0.11461481838116105,
-          "precision_at_k": 0.0,
-          "prevalence": 0.00966183574879227,
-          "recall_at_k": 0.0,
-          "roc_auc": 0.8720551042164466,
-          "savings": -0.0048588854024436134,
-          "savings_floor_all_hold": -32.04851887895539,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.0048588854024436134,
-          "savings_floor_volume_rank": -0.0048588854024436134,
-          "state_bytes_p99": null,
+          "pr_auc": 0.2842882428215557,
+          "precision_at_k": 0.06060606060606061,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.02195121951219512,
+          "roc_auc": 0.8086294945962493,
+          "savings": 0.11470094286610144,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.001017948124361956,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 1,
@@ -341,97 +328,6 @@
             "NaN": 1
           },
           "recall_by_typology": {
-            "R1:NaN": 1,
-            "R3:NaN": 1,
-            "R4:NaN": 1,
-            "R5:NaN": 1,
-            "R7:NaN": 1,
-            "R8:NaN": 1,
-            "R9:NaN": 1
-          },
-          "state_bytes_p99": {
-            "NaN": 1
-          },
-          "ttd_median_days": {
-            "Infinity": 1
-          }
-        },
-        "provenance_consistent": true,
-        "recall_by_typology": {
-          "R1": null,
-          "R2": 0.0,
-          "R3": null,
-          "R4": null,
-          "R5": null,
-          "R6": 0.0,
-          "R7": null,
-          "R8": null,
-          "R9": null
-        },
-        "rung": 1,
-        "seeds": [
-          42
-        ],
-        "sources": [
-          "rung1_train_seed42.json"
-        ],
-        "split": "TRAIN"
-      },
-      {
-        "beats_all_floors": false,
-        "cost_scenario": "base",
-        "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
-        ],
-        "floor_fail": [
-          "volume_rank"
-        ],
-        "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
-        ],
-        "label": "rung1",
-        "metrics": {
-          "alert_jaccard_wow": 0.2030892365638128,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
-          "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.0,
-          "detection_rate_d7": 0.0,
-          "ece": 0.016296919538695297,
-          "gap_to_oracle": 0.9185427214339845,
-          "model_size_mb": null,
-          "n_censored_dropped": 510.0,
-          "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
-          "p99_latency_ms": null,
-          "pr_auc": 0.33643776168278045,
-          "precision_at_k": 0.06382978723404255,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.029411764705882353,
-          "roc_auc": 0.8317365343611296,
-          "savings": 0.07457255204905777,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
-          "ttd_median_days": null
-        },
-        "n_seeds": 1,
-        "n_seeds_floor_fail": 1,
-        "non_finite": {
-          "model_size_mb": {
-            "NaN": 1
-          },
-          "p99_latency_ms": {
-            "NaN": 1
-          },
-          "recall_by_typology": {
-            "R6:NaN": 1,
-            "R7:NaN": 1,
-            "R8:NaN": 1,
             "R9:NaN": 1
           },
           "ttd_median_days": {
@@ -445,9 +341,9 @@
           "R3": 0.0,
           "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 1,
@@ -463,55 +359,49 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "rung2",
         "metrics": {
-          "alert_jaccard_wow": 0.6432942057942058,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
+          "alert_jaccard_wow": 0.2875,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.11764705882352941,
+          "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.009880609255631032,
-          "gap_to_oracle": 0.8928376885280365,
-          "model_size_mb": 0.4916,
-          "n_censored_dropped": 510.0,
+          "ece": 0.007945052615067748,
+          "gap_to_oracle": 0.545399776302596,
+          "model_size_mb": 0.5142,
+          "n_censored_dropped": 180.0,
           "n_features": 28.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
-          "p99_latency_ms": 0.0029555968272542174,
-          "pr_auc": 0.0764160664663894,
-          "precision_at_k": 0.22746781115879827,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.10392156862745099,
-          "roc_auc": 0.8143488238002917,
-          "savings": 0.09810500903812902,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
-          "ttd_median_days": null
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
+          "p99_latency_ms": 0.008085685660959642,
+          "pr_auc": 0.835700213824045,
+          "precision_at_k": 0.8636871508379889,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.31422764227642275,
+          "roc_auc": 0.9638204249271771,
+          "savings": 0.41311156864620613,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0011624668804387506,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 163.0
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
           "recall_by_typology": {
-            "R6:NaN": 5,
-            "R7:NaN": 5,
-            "R8:NaN": 5,
             "R9:NaN": 5
-          },
-          "ttd_median_days": {
-            "Infinity": 5
           }
         },
         "provenance_consistent": true,
@@ -519,11 +409,11 @@
           "R1": 0.0,
           "R2": 0.0,
           "R3": 0.0,
-          "R4": 0.5,
+          "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 2,
@@ -547,55 +437,49 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "rung3",
         "metrics": {
-          "alert_jaccard_wow": 0.6240842490842491,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
+          "alert_jaccard_wow": 0.23905261405261402,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.11764705882352941,
+          "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.009900369102659274,
-          "gap_to_oracle": 0.8988315561451452,
-          "model_size_mb": 0.5001,
-          "n_censored_dropped": 510.0,
+          "ece": 0.007950827683954474,
+          "gap_to_oracle": 0.5234081634485661,
+          "model_size_mb": 0.5165,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
-          "p99_latency_ms": 0.002640251499251125,
-          "pr_auc": 0.07963440064962514,
-          "precision_at_k": 0.20346320346320346,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.09215686274509804,
-          "roc_auc": 0.8205602959557614,
-          "savings": 0.09261773997242162,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
-          "ttd_median_days": null
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
+          "p99_latency_ms": 0.006328757136584713,
+          "pr_auc": 0.8551029847208473,
+          "precision_at_k": 0.8558659217877095,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.31138211382113823,
+          "roc_auc": 0.9804109377490835,
+          "savings": 0.43309613796581026,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0011624668804387506,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 162.0
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
           "recall_by_typology": {
-            "R6:NaN": 5,
-            "R7:NaN": 5,
-            "R8:NaN": 5,
             "R9:NaN": 5
-          },
-          "ttd_median_days": {
-            "Infinity": 5
           }
         },
         "provenance_consistent": true,
@@ -603,11 +487,11 @@
           "R1": 0.0,
           "R2": 0.0,
           "R3": 0.0,
-          "R4": 0.5,
+          "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 3,
@@ -631,51 +515,48 @@
         "beats_all_floors": false,
         "cost_scenario": "base",
         "eval_lock_sha": [
-          "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
         ],
         "floor_fail": [
           "volume_rank"
         ],
         "git_sha": [
-          "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
         ],
         "label": "rung4",
         "metrics": {
-          "alert_jaccard_wow": 0.7496753246753247,
-          "alerts_per_day": 9.0,
-          "capacity_k": 9.0,
+          "alert_jaccard_wow": 0.368568871830257,
+          "alerts_per_day": 15.0,
+          "capacity_k": 15.0,
           "detection_rate_d14": 0.0,
-          "detection_rate_d30": 0.058823529411764705,
+          "detection_rate_d30": 0.0,
           "detection_rate_d7": 0.0,
-          "ece": 0.009691871711884294,
-          "gap_to_oracle": 0.9222915178775173,
-          "model_size_mb": 0.4853,
-          "n_censored_dropped": 510.0,
+          "ece": 0.04326038043058097,
+          "gap_to_oracle": 0.5215465402970286,
+          "model_size_mb": 0.5201,
+          "n_censored_dropped": 180.0,
           "n_features": 49.0,
-          "n_merchants_scored": 1723.0,
-          "n_rows_kept": 51180.0,
-          "oracle_savings": 0.9154805238014658,
-          "p99_latency_ms": 0.002700773844133535,
-          "pr_auc": 0.06780734705243785,
-          "precision_at_k": 0.1975806451612903,
-          "prevalence": 0.00996483001172333,
-          "recall_at_k": 0.09607843137254903,
-          "roc_auc": 0.8147491457605343,
-          "savings": 0.07114060191730731,
-          "savings_floor_all_hold": -28.12778324865441,
-          "savings_floor_all_pass": 1.1102230246251565e-16,
-          "savings_floor_random": -0.003113085259967452,
-          "savings_floor_volume_rank": 0.16998977939266535,
-          "state_bytes_p99": 13262.0,
+          "n_merchants_scored": 3036.0,
+          "n_rows_kept": 181980.0,
+          "oracle_savings": 0.9087359554868717,
+          "p99_latency_ms": 0.004978601229701617,
+          "pr_auc": 0.8533790773016571,
+          "precision_at_k": 0.3902714932126697,
+          "prevalence": 0.013517969007583251,
+          "recall_at_k": 0.1402439024390244,
+          "roc_auc": 0.976483144301697,
+          "savings": 0.43478786185917917,
+          "savings_floor_all_hold": -9.136795644875383,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0011624668804387506,
+          "savings_floor_volume_rank": 0.6015771605172751,
+          "state_bytes_p99": 9716.0,
           "ttd_median_days": null
         },
         "n_seeds": 5,
         "n_seeds_floor_fail": 5,
         "non_finite": {
           "recall_by_typology": {
-            "R6:NaN": 5,
-            "R7:NaN": 5,
-            "R8:NaN": 5,
             "R9:NaN": 5
           },
           "ttd_median_days": {
@@ -687,11 +568,11 @@
           "R1": 0.0,
           "R2": 0.0,
           "R3": 0.0,
-          "R4": 0.25,
+          "R4": 0.0,
           "R5": 0.0,
-          "R6": null,
-          "R7": null,
-          "R8": null,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
           "R9": null
         },
         "rung": 4,
@@ -710,11 +591,409 @@
           "rung4_val_seed46.json"
         ],
         "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "all_hold",
+          "volume_rank"
+        ],
+        "git_sha": [
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+        ],
+        "label": "rung5_mil",
+        "metrics": {
+          "alert_jaccard_wow": null,
+          "alerts_per_day": 1.0,
+          "capacity_k": 1.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.1630346010173526,
+          "gap_to_oracle": 0.9236188389263542,
+          "model_size_mb": 0.5186,
+          "n_censored_dropped": 60.0,
+          "n_features": 13.0,
+          "n_merchants_scored": 161.0,
+          "n_rows_kept": 9600.0,
+          "oracle_savings": 0.32678418005303955,
+          "p99_latency_ms": 0.06972536231868603,
+          "pr_auc": 0.7176099885887234,
+          "precision_at_k": 0.9361702127659575,
+          "prevalence": 0.25625,
+          "recall_at_k": 0.01788617886178862,
+          "roc_auc": 0.7334777732231105,
+          "savings": 0.024960155092950465,
+          "savings_floor_all_hold": 0.5927917924327979,
+          "savings_floor_all_pass": 0.0,
+          "savings_floor_random": 0.0031499296609796,
+          "savings_floor_volume_rank": 0.2614068194351954,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "alert_jaccard_wow": {
+            "NaN": 5
+          },
+          "recall_by_typology": {
+            "R9:NaN": 5
+          },
+          "ttd_median_days": {
+            "Infinity": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": 0.0,
+          "R9": null
+        },
+        "rung": 5,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung5_mil_val_seed42.json",
+          "rung5_mil_val_seed43.json",
+          "rung5_mil_val_seed44.json",
+          "rung5_mil_val_seed45.json",
+          "rung5_mil_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+        ],
+        "label": "rung6_crc_base2_alpha0.05",
+        "metrics": {
+          "alert_jaccard_wow": 0.1369047619047619,
+          "alerts_per_day": 8.0,
+          "capacity_k": 8.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.008579023251794448,
+          "gap_to_oracle": 0.7182869371863514,
+          "model_size_mb": 0.5142,
+          "n_censored_dropped": 60.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 1518.0,
+          "n_rows_kept": 91020.0,
+          "oracle_savings": 0.8659162208551578,
+          "p99_latency_ms": 0.005706415239332182,
+          "pr_auc": 0.8318528896592612,
+          "precision_at_k": 0.9166666666666666,
+          "prevalence": 0.014502307185234015,
+          "recall_at_k": 0.3333333333333333,
+          "roc_auc": 0.9583081145907233,
+          "savings": 0.24393991071712628,
+          "savings_floor_all_hold": -10.43605979594687,
+          "savings_floor_all_pass": 2.220446049250313e-16,
+          "savings_floor_random": 0.001697305943235805,
+          "savings_floor_volume_rank": 0.6111642410310991,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 161.0
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "recall_by_typology": {
+            "R8:NaN": 5,
+            "R9:NaN": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": null,
+          "R9": null
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung6_crc_base2_alpha0.05_val_seed42.json",
+          "rung6_crc_base2_alpha0.05_val_seed43.json",
+          "rung6_crc_base2_alpha0.05_val_seed44.json",
+          "rung6_crc_base2_alpha0.05_val_seed45.json",
+          "rung6_crc_base2_alpha0.05_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+        ],
+        "label": "rung6_crc_base2_alpha0.1",
+        "metrics": {
+          "alert_jaccard_wow": 0.1369047619047619,
+          "alerts_per_day": 8.0,
+          "capacity_k": 8.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.008579023251794448,
+          "gap_to_oracle": 0.7182869371863514,
+          "model_size_mb": 0.5142,
+          "n_censored_dropped": 60.0,
+          "n_features": 28.0,
+          "n_merchants_scored": 1518.0,
+          "n_rows_kept": 91020.0,
+          "oracle_savings": 0.8659162208551578,
+          "p99_latency_ms": 0.005706415239332182,
+          "pr_auc": 0.8318528896592612,
+          "precision_at_k": 0.9166666666666666,
+          "prevalence": 0.014502307185234015,
+          "recall_at_k": 0.3333333333333333,
+          "roc_auc": 0.9583081145907233,
+          "savings": 0.24393991071712628,
+          "savings_floor_all_hold": -10.43605979594687,
+          "savings_floor_all_pass": 2.220446049250313e-16,
+          "savings_floor_random": 0.001697305943235805,
+          "savings_floor_volume_rank": 0.6111642410310991,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": 161.0
+        },
+        "n_seeds": 5,
+        "n_seeds_floor_fail": 5,
+        "non_finite": {
+          "recall_by_typology": {
+            "R8:NaN": 5,
+            "R9:NaN": 5
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": null,
+          "R9": null
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "sources": [
+          "rung6_crc_base2_alpha0.1_val_seed42.json",
+          "rung6_crc_base2_alpha0.1_val_seed43.json",
+          "rung6_crc_base2_alpha0.1_val_seed44.json",
+          "rung6_crc_base2_alpha0.1_val_seed45.json",
+          "rung6_crc_base2_alpha0.1_val_seed46.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+        ],
+        "label": "rung6_crc_base4_alpha0.05",
+        "metrics": {
+          "alert_jaccard_wow": 0.3213093803154713,
+          "alerts_per_day": 8.0,
+          "capacity_k": 8.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.042221616890657454,
+          "gap_to_oracle": 0.6994728489620465,
+          "model_size_mb": 0.5202,
+          "n_censored_dropped": 60.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 1518.0,
+          "n_rows_kept": 91020.0,
+          "oracle_savings": 0.8659162208551578,
+          "p99_latency_ms": 0.0041695652174040376,
+          "pr_auc": 0.8195905423319597,
+          "precision_at_k": 0.42291666666666666,
+          "prevalence": 0.014502307185234015,
+          "recall_at_k": 0.15378787878787878,
+          "roc_auc": 0.968457509881423,
+          "savings": 0.2602313348911519,
+          "savings_floor_all_hold": -10.43605979594687,
+          "savings_floor_all_pass": 2.220446049250313e-16,
+          "savings_floor_random": 0.0020115233409759847,
+          "savings_floor_volume_rank": 0.6111642410310991,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 3,
+        "n_seeds_floor_fail": 3,
+        "non_finite": {
+          "recall_by_typology": {
+            "R8:NaN": 3,
+            "R9:NaN": 3
+          },
+          "ttd_median_days": {
+            "Infinity": 3
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": null,
+          "R9": null
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44
+        ],
+        "sources": [
+          "rung6_crc_base4_alpha0.05_val_seed42.json",
+          "rung6_crc_base4_alpha0.05_val_seed43.json",
+          "rung6_crc_base4_alpha0.05_val_seed44.json"
+        ],
+        "split": "VALIDATION"
+      },
+      {
+        "beats_all_floors": false,
+        "cost_scenario": "base",
+        "eval_lock_sha": [
+          "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
+        ],
+        "floor_fail": [
+          "volume_rank"
+        ],
+        "git_sha": [
+          "165b2edb231615e6f3be48dc02e7fce2acd2489d"
+        ],
+        "label": "rung6_crc_base4_alpha0.1",
+        "metrics": {
+          "alert_jaccard_wow": 0.3213093803154713,
+          "alerts_per_day": 8.0,
+          "capacity_k": 8.0,
+          "detection_rate_d14": 0.0,
+          "detection_rate_d30": 0.0,
+          "detection_rate_d7": 0.0,
+          "ece": 0.042221616890657454,
+          "gap_to_oracle": 0.6994728489620465,
+          "model_size_mb": 0.5202,
+          "n_censored_dropped": 60.0,
+          "n_features": 49.0,
+          "n_merchants_scored": 1518.0,
+          "n_rows_kept": 91020.0,
+          "oracle_savings": 0.8659162208551578,
+          "p99_latency_ms": 0.0041695652174040376,
+          "pr_auc": 0.8195905423319597,
+          "precision_at_k": 0.42291666666666666,
+          "prevalence": 0.014502307185234015,
+          "recall_at_k": 0.15378787878787878,
+          "roc_auc": 0.968457509881423,
+          "savings": 0.2602313348911519,
+          "savings_floor_all_hold": -10.43605979594687,
+          "savings_floor_all_pass": 2.220446049250313e-16,
+          "savings_floor_random": 0.0020115233409759847,
+          "savings_floor_volume_rank": 0.6111642410310991,
+          "state_bytes_p99": 9716.0,
+          "ttd_median_days": null
+        },
+        "n_seeds": 3,
+        "n_seeds_floor_fail": 3,
+        "non_finite": {
+          "recall_by_typology": {
+            "R8:NaN": 3,
+            "R9:NaN": 3
+          },
+          "ttd_median_days": {
+            "Infinity": 3
+          }
+        },
+        "provenance_consistent": true,
+        "recall_by_typology": {
+          "R1": 0.0,
+          "R2": 0.0,
+          "R3": 0.0,
+          "R4": 0.0,
+          "R5": 0.0,
+          "R6": 0.0,
+          "R7": 0.0,
+          "R8": null,
+          "R9": null
+        },
+        "rung": 6,
+        "seeds": [
+          42,
+          43,
+          44
+        ],
+        "sources": [
+          "rung6_crc_base4_alpha0.1_val_seed42.json",
+          "rung6_crc_base4_alpha0.1_val_seed43.json",
+          "rung6_crc_base4_alpha0.1_val_seed44.json"
+        ],
+        "split": "VALIDATION"
       }
     ],
     "serialisation_note": "A null metric means the value was non-finite on every seed. Which token it was (NaN, Infinity, -Infinity) and on how many seeds is in the same row's non_finite map — ttd_median_days: null with {'Infinity': 5} beside it reads 'never detected on all five seeds'. JSON.parse accepts neither literal, so neither is ever emitted.",
     "splits": [
-      "TRAIN",
       "VALIDATION"
     ],
     "typologies": [
@@ -730,103 +1009,238 @@
     ]
   },
   "provenance": {
-    "authoritative_lock": "EVAL-LOCK-CYCLE2.json",
-    "eval_lock_sha": "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b",
-    "frozen_at_git_sha": "f5a251521e8cf593ee75d9f0b06a2b703ffc35f2",
-    "harness_note": "results_eval_lock_sha is verified equal to the authoritative lock's eval_module_sha256 — the harness that produced these numbers is the frozen one. EvalResult rows do NOT record generator_module_sha256 or scenario_config_sha256, so this artefact cannot certify that they were computed at the authoritative lock's geometry. Compare results_git_sha with the lock's frozen_at_git_sha before presenting a number as current.",
+    "authoritative_cycle": 3,
+    "authoritative_lock": "EVAL-LOCK-CYCLE3.json",
+    "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
+    "frozen_at_git_sha": "165b2edb231615e6f3be48dc02e7fce2acd2489d",
+    "harness_note": "Every results_eval_lock_sha is verified to match a lock in the supersession chain, and results_scored_under names which cycle froze each one. results_are_current is false when any row was scored under a SUPERSEDED cycle — that is the pre-registered state for a rung the newer cycle did not rescore, not drift, and such a row must be rendered as 'scored under cycle N', never as a current number. EvalResult rows do NOT record generator_module_sha256 or scenario_config_sha256, so this artefact cannot certify that they were computed at any lock's geometry. Compare results_git_sha with that cycle's frozen_at_git_sha before presenting a number as current.",
     "inputs": [
       {
         "path": "data/v2/eval/all_pass_val_seed42.json",
-        "sha256": "727d6ae05c86b85e66840605c74444e1b57246e7f4bd60c30dd1931bf0cf9b9c"
+        "sha256": "c95afaec84b65ab5895fde75aace9ad09b600def10b9dfffed25f1ac9ce5bbc1"
       },
       {
         "path": "data/v2/eval/random_at_k_val_seed42.json",
-        "sha256": "06c48759a5b29edc2442a98a4f7358659c7f41a373f6f468d8afe5e2978cf998"
-      },
-      {
-        "path": "data/v2/eval/rung1_train_seed42.json",
-        "sha256": "5097d2811c5e522ae94b6f4d0c0263588e65272746fb13fd1931fec764f69ab3"
+        "sha256": "92575731b8c167fc503f729afe4011745d5f4c8cb3c89e605d458715035ec204"
       },
       {
         "path": "data/v2/eval/rung1_val_seed42.json",
-        "sha256": "16981ad2f67673b6d16fef36f95f8e74e8f8729d4abb9fe9ebd5da183afed7c9"
+        "sha256": "d3b189f77836177d11d6f8bf4b7b8081bca4ef3409934d96eb6f7556b82ede40"
       },
       {
         "path": "data/v2/eval/rung2_val_seed42.json",
-        "sha256": "c8e34fd5e8e4de3bd709386d8490d837b5d75e4aa834271c423fb616606353ec"
+        "sha256": "1b4a4da1dd71f46bd3d7bde0e1d1c9dac5af490a283803416c4414bcfa361e59"
       },
       {
         "path": "data/v2/eval/rung2_val_seed43.json",
-        "sha256": "442648f05db1f8b3ae9806f6aeebc6d8226c5b201d6d9ea523e10e795af1ce87"
+        "sha256": "a6a556fd5ab1d6229d01ccc315c19c22273be57dd307149b8f43cca8f48284bb"
       },
       {
         "path": "data/v2/eval/rung2_val_seed44.json",
-        "sha256": "ba39863f5bf885054732ceb6843367b5d315e6bc70386a6031a178da157ad371"
+        "sha256": "eac15ccd74829da6e4f2ea2bc7d80a104746c7e61b4867ce4b6e9022cda2e749"
       },
       {
         "path": "data/v2/eval/rung2_val_seed45.json",
-        "sha256": "3d574fc011f5e41dd15a1f271db796914412b04d2aa7e35a6348542ed8fa3b70"
+        "sha256": "87f8bbcf9f1fab49749a5f89ec9cbf4df523f20453a8bbb4443dc8ed631b16ce"
       },
       {
         "path": "data/v2/eval/rung2_val_seed46.json",
-        "sha256": "b2da6b5f9c102322f711d37090923ccf1d884a32bb49fc25c4a6db4f5cf5f626"
+        "sha256": "ac9e3a291663d30a463807964c27cdc2e8cd5962e8d0b8fad3a36b6702466bb6"
       },
       {
         "path": "data/v2/eval/rung3_val_seed42.json",
-        "sha256": "786fffb491ce3294c3f21b09764522b47939e1fa89a3d1a28289e6a72265637d"
+        "sha256": "a964f35f1d7f3de8567bee7336318aff565eebc6aacb7ed5f1770a9947d183f2"
       },
       {
         "path": "data/v2/eval/rung3_val_seed43.json",
-        "sha256": "a97bd2d659bec9982b1bad8d577a4dfb505eb9ac06f6715d06efc5eec9885566"
+        "sha256": "3cdcb097de359f5df3f22ec016436ce8a8f90d04977ef65c0555711122b5d99e"
       },
       {
         "path": "data/v2/eval/rung3_val_seed44.json",
-        "sha256": "5eefd5bacd2001f8fd405a0e0e0a887ccc0b5950ba556797d86c744c6ba8ad5e"
+        "sha256": "b5aef9d26767ebfd4494bc4b31147074b02d33320c948084a5185f365332cb04"
       },
       {
         "path": "data/v2/eval/rung3_val_seed45.json",
-        "sha256": "26d2c8d0e04b07b02adf6aaa43da4f21eaff420c95c7a3ca7f1c33814f677916"
+        "sha256": "4a079ba591f6c2b2469d4f34cd847947dfc082abcb17b6a1b42cc73a21696258"
       },
       {
         "path": "data/v2/eval/rung3_val_seed46.json",
-        "sha256": "1d4dac0b55df561e757ab944314dd8c9c32ad2bc89bdcc8c141019cded967a30"
+        "sha256": "a6aae8a748f709259250f52f6b51d1631a33de7e99cd511e8c60557d5713d3cf"
       },
       {
         "path": "data/v2/eval/rung4_val_seed42.json",
-        "sha256": "9c0d297b279229215052194c9081cfd2607597f43771ba3b7a5812b6f6aec966"
+        "sha256": "d8bec7eab6b330866e21605074fddb4447f6d95551ded2523e4f5edd4da3e3a1"
       },
       {
         "path": "data/v2/eval/rung4_val_seed43.json",
-        "sha256": "a85c1804b9e685dab908dbc71295f388949d5e12b5be8f62fed3d95085509518"
+        "sha256": "e3b83aa977b2ad5afc48c1b527c345b91951f9402fb2d38c6d06df3dab337aab"
       },
       {
         "path": "data/v2/eval/rung4_val_seed44.json",
-        "sha256": "d22912fbab228a205dc1dad667ee8860bd9009da1421265bb13f5d9af7845695"
+        "sha256": "75546d1e39718166c22a67fdfc1f543ce6179acf199607326ae0004ef4c0ca93"
       },
       {
         "path": "data/v2/eval/rung4_val_seed45.json",
-        "sha256": "d4c5e3b99eade197753db4f520fe301cb652dcade59403d9d8ddf552379b3437"
+        "sha256": "756d76b516411f021c6f1e23faaf94dbd63c8fb9d690890c1f3458c50339fdd3"
       },
       {
         "path": "data/v2/eval/rung4_val_seed46.json",
-        "sha256": "cc69c764cc30ad1b1e473aa77db8b92b96ad5fac8c741266718cd509a69e4505"
+        "sha256": "83c6a4087bd795abe136aadc7c0ca92332b60d2fae5355ed15aa0b49fd89dc78"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed42.json",
+        "sha256": "9e0eabd99bdac34b366c0f11e80b28fef5cf21ec5a4f0c0e8db607b385e90282"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed43.json",
+        "sha256": "be4415cfca0c3d7e4d6299fb15d2a1e1035e6375fbf148f0e89f4840f70c1f53"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed44.json",
+        "sha256": "ba4d6d871698566361a5eecb0fc9e68e85aaf66f4b1bdc10317bfc018174e5de"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed45.json",
+        "sha256": "d3baa8d86ec7b89393b58bdaa186a14a3c136d0d492e9e555d50e6059815b989"
+      },
+      {
+        "path": "data/v2/eval/rung5_mil_val_seed46.json",
+        "sha256": "5034f6b6909401bcafd19e6d0a2661c392a136a3da17c64d874a0cf1036f36f3"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed42.json",
+        "sha256": "b57ea87d9e097c31ddbd7db7bd7b80ada2961f181ad7006ece1dda594b999032"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed43.json",
+        "sha256": "d8646c8cc76e04f3a5ca4259b02c1cdfd43647141f6bf1b95e2ba2bc6e05f851"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed44.json",
+        "sha256": "f0c8cd9e73d94c17cb9d4f81526ec20c66ae8e873237a7acdf30699318be776e"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed45.json",
+        "sha256": "f0b6c77ceb85b4021ace3c7617fd51cde399ea037c3744c198706fca27eb6d09"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed46.json",
+        "sha256": "d75d940236b23a7e216e7f8076757cc03773710552e6b55bc8499bd168a801c4"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed42.json",
+        "sha256": "13a5ae234006af0f138066dc920962f17e275dfae618f5121658e2f4b04db944"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed43.json",
+        "sha256": "1d6fa17b12687ec85fa22b4b5c45851fe525ac5e2abf4625cdf3dda00d9a303b"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed44.json",
+        "sha256": "472ac36a2598eb7f05439aacc3825cf3c7a4289f8043b1f68179094beb0c7085"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed45.json",
+        "sha256": "2e424aacc94802c57d326fdc155f94f2b7b56e2865ed7c76995e35b102df5948"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed46.json",
+        "sha256": "93b844350b0d92e4d1a7315ade335ceb6fbd74e3db9ba7c036d3a1fbf2643d95"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed42.json",
+        "sha256": "cdbf34d8b2f58bef97d1a3e263c0d325977ca751ff3c59df30d4476b9c7b8b58"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed43.json",
+        "sha256": "04eaa63daba0cdc5a12bb9d2d2a28032e6fe1a4fcc0f08f90c22f0be09ddc128"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.05_val_seed44.json",
+        "sha256": "fd309d11a26edd88aff2c8114835bd2de47cb1c31c36b202cd34af3652e41d26"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed42.json",
+        "sha256": "eb43546c56f01e34072179489f5a207570f242b0923404b058f8dd22a580eb1c"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed43.json",
+        "sha256": "99442bfe9f4f5264b89d7574b1b9ff0d402ba8f57a06a86c00aada3eacb84001"
+      },
+      {
+        "path": "data/v2/eval/rung6_crc_base4_alpha0.1_val_seed44.json",
+        "sha256": "dc5d3a7beb358fe0add3e7a95f5c0a2c548d63e6b62186e1bfe2c844dc44a2c2"
       },
       {
         "path": "data/v2/eval/volume_rank_val_seed42.json",
-        "sha256": "f221734f9109d74f9bb4978f44e553e91dae924a22499bfa570988a26ac2caa6"
+        "sha256": "c9290cdb80686b44af30628c401f2e1ff6508b41a9388a312dacced0cdb429ef"
       }
     ],
     "open_count": 0,
+    "results_are_current": true,
     "results_eval_lock_sha": [
-      "f15be39ef68343b26eb6333bbb5d46620b4fecc1fe2b08cd31d75ca192f3057b"
+      "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3"
     ],
     "results_git_sha": [
-      "b4bb2ab1d6eee2d1f836f23da162c3221a52cc07"
+      "165b2edb231615e6f3be48dc02e7fce2acd2489d"
     ],
     "results_open_count": [
       0
-    ]
+    ],
+    "results_scored_under": {
+      "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3": {
+        "cycles": [
+          3
+        ],
+        "is_authoritative_lock": true,
+        "locks": [
+          "EVAL-LOCK-CYCLE3.json"
+        ],
+        "sources": [
+          "all_pass_val_seed42.json",
+          "random_at_k_val_seed42.json",
+          "rung1_val_seed42.json",
+          "rung2_val_seed42.json",
+          "rung2_val_seed43.json",
+          "rung2_val_seed44.json",
+          "rung2_val_seed45.json",
+          "rung2_val_seed46.json",
+          "rung3_val_seed42.json",
+          "rung3_val_seed43.json",
+          "rung3_val_seed44.json",
+          "rung3_val_seed45.json",
+          "rung3_val_seed46.json",
+          "rung4_val_seed42.json",
+          "rung4_val_seed43.json",
+          "rung4_val_seed44.json",
+          "rung4_val_seed45.json",
+          "rung4_val_seed46.json",
+          "rung5_mil_val_seed42.json",
+          "rung5_mil_val_seed43.json",
+          "rung5_mil_val_seed44.json",
+          "rung5_mil_val_seed45.json",
+          "rung5_mil_val_seed46.json",
+          "rung6_crc_base2_alpha0.05_val_seed42.json",
+          "rung6_crc_base2_alpha0.05_val_seed43.json",
+          "rung6_crc_base2_alpha0.05_val_seed44.json",
+          "rung6_crc_base2_alpha0.05_val_seed45.json",
+          "rung6_crc_base2_alpha0.05_val_seed46.json",
+          "rung6_crc_base2_alpha0.1_val_seed42.json",
+          "rung6_crc_base2_alpha0.1_val_seed43.json",
+          "rung6_crc_base2_alpha0.1_val_seed44.json",
+          "rung6_crc_base2_alpha0.1_val_seed45.json",
+          "rung6_crc_base2_alpha0.1_val_seed46.json",
+          "rung6_crc_base4_alpha0.05_val_seed42.json",
+          "rung6_crc_base4_alpha0.05_val_seed43.json",
+          "rung6_crc_base4_alpha0.05_val_seed44.json",
+          "rung6_crc_base4_alpha0.1_val_seed42.json",
+          "rung6_crc_base4_alpha0.1_val_seed43.json",
+          "rung6_crc_base4_alpha0.1_val_seed44.json",
+          "volume_rank_val_seed42.json"
+        ]
+      }
+    }
   },
-  "schema_version": "v3.0.0",
-  "split": null
+  "schema_version": "v3.1.0",
+  "split": "VALIDATION"
 }
