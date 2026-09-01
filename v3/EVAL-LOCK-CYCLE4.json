@@ -1,0 +1,87 @@
+{
+  "created_at": "2026-09-01T18:31:08.242473Z",
+  "cycle": 4,
+  "supersedes": "EVAL-LOCK-CYCLE3.json",
+  "pre_registration": "docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md",
+  "eval_module_sha256": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
+  "generator_module_sha256": "e750edbf3b30cf837c100a9b993bd4bf071a3014df67af881e1a694452aba36a",
+  "scenario_config_sha256": "683c435c13af18a39078b79e448f7da08f299d719b14aa4ea934b1636379b61a",
+  "eval_modules": [
+    "src/rakshak/eval/splits.py",
+    "src/rakshak/eval/metrics.py",
+    "src/rakshak/eval/oracle.py",
+    "src/rakshak/eval/capacity.py",
+    "src/rakshak/eval/lock.py"
+  ],
+  "generator_glob": "src/rakshak/generator/*.py",
+  "scenario_config": "configs/scenario_v2.yaml",
+  "enforced": [
+    "eval_module_sha256"
+  ],
+  "enforcement_note": "Only eval_module_sha256 is a hard fail. Lane C froze the harness while Lane A's generator was still in flight, which project-context/STATE.md calls preferable: a harness frozen before the generator is finished is harder to accuse of hindsight. The generator and scenario-config hashes are therefore recorded as provenance of what existed at freeze time and reported as drift, not enforced. Enforcing them here would hard-fail on Lane A's next commit and train everyone to override the lock, and a lock that is routinely overridden is not a lock. verify_lock(strict=True) enforces all three once the generator is frozen (T-116).",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "split_boundaries": {
+    "train": [
+      0,
+      239
+    ],
+    "val": [
+      240,
+      299
+    ],
+    "test": [
+      300,
+      364
+    ]
+  },
+  "split_origin": "2026-01-01",
+  "capacity_k": 50,
+  "capacity_per_n_merchants": 10000,
+  "metrics": [
+    "pr_auc",
+    "roc_auc",
+    "ece",
+    "savings",
+    "savings_floor_random",
+    "savings_floor_all_pass",
+    "savings_floor_all_hold",
+    "savings_floor_volume_rank",
+    "precision_at_k",
+    "recall_at_k",
+    "alerts_per_day",
+    "ttd_median_days",
+    "detection_rate_d7",
+    "detection_rate_d14",
+    "detection_rate_d30",
+    "gap_to_oracle",
+    "alert_jaccard_wow",
+    "recall_by_typology",
+    "p99_latency_ms",
+    "state_bytes_p99",
+    "model_size_mb",
+    "false_hold_coverage",
+    "onset_localisation_error",
+    "tpp_rescaled_ks"
+  ],
+  "cost_asymmetry_ratios": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "declared_adoption_margins": {
+    "relative_pr_auc": 0.1,
+    "ttd_days": 3.0,
+    "note": "from 00-charter-v2.md \u00a72, declared before any v2 model existed. A rung is adopted only if it beats the previous rung by >=10% relative PR-AUC OR reduces median TTD by >=3 days at equal alerts-per-analyst-day, while holding p99 scoring latency <=10 ms per merchant on one CPU core."
+  },
+  "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
+  "open_count": 0,
+  "open_log": []
+}
