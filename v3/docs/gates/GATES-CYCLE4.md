@@ -4,6 +4,15 @@
 The GREEN/RED words below are the *gate report*, not test outcomes — G5 reports its
 excess as a finding rather than failing the suite.
 
+> **RESOLVED 2026-09-02 - the observation below is retired, and the caution was
+> correct.** The controlled comparison has now been run
+> (`scripts/g5_cycle_comparison.py`): the cycle-3 and cycle-4 configs produce
+> **bit-identical** G5 numbers (raw +7.07pp, residual +2.70pp under both), so there
+> is no cycle-3 -> cycle-4 effect here at all. The real discrepancy is between
+> `LIMITATIONS.md` section 6 and the gate as it currently stands, and it is written
+> up as **section 6a**, where the conclusion - not just the numbers - inverts. What
+> follows is what was originally observed, and why it was not claimed.
+
 ## The one thing that moved, and it is not yet a claim
 
 On cycle-4 data the RAW detector is RED at **+7.07pp** worst-window excess while the
