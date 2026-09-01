@@ -28,7 +28,14 @@ from __future__ import annotations
 import numpy as np
 import polars as pl
 import pytest
-from gates_report import GATE_MERCHANTS, START, daily_counts, green_if, record
+from gates_report import (
+    GATE_DAYS,
+    GATE_MERCHANTS,
+    complete_window_counts,
+    daily_counts,
+    green_if,
+    record,
+)
 
 from rakshak.eval.baf_adapter import (
     ANALOGUES,
@@ -66,7 +73,7 @@ def test_g1_realised_fano_matches_the_target(gate_data: GeneratedData) -> None:
     even though it is the less flattering of the two.
     """
     n_days = gate_data.transactions["event_time"].dt.date().n_unique()
-    counts = daily_counts(gate_data, GATE_MERCHANTS, 180)
+    counts = daily_counts(gate_data)
     realised = fano_factor(counts)
     target = 12.25
     ok = green_if(
@@ -82,30 +89,10 @@ def test_g1_realised_fano_matches_the_target(gate_data: GeneratedData) -> None:
 def window_counts(data: GeneratedData, window_days: int) -> np.ndarray:
     """Transactions per merchant per complete ``window_days`` window.
 
-    Complete windows only. A trailing partial window is a shorter observation period, and
-    a count over a shorter period is smaller for a reason that has nothing to do with the
-    distribution being tested — it would drag the left tail down and make any KS against
-    BAF look worse than the generator deserves.
-
-    Merchant-window cells with no events at all are not emitted. BAF's ``zip_count_4w``
-    has a floor of 1 for the same reason: a zip with no applications produces no
-    application row to observe it on.
+    Complete-window selection and the horizon it is derived from live in
+    ``gates_report.complete_window_counts``; G2 reads the same helper.
     """
-    frame = (
-        data.transactions.filter(~pl.col("is_refund"))
-        .with_columns(
-            window=((pl.col("event_time") - START).dt.total_days() // window_days).cast(
-                pl.Int64
-            )
-        )
-        .filter(pl.col("window") < 180 // window_days)
-    )
-    return (
-        frame.group_by(["merchant_id", "window"])
-        .len()["len"]
-        .cast(pl.Float64)
-        .to_numpy()
-    )
+    return complete_window_counts(data, window_days)["len"].cast(pl.Float64).to_numpy()
 
 
 def _rakshak_marginal(data: GeneratedData, name: str) -> np.ndarray:
@@ -283,9 +270,9 @@ def test_g1d_prevalence_and_drift_are_anchored(gate_data: GeneratedData) -> None
     point of the clause is that it discriminates.
 
     The monthly spread is reported rather than gated. BAF's drift is real but it is drift
-    in *account-opening* fraud over eight months; the generator's 180-day window is not
-    the same clock, and asserting agreement between them would be inventing a
-    correspondence again.
+    in *account-opening* fraud over eight months; the generator's window is not the
+    same clock, and asserting agreement between them would be inventing a correspondence
+    again.
     """
     if baf_path() is None:
         record(
@@ -317,8 +304,8 @@ def test_g1d_prevalence_and_drift_are_anchored(gate_data: GeneratedData) -> None
         f"({by_month.max() / by_month.min():.2f}x swing over 8 months) — REPORTED",
         "real temporal drift in a real label distribution, and the reason T-0012 used "
         "BAF at all. Not gated: BAF's eight months of account-opening fraud is not the "
-        "generator's 180 days of merchant behaviour, and asserting they agree would be "
-        "inventing a correspondence.",
+        f"generator's {GATE_DAYS} days of merchant behaviour, and asserting they agree "
+        "would be inventing a correspondence.",
     )
     ok = green_if(
         "G1d baf-prevalence",

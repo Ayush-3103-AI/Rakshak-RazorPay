@@ -34,7 +34,7 @@ from __future__ import annotations
 import numpy as np
 import polars as pl
 import pytest
-from gates_report import GATE_SEED, START, record
+from gates_report import GATE_SEED, complete_window_counts, record
 
 from rakshak.eval.baf_adapter import baf_path
 from rakshak.generator.engine import GeneratedData
@@ -154,15 +154,7 @@ def _generator_matrix(data: GeneratedData) -> tuple[np.ndarray, np.ndarray]:
 def _per_merchant_mean(data: GeneratedData, days: int, order: pl.Series) -> np.ndarray:
     """Mean complete-window count per merchant, aligned to ``order``."""
     frame = (
-        data.transactions.filter(~pl.col("is_refund"))
-        .with_columns(
-            window=(
-                (pl.col("event_time") - START).dt.total_days() // days
-            ).cast(pl.Int64)
-        )
-        .filter(pl.col("window") < 180 // days)
-        .group_by(["merchant_id", "window"])
-        .len()
+        complete_window_counts(data, days)
         .group_by("merchant_id")
         .agg(pl.col("len").mean().alias("c"))
     )

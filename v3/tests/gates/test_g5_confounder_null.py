@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import numpy as np
 import polars as pl
-from gates_report import GATE_MERCHANTS, START, daily_counts, record, scenario
+from gates_report import GATE_DAYS, START, daily_counts, record, scenario
 
 from rakshak.generator.confounders import build_layer
 from rakshak.generator.engine import GeneratedData
@@ -44,7 +44,6 @@ EXCESS_ALLOWED = 0.02
 #: Trailing window the baseline is estimated over. Matches the 28-day window the volume
 #: features in 07-feature-register.md use (v_fano_trailing, g_payer_hhi).
 BASELINE_DAYS = 28
-N_DAYS = 180
 
 
 def trailing_z(counts: np.ndarray, window: int = BASELINE_DAYS) -> np.ndarray:
@@ -114,12 +113,12 @@ def test_g5_confounder_null(null_data: GeneratedData) -> None:
     nominal = config.capacity.analyst_reviews_per_day / config.capacity.per_n_merchants
 
     assert null_data.ground_truth["risk_typology_id"].null_count() == null_data.ground_truth.height
-    counts = daily_counts(null_data, GATE_MERCHANTS, N_DAYS)
+    counts = daily_counts(null_data)
 
-    busy = np.zeros(N_DAYS, dtype=bool)
+    busy = np.zeros(GATE_DAYS, dtype=bool)
     for window in windows:
         busy[window.start_day : window.end_day] = True
-    quiet = np.flatnonzero(~busy & (np.arange(N_DAYS) > BASELINE_DAYS))
+    quiet = np.flatnonzero(~busy & (np.arange(GATE_DAYS) > BASELINE_DAYS))
     assert quiet.size > 40, "not enough quiet days to calibrate a threshold against"
 
     raw = trailing_z(counts, BASELINE_DAYS)
