@@ -21,7 +21,6 @@ What is asserted here:
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
@@ -29,7 +28,12 @@ import pytest
 from typer.testing import CliRunner
 
 from rakshak import cli
-from rakshak.eval.lock import LockMismatchError, SplitLockedError, require_unlocked_or_refuse
+from rakshak.eval.lock import (
+    LOCK_GLOB,
+    LockMismatchError,
+    SplitLockedError,
+    require_unlocked_or_refuse,
+)
 
 runner = CliRunner()
 
@@ -76,6 +80,18 @@ def test_eval_refuses_the_test_split_before_it_opens_anything(tmp_path: Path) ->
     assert isinstance(result.exception, SplitLockedError), result.exception
 
 
+
+def _copy_lock_chain(dest: Path) -> None:
+    """Copy every lock file into ``dest``, preserving the supersession chain.
+
+    The whole chain, not just the authoritative file: ``resolve_authoritative`` follows
+    each lock's ``supersedes``, and a lock whose predecessor is absent is a BROKEN chain,
+    not a single-lock root. Copying one file would make these tests fail on chain
+    resolution before they ever reached the harness-hash check they exist to make.
+    """
+    for src in sorted(cli.ROOT.glob(LOCK_GLOB)):
+        (dest / src.name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
 def test_train_goes_through_the_same_door(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """``train`` calls ``verify_lock`` too, and a changed harness stops it.
 
@@ -83,8 +99,7 @@ def test_train_goes_through_the_same_door(monkeypatch: pytest.MonkeyPatch, tmp_p
     literal ``<absent>`` marker rather than being skipped - "the file that computed savings
     is gone" must not verify clean.
     """
-    lock = json.loads((cli.ROOT / cli.LOCK_PATH).read_text(encoding="utf-8"))
-    (tmp_path / cli.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8")
+    _copy_lock_chain(tmp_path)
     monkeypatch.setattr(cli, "ROOT", tmp_path)
     result = runner.invoke(cli.app, ["train", "--rung", "2"], env=_without_unlock())
     assert result.exit_code != 0
@@ -96,8 +111,7 @@ def test_eval_hard_fails_on_a_changed_harness_even_on_the_validation_split(
 ) -> None:
     """The lock is not only a test-split thing. Results computed against different eval
     code are not comparable to results computed against this one, on any split."""
-    lock = json.loads((cli.ROOT / cli.LOCK_PATH).read_text(encoding="utf-8"))
-    (tmp_path / cli.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8")
+    _copy_lock_chain(tmp_path)
     monkeypatch.setattr(cli, "ROOT", tmp_path)
     result = runner.invoke(cli.app, ["eval", "--rung", "1"], env=_without_unlock())
     assert result.exit_code != 0
