@@ -373,3 +373,35 @@ in §4, §5, §6 or §7 depends on either figure: every gate is stated against c
 that did not exist when this was sealed and still do not exist now. Reproduce with
 `uv run python scripts/exposure_diagnostic.py`; `LIMITATIONS.md` §8.3a carries the corrected
 table and the same note.
+
+**2026-09-02 — §4.1's primary gate for Rung 9 is NOT EVALUABLE, and is reported as such.**
+§4.1 names the primary latency gate as *"a paired McNemar test on `detection_rate_d30`
+discordant pairs against the best incumbent rung, significant at p < 0.05."* That test needs
+per-merchant detection outcomes. **The harness does not emit them.** `EvalResult` carries
+`detection_rate_d30` as an aggregate rate and `recall_by_typology` as a per-typology rate;
+no artefact anywhere records which individual merchant was detected within 30 days of its
+own onset, so the discordant pairs a McNemar test consumes cannot be reconstructed from any
+committed file.
+
+This is a defect in the pre-registration, not in the harness: a gate was specified against a
+quantity the output format does not contain, and that should have been checked before
+sealing. It is recorded here rather than swapped for whatever test the stored data happens
+to support, because silently substituting a different statistic for a named one is the exact
+move pre-registration exists to prevent.
+
+**Consequence, stated plainly: Rung 9 cannot meet its primary gate, therefore Rung 9 is NOT
+ADOPTED.** §4.1 requires *both* the primary and the mechanism gate to hold. A gate that
+cannot be evaluated has not been met. The mechanism gate (median `alert_jaccard_wow` in
+[0.30, 0.85]) and the do-no-harm gate are stored and are reported on their own terms, and
+Rung 9 stays in the tree as a negative result exactly as §4.4 requires.
+
+**A second, smaller gap in the same clause.** §4.1's do-no-harm condition includes
+*"p99 scoring latency ≤ 10 ms per merchant"*. Rung 9's dispatch sets `latency_ms` to `nan`
+because its cost is dominated by a batch operation — a per-day cross-sectional ranking and a
+blend fit over the train split — rather than a per-merchant call. So that condition is
+**unmeasured, not passed**, and is reported as unmeasured.
+
+**The fix for a later cycle**, so this is actionable rather than merely admitted: emit a
+per-merchant `detected_within_d` boolean vector as a `cli.py` sidecar, alongside the
+denominators already landed there under RE-FREEZE Amendment 4. It needs no edit to the
+locked eval package and it makes every paired latency test computable from committed files.
