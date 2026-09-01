@@ -27,13 +27,13 @@ schema: rung_roster/v1
 # The set the emitter and the contract validate against. UNVERIFIED is uppercase so it is
 # impossible to skim past.
 statuses:
-  - planned # ticket exists, not started
-  - built # code in the tree, no EvalResult row of its own
-  - scored # has rows under data/v2/eval/, therefore appears in ladder.json
-  - cut # was live at some point, then dropped, with a reason and a decision site
-  - deferred # explicitly out of scope, with a reason and a decision site
-  - conditional # gated on a decision that has not been made
-  - UNVERIFIED # the documents disagree or are silent — DO NOT render as fact
+  - 'planned # ticket exists, not started'
+  - 'built # code in the tree, no EvalResult row of its own'
+  - 'scored # has rows under data/v2/eval/, therefore appears in ladder.json'
+  - 'cut # was live at some point, then dropped, with a reason and a decision site'
+  - 'deferred # explicitly out of scope, with a reason and a decision site'
+  - 'conditional # gated on a decision that has not been made'
+  - 'UNVERIFIED # the documents disagree or are silent — DO NOT render as fact'
 
 source:
   derived_by: T-0130 lane (artefacts), from committed documents only
@@ -44,7 +44,7 @@ source:
     - project-context/06-requirements-v2.md §E — "Non-goals"
     - project-context/STATE.md — "Deferred (do not start)"
     - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §3, §4
-    - GitHub #51 — SPEC: the five deferred capabilities
+    - 'GitHub #51 — SPEC: the five deferred capabilities'
     - GitHub issue list, `gh issue list --state all --limit 80`
   known_gap: >-
     ADR-V3-001 (the torch decision) gates the two `conditional` entries below. It is
@@ -212,10 +212,10 @@ rungs:
     ticket: T-0120
     issue: 54
     citation:
-      - GitHub #54, OPEN, labels ready-for-agent + blocked
-      - GitHub #51 ("The developer wants all five inside the current cycle")
+      - 'GitHub #54, OPEN, labels ready-for-agent + blocked'
+      - 'GitHub #51 ("The developer wants all five inside the current cycle")'
       - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §4, step 4
-      - docs/LOGBOOK.md, T-0119 ("Next: T-0120 (Rung 5 MIL)")
+      - 'docs/LOGBOOK.md, T-0119 ("Next: T-0120 (Rung 5 MIL)")'
     contradicts:
       - project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start")
       - project-context/06-requirements-v2.md §E ("No MIL layer (Rung 5) ... in this sprint")
@@ -239,8 +239,8 @@ rungs:
     ticket: T-0121
     issue: 55
     citation:
-      - GitHub #55, OPEN, labels ready-for-agent + blocked
-      - GitHub #51 ("the cheapest of the five and the strongest decision-layer claim")
+      - 'GitHub #55, OPEN, labels ready-for-agent + blocked'
+      - 'GitHub #51 ("the cheapest of the five and the strongest decision-layer claim")'
       - docs/PRE-REGISTRATION-CYCLE3-2026-08-31.md §2 (false_hold_coverage declared for it)
     contradicts:
       - >-
@@ -260,7 +260,7 @@ rungs:
     ticket: T-0122
     issue: 56
     citation:
-      - GitHub #56, OPEN, labels ready-for-agent + blocked
+      - 'GitHub #56, OPEN, labels ready-for-agent + blocked'
       - 'GitHub #56 title carries the marker "[cut first]"'
     reason: >-
       UNVERIFIED because no document states whether this is in or out. Its own issue title
@@ -278,7 +278,7 @@ rungs:
     ticket: T-0123
     issue: 57
     citation:
-      - GitHub #57, OPEN, labels ready-for-agent + blocked
+      - 'GitHub #57, OPEN, labels ready-for-agent + blocked'
       - >-
         GitHub #51 ("running at Stage 2 of the cascade only — on non-PASS decisions, never
         in the scoring path, never scored on PR-AUC")
@@ -303,8 +303,8 @@ rungs:
     ticket: T-0124
     issue: 58
     citation:
-      - GitHub #58, OPEN, labels ready-for-agent + blocked
-      - GitHub #51, user stories 5 and 6 (which day behaviour changed; named phases)
+      - 'GitHub #58, OPEN, labels ready-for-agent + blocked'
+      - 'GitHub #51, user stories 5 and 6 (which day behaviour changed; named phases)'
     blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
 
   - rung: 8
@@ -316,7 +316,7 @@ rungs:
     ticket: T-0125
     issue: 59
     citation:
-      - GitHub #59, OPEN, labels ready-for-agent + blocked
+      - 'GitHub #59, OPEN, labels ready-for-agent + blocked'
       - >-
         GitHub #51 ("fitted by scipy.optimize against a parametric Hawkes/NB conditional
         intensity ... it does not require the intensity to be neural")
@@ -340,7 +340,7 @@ rungs:
     issue: 65
     citation:
       - 'GitHub #65, OPEN, label `conditional`, title "(needs ADR-V3-001 reversed)"'
-      - GitHub #51 ("Gated-attention MIL is the upgrade and it requires the torch decision")
+      - 'GitHub #51 ("Gated-attention MIL is the upgrade and it requires the torch decision")'
     reason: >-
       Needs autograd. CLAUDE.md rejects torch and transformers and the machine is CPU-only
       with four cores. Unblocks only if ADR-V3-001 is reversed, and #51 records that the
@@ -360,7 +360,7 @@ rungs:
     issue: 66
     citation:
       - 'GitHub #66, OPEN, label `conditional`, title "(needs ADR-V3-001 reversed)"'
-      - GitHub #51 ("A neural intensity is the upgrade and it requires the torch decision")
+      - 'GitHub #51 ("A neural intensity is the upgrade and it requires the torch decision")'
     reason: Same autograd/torch gate as T-0131. Explicitly banned by 06-requirements-v2.md §E while the ADR stands.
     decided_in: GitHub #51, ADR-V3-001 (recommendation, no).
     gap: ADR-V3-001 has no file in this tree.
