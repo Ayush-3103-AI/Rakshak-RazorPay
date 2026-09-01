@@ -712,7 +712,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.0051902849239266295,
+          "p99_latency_ms": 0.005117930013843893,
           "pr_auc": 0.7379858549557606,
           "precision_at_k": 0.8833333333333333,
           "prevalence": 0.011950207468879669,
@@ -786,7 +786,7 @@
           "n_merchants_scored": 6025.0,
           "n_rows_kept": 361500.0,
           "oracle_savings": 0.9353154632786702,
-          "p99_latency_ms": 0.005880070816036984,
+          "p99_latency_ms": 0.005713814384499461,
           "pr_auc": 0.7677428463254012,
           "precision_at_k": 0.3611111111111111,
           "prevalence": 0.011950207468879669,
@@ -1019,7 +1019,7 @@
           "n_merchants_scored": 3013.0,
           "n_rows_kept": 180780.0,
           "oracle_savings": 0.9476344359837592,
-          "p99_latency_ms": 0.0051408614107890035,
+          "p99_latency_ms": 0.0051672879667993875,
           "pr_auc": 0.6666474189638165,
           "precision_at_k": 0.6333333333333333,
           "prevalence": 0.01261201460338533,
@@ -1097,7 +1097,7 @@
           "n_merchants_scored": 3013.0,
           "n_rows_kept": 180780.0,
           "oracle_savings": 0.9476344359837592,
-          "p99_latency_ms": 0.0051408614107890035,
+          "p99_latency_ms": 0.0051672879667993875,
           "pr_auc": 0.6666474189638165,
           "precision_at_k": 0.6333333333333333,
           "prevalence": 0.01261201460338533,
@@ -1459,7 +1459,7 @@
       },
       {
         "path": "data/v2/eval/rung3_realised_exposure_val_seed43.json",
-        "sha256": "afca8b97138b7e3172d349dfd509c55235b51e3cf839255590f9bf2d94904bfe"
+        "sha256": "78c841f903cef95254d786b54872a1ec3cc47a906d621f6f3d79b47fc987a090"
       },
       {
         "path": "data/v2/eval/rung3_realised_exposure_val_seed44.json",
@@ -1499,7 +1499,7 @@
       },
       {
         "path": "data/v2/eval/rung4_realised_exposure_val_seed43.json",
-        "sha256": "028b918bfc78f3b95ee550c22c7c7c77c9e4f953528bfb1270eb809903996404"
+        "sha256": "bf09e996e3c2a5f9867fe4941e0ca7f70e697b54e33f7135dfb0f763abfbf132"
       },
       {
         "path": "data/v2/eval/rung4_realised_exposure_val_seed44.json",
@@ -1519,7 +1519,7 @@
       },
       {
         "path": "data/v2/eval/rung4_val_seed43.json",
-        "sha256": "1d710490301b353d5665db6e19e0528465aae6bcfd9636e5af67f8fb3a8446b4"
+        "sha256": "183ed7fa06f2d3353b5ce73ee8723afa350b1b6a41e4f38b9e3e5dc126d44429"
       },
       {
         "path": "data/v2/eval/rung4_val_seed44.json",
@@ -1559,7 +1559,7 @@
       },
       {
         "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed43.json",
-        "sha256": "71a2e5f4866c12e7f1a40dc68c55a7acf89cfca771e930d21294ac3a08fe84da"
+        "sha256": "4b6f9f48c18acef4103461302aa5583b26a976290953d1e55124263904b96fa6"
       },
       {
         "path": "data/v2/eval/rung6_crc_base2_alpha0.05_val_seed44.json",
@@ -1579,7 +1579,7 @@
       },
       {
         "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed43.json",
-        "sha256": "f3405d8b5ee91dab3411e672fad0cfe99841b4c7bc869a2d82daabc7ba70e426"
+        "sha256": "a569658a37c1d3bb1782ae3781ada443f9e940904296eceadf6ca9fc2f23b52f"
       },
       {
         "path": "data/v2/eval/rung6_crc_base2_alpha0.1_val_seed44.json",
@@ -1599,7 +1599,7 @@
       },
       {
         "path": "data/v2/eval/rung9_realised_exposure_val_seed43.json",
-        "sha256": "6e908501eb5fca24d8554a98c014f2426f70b7349f76d9a95a5d85e24c088720"
+        "sha256": "d98e4c768d4f8e493390e14a12284c8cbb33050c038071654d3edb5be98a0213"
       },
       {
         "path": "data/v2/eval/rung9_realised_exposure_val_seed44.json",
@@ -1619,7 +1619,7 @@
       },
       {
         "path": "data/v2/eval/rung9_val_seed43.json",
-        "sha256": "54e66c187c926e17be0e35b5e75be5d4b737ab34c69a85cd399ade34d66e2679"
+        "sha256": "19ca44d2fa86a3b34c06c71f7034cd9fbfd71f8efd79a1fad2cbc18f91f32eea"
       },
       {
         "path": "data/v2/eval/rung9_val_seed44.json",
