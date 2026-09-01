@@ -32,15 +32,31 @@ every band and residual line flat.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 import polars as pl
 from gates_report import GATE_DAYS, START, daily_counts, record, scenario
 
-from rakshak.generator.confounders import build_layer
+from rakshak.generator.confounders import ConfounderWindow, build_layer
 from rakshak.generator.engine import GeneratedData
 
 #: Percentage-point headroom above the nominal FPR (spec §7, G5).
 EXCESS_ALLOWED = 0.02
+#: Where the artefact generator looks for this gate's numbers: it is
+#: ``rakshak.artifacts.build.DEFAULT_G5_PATH`` and nothing else is read. Until this file
+#: exists the dashboard's lead figure is emitted as MISSING rather than fabricated, so the
+#: gate owns the dump exactly as it owns the measurement.
+G5_SERIES_PATH = Path(__file__).resolve().parents[2] / "data" / "v2" / "gates" / "g5_series.json"
+#: The one observable both detectors read: ``trailing_z`` is a z of the daily transaction
+#: count. A confounder window that moves *this* is an adversarial test of the null; a
+#: window that moves a feature neither detector can see is a control, and an excess inside
+#: it would be coincidence rather than the confounder. Which is which is a property of the
+#: run -- of which detector was measured against which confounder -- which is why ``role``
+#: travels in the artefact instead of being hardcoded in a dashboard component (#62).
+DETECTOR_FEATURE = "txn_count"
 #: Trailing window the baseline is estimated over. Matches the 28-day window the volume
 #: features in 07-feature-register.md use (v_fano_trailing, g_payer_hhi).
 BASELINE_DAYS = 28
@@ -101,6 +117,58 @@ def calibrate(z: np.ndarray, quiet_days: np.ndarray, nominal: float) -> float:
     return float(np.quantile(values, 1.0 - nominal))
 
 
+def window_role(window: ConfounderWindow) -> str:
+    """``"adversarial"`` if the window moves the observable the detector reads."""
+    return "adversarial" if window.feature == DETECTOR_FEATURE else "control"
+
+
+def day_rate(z: np.ndarray, threshold: float, day: int) -> float | None:
+    """One day of the plotted line, or ``None`` where there is nothing to plot.
+
+    The first ``BASELINE_DAYS`` days have no trailing baseline, so their z is undefined.
+    ``null`` draws that as a gap; ``0.0`` would draw it as "the detector was quiet", which
+    is a different and false claim. ``NaN`` is not an option -- the artefact contract
+    serialises with ``allow_nan=False``.
+    """
+    rate = alert_rate(z, threshold, np.array([day]))
+    return None if np.isnan(rate) else rate
+
+
+def dump_series(
+    prevalence: float,
+    nominal: float,
+    windows: list[ConfounderWindow],
+    series: list[dict[str, Any]],
+) -> None:
+    """Write the figure's data to ``DEFAULT_G5_PATH`` in the shape ``build_g5`` requires.
+
+    ``start_day``/``end_day`` are the generator's own **half-open** ``[start, end)`` range,
+    unmodified: ``ConfounderWindow`` says "gate G5 shades exactly these", and re-deriving
+    the band here would let the shading and the measurement drift apart.
+    """
+    G5_SERIES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    document = {
+        "prevalence": prevalence,
+        "nominal_alert_rate": nominal,
+        "excess_allowed_pp": EXCESS_ALLOWED * 100.0,
+        "n_days": GATE_DAYS,
+        "windows": [
+            {
+                "confounder": window.confounder.value,
+                "start_day": window.start_day,
+                "end_day": window.end_day,
+                "feature": window.feature,
+                "role": window_role(window),
+            }
+            for window in windows
+        ],
+        "series": series,
+    }
+    G5_SERIES_PATH.write_text(
+        json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
 def test_g5_confounder_null(null_data: GeneratedData) -> None:
     config = scenario(prevalence=0.0)
     layer = build_layer(
@@ -124,10 +192,12 @@ def test_g5_confounder_null(null_data: GeneratedData) -> None:
     raw = trailing_z(counts, BASELINE_DAYS)
     residual = cohort_residual(raw)
 
+    series: list[dict[str, Any]] = []
     for name, z in (("raw", raw), ("cohort-residual", residual)):
         threshold = calibrate(z, quiet, nominal)
         baseline_rate = alert_rate(z, threshold, quiet)
         worst = 0.0
+        excesses: list[dict[str, Any]] = []
         for window in windows:
             days = np.arange(window.start_day, window.end_day)
             days = days[days > BASELINE_DAYS]
@@ -136,6 +206,17 @@ def test_g5_confounder_null(null_data: GeneratedData) -> None:
             rate = alert_rate(z, threshold, days)
             excess = rate - nominal
             worst = max(worst, excess)
+            excesses.append(
+                {
+                    "confounder": window.confounder.value,
+                    "start_day": window.start_day,
+                    "end_day": window.end_day,
+                    "role": window_role(window),
+                    "days_measured": int(days.size),
+                    "alert_rate": rate,
+                    "excess_pp": excess * 100.0,
+                }
+            )
             record(
                 f"G5 {name} {window.confounder.value}",
                 "GREEN" if excess <= EXCESS_ALLOWED else "RED",
@@ -149,12 +230,29 @@ def test_g5_confounder_null(null_data: GeneratedData) -> None:
             f"worst window excess {worst * 100:+.2f}pp; quiet-day rate {baseline_rate:.4f}",
             "prevalence=0, so every alert here is a false positive by construction",
         )
+        # Every number in the dump is the one just recorded to the terminal rather than a
+        # second computation of it: a dump that quietly disagreed with the reported gate
+        # would be worse than no dump at all.
+        series.append(
+            {
+                "detector": name,
+                # A freshly generated zero-prevalence population belongs to no split.
+                "split": "NULL_RUN",
+                "threshold": threshold,
+                "quiet_day_rate": baseline_rate,
+                "alert_rate_by_day": [day_rate(z, threshold, d) for d in range(GATE_DAYS)],
+                "window_excess": excesses,
+                "verdict": "GREEN" if worst <= EXCESS_ALLOWED else "RED",
+            }
+        )
         # The measurement is sound: the threshold really does sit at the nominal rate on
         # the quiet stretch. Without this, a RED verdict could just be a mis-calibration.
         assert abs(baseline_rate - nominal) < 0.005, (
             f"{name} threshold did not calibrate: quiet-day rate {baseline_rate:.4f} vs "
             f"nominal {nominal:.4f}"
         )
+
+    dump_series(config.population.prevalence, nominal, windows, series)
 
 
 def test_g5_windows_cover_all_six_confounders(null_data: GeneratedData) -> None:

@@ -3,12 +3,12 @@
   "payload": {
     "artifacts": [
       {
-        "file": null,
+        "file": "g5_confounder_null.json",
         "name": "g5_confounder_null",
-        "reason": "no G5 gate output at data/v2/gates/g5_series.json; `make gates` must dump the confounder-null series before this figure exists",
-        "sha256": null,
+        "reason": null,
+        "sha256": "98ec8df31f2711bffa23cbe2c6ba78ff7f0bb2594e22276b4e0fce6221ddc0ff",
         "split": "NULL_RUN",
-        "status": "MISSING"
+        "status": "PRESENT"
       },
       {
         "file": "ladder.json",
