@@ -341,22 +341,59 @@ rungs:
   - rung: 7
     name: onset_localisation
     title: Onset localisation and segmented narrative (Rung 7b)
-    status: planned
-    adopted: null
-    module: null
+    status: built
+    adopted: false
+    module: src/rakshak/explain/segmentation.py
     ticket: T-0124
     issue: 58
     citation:
       - 'GitHub #58, OPEN, labels ready-for-agent + blocked'
       - 'GitHub #51, user stories 5 and 6 (which day behaviour changed; named phases)'
     blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+    amended: >-
+      2026-09-02, T-0124. planned -> built, adopted -> false. Measured on validation
+      (open_count 0) by scripts/rung7b_score.py at two EM initialisation seeds, and it
+      LOSES to the trivial "onset = alert day" baseline on both. Median absolute
+      onset_localisation_error 129.0 days (seed 1) and 85.0 days (seed 2) against the
+      baseline's 77.0; median signed error -121.5 and -85.0 days (IQR 138.75 and 110.0)
+      against the baseline's +77.0 (IQR 70.5), over 19 alerted true-positive merchants.
+      State recovery AMI 0.1075 / 0.0670 (headline) with ARI 0.0672 / 0.0323 beside it and
+      macro-recall 0.4614 / 0.1917. PRE-REGISTRATION-CYCLE3 §5 pre-declared this outcome:
+      "If onset_localisation_error shows Rung 7 cannot localise onset better than the
+      trivial guess, that is a negative result and Rung 7 is dropped from the scoring
+      path." It was never on the scoring path, so what is dropped is the claim, not a row.
+      adopted:false rather than null because there is now a measurement to be not-adopted
+      on; Rung 7a stays null because it was never scored against an adoption question.
+      Artifacts: data/v2/explanation_quality/rung7b_onset_localisation_val_emseed{1,2}.json.
+      See LIMITATIONS.md §13.
+    corrected: >-
+      2026-09-02, lead. status scored -> built. T-0124 wrote `scored`, which this file's
+      own vocabulary reserves for "has rows under data/v2/eval/, therefore appears in
+      ladder.json" — and the `note` directly below said the opposite in the same commit.
+      tests/unit/test_artifacts_contract.py caught the contradiction
+      (test_no_roster_entry_claims_a_rung_that_has_no_ladder_row_was_scored). No number
+      moved: the measurement stands exactly as recorded above, and `built` is the same
+      call Rung 8 and Rung 5b made for the same reason on the same day.
+    note: >-
+      Like Rung 7a, never a ladder row: the artifact is written to
+      data/v2/explanation_quality/ and not to data/v2/eval/, which
+      artifacts/build.py::read_result_rows globs into ladder.json. A consumer that renders
+      this entry must not expect a PR-AUC column for it — there is no score, not a bad one.
 
   - rung: 8
     name: tpp_hawkes_nb
     title: Hawkes/NB temporal point process with a time-rescaling KS test
-    status: planned
-    adopted: null
-    module: null
+    status: built
+    # `built` and NOT `scored`, which the vocabulary above defines as "has rows under
+    # data/v2/eval/, therefore appears in ladder.json". Rung 8 has no ladder row and never
+    # will: it is a goodness-of-fit hypothesis test, not a calibrated probability, so it has
+    # no PR-AUC, no savings, no precision@K and no capacity K. Its artefacts live at
+    # data/v2/rung8_tpp/ and deliberately NOT at data/v2/eval/. It was measured — the
+    # `result` block below is the measurement — but "scored" would put it on a ladder it
+    # makes no claim on, and the vocabulary is pinned in artifacts/__init__.py so widening
+    # it is not this ticket's to do.
+    adopted: false
+    module: src/rakshak/models/rung8_tpp.py
     ticket: T-0125
     issue: 59
     citation:
@@ -372,6 +409,53 @@ rungs:
         the separate conditional ticket T-0132 below — so §E does not bite. STATE.md's
         wording is stale and should be corrected.
     blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+    amended: >-
+      2026-09-02, T-0125. planned -> built; adopted null -> false. The `citation` and
+      `contradicts` blocks above are left exactly as written. What changed is only that the
+      rung now exists and has been measured: src/rakshak/models/rung8_tpp.py fits
+      lambda(t) = mu*s(t) + sum alpha*beta*exp(-beta(t-t_i)) per merchant by scipy
+      L-BFGS-B with an analytic gradient, and scripts/rung8_score.py feeds the compensator
+      increments to the already-locked eval.metrics.tpp_rescaled_ks. Nothing in
+      EVAL_MODULES was touched; the test split was not opened and open_count is 0.
+      `built` and not `scored` because the rung has no ladder row by construction — see the
+      comment on `status`.
+    result: >-
+      Acceptance criterion 1 MET: on a Hawkes process simulated from the generator's own
+      branching construction (mu 20/day, alpha 0.30, beta 480/day, 120 days, 3,671 events)
+      the fit recovers 20.76 / 0.321 / 480.1 and the rescaling test does not reject —
+      KS 0.0106, p 0.799, n 3,670. Paired power check: a doubled rate gives KS 0.1523,
+      p 3.7e-136. Criterion 2 NOT MET, and it is the one that decides the rung. On the
+      prevalence=0 population with confounders on — gates_report.scenario(prevalence=0.0),
+      seed GATE_SEED+1, the same configuration and seed G5's null_data fixture uses —
+      1,191 merchants over 365 days, the alert rate inside the P1 festival window at days
+      308-313 is 0.0711 against a nominal 0.0050, an excess of +6.61pp against G5's own
+      +2pp headroom. RED. Every alert there is a false positive by construction, so the
+      statistic is firing on the PLATFORM and not on the merchant. Criterion 3 NOT MET:
+      BAF is not vendored on this machine (CC BY-NC-SA; four gates already SKIP for the
+      same reason), so test-size calibration against the external anchor was not measured
+      and is recorded as unmet rather than waived.
+    known_issue: >-
+      The number that settles it is the calibrated threshold, not the excess. To hold the
+      false-alarm rate at the nominal 0.0050 on a population containing NO FRAUD AT ALL,
+      the test has to be thresholded at p < 1.09e-92. On the real cycle-4 validation fold
+      it rejects 83.65% of merchants that never drifted at a nominal level of 0.05 — 16.7x
+      its own nominal size. The cause is structural and is in the model by construction:
+      the generator draws each day's COUNT from a negative binomial (median realised
+      baseline Fano 8.71) and a conditional intensity cannot represent an i.i.d. latent
+      per-day multiplier, because that multiplier carries no history. Re-fitting the
+      baseline on days 210-239 instead of 0-29 moves the size only 0.8365 -> 0.7942, so
+      elapsed non-stationarity accounts for about 4pp of a 79pp gap and the remainder is
+      the NB layer. P6 (macro sinusoid, days 11-34) could not be measured at all: it
+      overlaps the fit's own baseline window, so 5 of 6 confounders were evaluated and the
+      sixth contaminates the baseline. NOT TUNED to rescue any of this.
+    note: >-
+      Reported as a METHOD DEMONSTRATION with an explicitly UNPROVEN detection claim, which
+      is the third mitigation #59 pre-committed to for exactly this outcome. LIMITATIONS.md
+      §12 records the circularity in the same words v1's ADR-0002 used against GNNs. The
+      statistic does carry signal — ROC-AUC 0.8014 of -log10(p) against the drift label on
+      586 VAL merchants — but a ranking is not what this rung was for: every other rung
+      already produces a ranking, and the only thing Rung 8 offered that they do not is a
+      calibrated null. That is the thing that does not survive measurement.
 
   - rung: 9
     name: rank_cusum
@@ -420,9 +504,9 @@ rungs:
   - rung: 5
     name: mil_gated_attention
     title: Gated-attention MIL (Ilse et al., ICML 2018)
-    status: conditional
-    adopted: null
-    module: null
+    status: built
+    adopted: false
+    module: src/rakshak/models/rung5b_attention.py
     ticket: T-0131
     issue: 65
     citation:
@@ -437,13 +521,55 @@ rungs:
       RESOLVED 2026-09-02: `docs/adr/ADR-V3-001-no-autograd.md`. The status now rests on a
       readable ADR rather than on an issue label. The ADR records the reversal process, so
       `conditional` means gated-and-revisitable rather than quietly abandoned.
+    amended: >-
+      2026-09-02, cycle 4. STATUS conditional -> built; ADOPTION null -> false. The
+      `reason` and `decided_in` blocks above are left exactly as written: they record the
+      state of the gate before the lead reversed it, and #51's recommendation against the
+      reversal was not withdrawn — it was overridden. What moved is only the blocker.
+      ADR-V3-001 was REVERSED by written amendment on 2026-09-02 for this rung and T-0132,
+      `torch==2.14.0+cpu` is pinned from an explicit CPU index, and the rung was built and
+      scored. `status` is `built` and NOT `scored` because Rung 5b emits no `EvalResult`
+      row: its gate is PR-AUC and latency, and its artefacts live in
+      `data/v2/rung5b_attention/` rather than `data/v2/eval/`, which
+      `artifacts/build.py::read_result_rows` globs into `ladder.json`.
+    result: >-
+      NOT ADOPTED, and by a margin in the wrong direction. The gate declared in advance in
+      the ADR amendment was >= +10% relative PR-AUC on validation against Rung 5's
+      fitted-tau = 5.0 LSE pooling, pooled over seeds 42-46. Measured: pooled Rung 5b
+      0.755459 against Rung 5's 0.783574, a relative margin of **-3.588%** — it does not
+      merely fail to clear +10%, it LOSES to the fixed pooling it was built to replace.
+      Negative at 5 of 5 seeds (-3.23%, -3.60%, -3.85%, -3.55%, -3.71%), a per-seed spread
+      of 0.620pp, so the pooled margin sits well outside the spread and the tie clause does
+      not apply. The latency term HOLDS — worst-seed p99 2.89 ms per merchant-day bag on
+      one CPU core against a 10 ms budget — so the rung fails on accuracy alone, not on
+      cost. Same five seeds, same subsample, same bags, same frozen instance model as Rung
+      5; the recomputed tau grid reproduces the committed
+      `data/v2/eval/rung5_mil_val_seed4*.json` table exactly at all five seeds, which is
+      what makes the pooling the single variable. NOT TUNED to rescue it: hyperparameters
+      were fixed before the first run and the losing number is the first number.
+    known_issue: >-
+      The result is what ADR-V3-001's own §Reversal item 3 predicted and recorded as NOT
+      SATISFIED. The gate carries **232 trainable parameters against ~234 trainable
+      positive merchants** — 0.99 parameters per positive — and the amendment named that
+      unrelieved label constraint as the single most likely reason for the rung to fail.
+      The revisit trigger #65 declared also never fired: it asked for a LARGE fitted tau,
+      and tau = 5.0 was selected at 5/5 seeds on a 0..inf grid whose whole family spans
+      0.0068 PR-AUC. Attention weights ARE reported per capsule (#65's third acceptance
+      criterion) and they render — merchant M036758, day 295, 1,528 capsules — but they
+      are close to uniform: entropy 6.62 nats against a maximum of 7.33, and the
+      top-weighted payer carries 0.47% of the bag score. The learned attention agrees with
+      the fitted tau that this bag label is not driven by a small number of payers.
 
   - rung: 8
     name: tpp_neural_intensity
     title: Neural conditional intensity for Rung 8
-    status: conditional
-    adopted: null
-    module: null
+    status: built
+    # `built` and NOT `scored`, for the same reason the tpp_hawkes_nb entry above says so:
+    # this is a goodness-of-fit hypothesis test with no PR-AUC, no savings, no precision@K
+    # and no capacity K. Its artefacts live at data/v2/rung8b_neural/ and deliberately NOT
+    # at data/v2/eval/, which artifacts/build.py::read_result_rows globs into ladder.json.
+    adopted: false
+    module: src/rakshak/models/rung8b_neural.py
     ticket: T-0132
     issue: 66
     citation:
@@ -453,3 +579,56 @@ rungs:
     decided_in: GitHub #51, ADR-V3-001 (recommendation, no).
     gap: >-
       RESOLVED 2026-09-02: `docs/adr/ADR-V3-001-no-autograd.md`. Same gate as T-0131.
+    amended: >-
+      2026-09-02, T-0132. STATUS conditional -> built; ADOPTION null -> false. The `reason`
+      and `decided_in` blocks above are left exactly as written: #51's recommendation
+      against the torch reversal was never withdrawn, it was overridden by the lead, and
+      rewriting the record would hide that. What moved is only the blocker. ADR-V3-001 was
+      REVERSED by written amendment on 2026-09-02 for this rung and T-0131,
+      `torch==2.14.0+cpu` is pinned from an explicit CPU index, and the rung was built and
+      measured. `src/rakshak/models/rung8b_neural.py` is a monotone cumulative-hazard
+      network (Omi, Ueda & Aihara, NeurIPS 2019) over a six-timescale closed-form
+      excitation memory, with the intensity obtained as `dLambda/dtau` by `torch.autograd`;
+      `scripts/rung8b_score.py` feeds its compensator increments to the already-locked
+      `eval.metrics.tpp_rescaled_ks` through the SAME `compensator_increments` contract
+      Rung 8 uses, and imports Rung 8's runner for the scenario, the VAL fold and the
+      alert-rate arithmetic so the two columns cannot drift apart. `rung8_tpp.py` is
+      UNTOUCHED. Nothing in EVAL_MODULES was touched; the test split was not opened and
+      open_count is 0.
+    result: >-
+      NOT ADOPTED, and the adoption gate was UNREACHABLE BY CONSTRUCTION before the first
+      line was written. ADR-V3-001 §AMENDMENT requires all three of T-0125's circularity
+      mitigations to pass with the neural intensity AND demonstrably better goodness-of-fit
+      calibration on the same KS framing. **Mitigation 2 is structurally unavailable to any
+      implementation** — BAF is CC BY-NC-SA and deliberately not vendored, which is why
+      `make gates` reports 4 skips — so it is recorded UNMET, exactly as Rung 8 recorded it,
+      and no substitute anchor was invented. Measured, each against the parametric rung on
+      identical framing: acceptance criterion 1 MET but calibration WORSE — on the same
+      simulated Hawkes (same seed, same construction, 3,671 events) KS 0.0203 / p 0.0948
+      against the parametric KS 0.0106 / p 0.799, so #66's criterion 4 FAILS at the
+      declared epoch budget. Mitigation 1 still RED: worst window +3.78pp against G5's
+      +2pp allowance (parametric +6.61pp), in the same P1 festival window, days 308-313,
+      on the same fraud-free population. Validation-fold realised size 0.6958 against the
+      parametric 0.8365 on the identical 586 merchants — better, and still **13.9x its own
+      nominal 0.05**. 209 parameters against 3, and against the ~234 trainable positives
+      ADR-V3-001 records as an unmet precondition. LIMITATIONS.md 15.
+    known_issue: >-
+      The number #66 predicted would move the wrong way did. LIMITATIONS.md §12.3 names the
+      threshold, not the excess, as the number that settles this rung: to hold the nominal
+      0.0050 alert rate on a population with NO FRAUD IN IT, the parametric test had to be
+      thresholded at p < 1.09e-92. The neural test needs **p < 9.32e-111** — eighteen orders
+      of magnitude further from a usable level. The added capacity fits the merchant's own
+      baseline more tightly, so quiet-day p-values collapse further, which is the
+      circularity objection getting worse rather than better exactly as the ticket said it
+      would. A convergence diagnostic makes the mechanism explicit: at 3x the declared
+      epoch budget the neural fit scores KS 0.0076 / p 0.982 on the simulated process,
+      **better than the correctly-specified parametric model that generated it**. The same
+      diagnostic on the validation fold settles what the one apparent gain was worth: at 3x
+      the budget the realised size does not fall further, it RISES from 0.6958 to 0.7586,
+      back toward the parametric 0.8365, while power rises 0.9500 -> 0.9833. Training the
+      intensity harder fits each merchant own baseline more tightly and rejects MORE
+      merchants that never drifted, so the 14pp size advantage at the declared budget is
+      substantially the slack of a fit stopped short of its optimum rather than better
+      calibration. NOT TUNED to rescue any of this — the optimiser settings were fixed in
+      the module before the first mitigation ran, no configuration was re-chosen after a
+      result was seen, and both longer-budget runs make the rung look worse, not better.
