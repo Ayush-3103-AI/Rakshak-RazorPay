@@ -285,8 +285,10 @@ Explicitly out of scope for v2. Listing them is what prevents scope creep at hou
   retrained. Delayed labels make anything else unsound and unverifiable in 48 hours.
 - **No GNN, no transformer, no RNN, no neural TPP.** Deferred with reasons in the
   lit survey; the ADR rejecting GNNs stands on synthetic-graph circularity.
-- **No MIL layer (Rung 5) and no HSMM explanation layer (Rung 7)** in this sprint. Both
-  are specified in the lit survey as the post-submission roadmap.
+- ~~No MIL layer (Rung 5) and no HSMM explanation layer (Rung 7) in this sprint~~ —
+  **reversed 2026-08-31 (GitHub #51)**. Rungs 5–7 were built and scored in cycle 4; see
+  `LIMITATIONS.md` §9.9. Rung 8 (neural conditional intensity) is still a non-goal for
+  this sprint — `status: planned` in `configs/rung_roster.yaml`.
 - **No real-time streaming infrastructure** (Kafka, Flink). The online feature runner
   proves streaming-computability; deploying it is not this sprint's job.
 - **No multi-currency, no cross-border settlement modelling.** INR only.

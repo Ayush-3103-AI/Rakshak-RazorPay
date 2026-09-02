@@ -146,8 +146,12 @@ rather than at hour 40 when it is emotional.
 10. Rung 6 (conformal risk control) — highest-value deferral, spec it in Future Work
 11. T2 divergence features beyond the two cheapest
 
-**Already deferred, spec only, do not start**
-MIL (Rung 5), HSMM-NB explanation layer (Rung 7), neural TPP, GRU, any GNN.
+**Reversed 2026-08-31 (GitHub #51): "the developer wants all five inside the current
+cycle."** MIL (Rung 5), conformal risk control (Rung 6) and the HSMM-NB explanation
+layer (Rung 7) were built and scored in cycle 4 — see `LIMITATIONS.md` §9.9. Rung 8
+(neural conditional intensity) is `status: planned` in `configs/rung_roster.yaml`, gated
+`conditional` on `docs/adr/ADR-V3-001-no-autograd.md`, and has not been built. Neural
+TPP beyond Rung 8, GRU, and any GNN remain out of scope for this sprint.
 
 ---
 
