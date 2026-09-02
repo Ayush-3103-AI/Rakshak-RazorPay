@@ -1167,4 +1167,20 @@ a 15% alert-rate reduction (`raw_alert * 0.85`) and measured 14.3% (`0.3677` aga
 of `0.3647`) — identical before and after the cycle-4 config change, so the threshold had
 been set on a different population, not regressed. Decision: the claim is restated as 14%
 (`raw_alert * 0.86`), which 14.3% clears. With this fixed, all six `make all` stages are
-green and **K-5 is retired in fact, not just in status.**
+green **on CI (`ubuntu-latest`, the platform K-5 actually verifies)** — lint, parity, gen,
+gates and test confirmed on this Windows dev machine too, from a genuinely clean clone.
+
+**A fourth defect, found by that clean-clone run and not fixed: two `perf` budgets miss on
+Windows.** `tests/perf/test_stage0_latency.py::test_stage0_screen_latency` (NFR-01) and
+`tests/perf/test_sweep_budget.py::test_full_daily_sweep_of_ten_thousand_merchants` (NFR-03)
+both fail here, reproduced three times across both the clean clone and the original working
+tree with consistent numbers: NFR-01 measured 1.10 ms p99 against a 0.5 ms budget (2.2x
+over); NFR-03 measured 57–64 s against a 30 s budget (1.9–2.1x over), with "load packed
+state" alone costing ~4 ms/merchant. `v3-ci.yml` runs both `lint-and-test` and `clean-clone`
+on `ubuntu-latest` only — these two budgets have never actually been exercised on Windows
+before this session, on either the working tree or a clone, so this is not a clean-clone
+defect and not necessarily a regression: it may be a real Windows-vs-Linux gap in the packed-
+state load path, calibrated tight (2x margin) on hardware this local machine doesn't match.
+**Unverified, not fixed, not weakened** — CI is green on Linux and that is what K-5 measures;
+this is recorded as an open question about the two tightest perf budgets on a platform the
+project was never claiming to guarantee.

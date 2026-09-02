@@ -177,10 +177,16 @@ stashing, so the threshold was set on a different population and had drifted, no
 regressed. **The decision (not a patch): the claim is restated as 14%.** The assertion
 now reads `raw_alert * 0.86`, which the measured 14.3% clears; `LIMITATIONS.md` §9.10 is
 updated to match. `ruff` and `mypy --strict` clean on 49 source files, `tests/parity` 94
-passed 1 xfailed, `tests/perf` green with NFR-10 measured at 215.3 s against a 1,460 s
-derived budget, `tests/gates` 20 passed 4 skipped — the tree is now fully green and K-5
-is genuinely retired, not just recorded as retired. §9.10 records how long the other two
-stages spent failing unnoticed before this cycle.
+passed 1 xfailed, `tests/gates` 20 passed 4 skipped, `tests/perf` green with NFR-10
+measured at 215.3 s against a 1,460 s derived budget — all confirmed **from a genuinely
+clean clone**, not just the working tree, closing the last untested claim.
+
+**Two `perf` budgets (NFR-01, NFR-03) fail on this Windows machine, both in the clean
+clone and the working tree** — 2.2x and 1.9–2.1x over, three reproductions, consistent
+numbers. `v3-ci.yml` runs `perf` on `ubuntu-latest` only; these two budgets had never
+actually been exercised on Windows before. Not fixed, not weakened — recorded in
+`LIMITATIONS.md` §9.10 as an open question about a Linux-vs-Windows gap, not a clean-clone
+defect. **K-5 is read as retired on the platform it actually verifies (CI, Linux).**
 
 **2. RESOLVED 2026-09-02. `configs/rung_roster.yaml`'s `known_gap` and two `gap` fields
 now cite `docs/adr/ADR-V3-001-no-autograd.md`** (the source YAML and `artifacts/rung_roster.json`
