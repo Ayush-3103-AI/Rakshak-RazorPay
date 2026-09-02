@@ -124,6 +124,61 @@ mistake that made v1's headline meaningless. Rows are ordered by rung, not by
 score — a rung that lost sits where it belongs, in the same table and the same
 style as one that won (Prime Directive 6).
 
+**Which table is which.** This section is three parts, in this order. First
+**the trajectory**: what the two frozen prior cycles measured, quoted beside
+this one. Then **§2.0, the headline** — one row per *policy*, pooled over the
+seeds, with the per-seed range beside every mean. **Quote §2.0.** Then **§2.1,
+the raw artefact** — one row per *(policy, seed)*, unpooled: the rows §2.0 is
+computed from, kept in full because a summary nobody can check is not a result.
+It is the longer table and it is not the headline; a single row of it is one
+seed and must not be read as a number for the policy.
+
+### The trajectory — v1, cycle 3, and this cycle
+
+The prior cycles are reported here, in the results section, with their own
+numbers. They are **quoted, never recomputed**: `v1-frozen` and
+`cycle3-ladder-immutable` are tags, and Prime Directive 2 makes everything
+under them immutable. **The columns are not commensurable and no delta is taken
+across them** — different generator, different prevalence, different split,
+different capacity K. A difference between two columns measures the harness,
+not the model. What changed between them is the finding.
+
+|  | v1 — `v1-frozen` | cycle 3 — `cycle3-ladder-immutable` | this cycle |
+|---|---|---|---|
+| split reported | **test**, opened once (unlock ticket T-0011) | val | val |
+| seeds | 1 (seed 42) | 1 (seed 42) | 5 |
+| headline | the sequence layer beats the rule engine on savings by **5.9%** relative (0.5176 vs 0.4889) against a **pre-registered bar of 20%** — **kill criterion K2 FIRED** | every rung is FLOOR-FAIL: best rung **0.4354** against `volume_rank` **0.6017**, **−27%** | best rung `rung4_realised_exposure` 0.5981 against `volume_rank` 0.5240, **+0.0740** at 5/5 seeds — **post-hoc**, see below; `detection_rate_d30` non-zero for 13 of 16 policies |
+| what beat it | a **uniform random** score, at 0.5365. The shipped model sat **−0.0188** below that floor | `volume_rank`, while the rung caught **61% more** fraud merchants at **52% higher** precision on the same alert budget | `volume_rank` still beats most of the ladder — see the FLOOR-FAIL banner above |
+| the model the project was built around | HMM PR-AUC **0.3347** at **20.00%** prevalence, against LightGBM's **0.6523** on the same rows: it lost by **0.3176** | cohort residuals: K-1's verdict, LIMITATIONS.md §8.2 | the exposure correction, not a model — §9.2 |
+| detection latency | median lag reported *after* a convention correction that reversed the column's reading | `det@7d` / `@14d` / `@30d` identically **0.000** for all 7 policies | `det@30d` non-zero for **13 of 16** policies |
+| test split | opened, once | not opened | **not opened.** `open_count` is 0 |
+
+**v1 → v3: the freeze moved from the claim to the harness.** v1's headline was
+computed at 20% prevalence against a real rate near 1.5% and reported without
+saying so, which is why prevalence is on every row of this report and why there
+is no code path here that prints a PR-AUC without it. v1 also spent its
+one-way door: it opened the test split, and the number it found there **failed
+v1's own pre-registered bar** and sat below a uniform-random floor. That is not
+a footnote to this report. It is the reason the harness in §1 was frozen, and
+hashed, before a single v2 model was written.
+
+**cycle 3 → cycle 4: no model changed and every number did.** Two measurement
+defects moved. The evaluation window opened after nearly every drift onset had
+already happened, so time-to-detection was not merely bad but *unreachable* —
+a perfect oracle scores 0.000 too (LIMITATIONS.md §8.7a). And the decision
+layer was handed the merchant's **declared** GMV as its exposure estimate,
+which tracks realised loss at ρ 0.53 where the observed GMV the floor uses
+tracks it at ρ 0.935 (§8.3a). Fixing the measurement, not the models, is what
+moved the ladder — and a cycle whose whole delta is measurement is the most
+useful thing this trajectory has to say.
+
+**And this cycle failed its own gate.** The pre-registered floor-fail condition required the best rung to clear **0.7017** on at least 4 of 5 seeds *and* at least 4 of 5 sweep ratios. `rung4_realised_exposure` clears it on **0 of 5 seeds**, and §4's sweep clears it at none of its ratios. The bar was anchored to the cycle-3 floor plus 0.10 — a figure the cycle-4 regeneration invalidated, since the floor above is 0.5240. That is an error by the pre-registration's author, it is recorded as one, and it is **not re-anchored**: the gate stands as written and its verdict stands with it. The +0.0740 in the table is therefore the comparison the gate was *trying* to make, and it is post-hoc by construction.
+
+**What two cycles bought, stated plainly.** v1 opened its test split and got a
+number that failed its own bar. This cycle did not open its test split, because
+a gate written before the answer was known said not to, and it was left where
+it was written. That, and not any margin in the table above, is the trajectory.
+
 ### 2.0 Pooled over seeds, with the per-seed range
 
 Every headline in this project is a mean over five seeds. A mean without its spread
@@ -154,7 +209,13 @@ the range is zero to four decimals: that metric does not depend on the seed.
 
 This is the concrete cost of cycle 3's single-seed ladder, and it is worth stating plainly: for these policies, **which seed you drew decided whether the rung was reported as beating the floor.** Cycle 4 scores five for exactly this reason, and a margin this close to a floor should be read as a coin-flip, not as a win or a loss.
 
-### 2.1 Every row, one per (policy, seed)
+### 2.1 Every row, one per (policy, seed) — the raw artefact, not the headline
+
+**80 rows: every (policy, seed) pair scored, unpooled.** This is the
+evidence §2.0 is computed from, kept whole so the pooling can be checked. A
+single row here is a single seed. Read §2.0 for the number that belongs to a
+policy, and read this table when you want to know whether that number is a
+result or a draw.
 
 | rung | split | prevalence | PR-AUC | savings | floor all_pass | floor all_hold | floor random@K | floor volume_rank | gap to oracle | median TTD (d) | det@30d | P@K | alerts/day | p99 ms | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|

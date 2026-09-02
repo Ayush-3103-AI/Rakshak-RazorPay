@@ -396,6 +396,204 @@ def _floor_fail_banner(rows: Sequence[EvalResult]) -> str:
     return "\n".join(lines)
 
 
+#: The label of the strongest floor on this generator, and the one the ladder is judged
+#: against. Looked up rather than assumed: if the floor is ever renamed or dropped, the
+#: trajectory section says so instead of quoting a number from thin air.
+FLOOR_LABEL: Final = "volume_rank"
+
+#: The cycle-4 floor-fail bar, quoted from `PRE-REGISTRATION-CYCLE4-2026-09-01.md` §5
+#: condition 1. It is ``0.7017`` = the *cycle-3* ``volume_rank`` floor of 0.6017 plus 0.10,
+#: and the cycle-4 regeneration moved that floor to a lower number. Anchoring a gate to a
+#: figure the same cycle invalidates was an error by the pre-registration's author. It is
+#: quoted here as written and **not re-anchored** — a sealed gate rewritten once the answer
+#: is known is not a gate. LIMITATIONS.md §9.3.
+PREREG_FLOOR_FAIL_BAR: Final = 0.7017
+
+
+def _policy_groups(rows: Sequence[EvalResult]) -> dict[tuple[int, str, str], list[EvalResult]]:
+    """Rows keyed by (rung, policy label, split) — the grouping §2.0 and §7 already use."""
+    base = [r for r in rows if r.cost_scenario == "base"] or list(rows)
+    groups: dict[tuple[int, str, str], list[EvalResult]] = {}
+    for r in base:
+        groups.setdefault((r.rung, r.label or "", r.split), []).append(r)
+    return groups
+
+
+def _mean(rs: Sequence[EvalResult], attr: str) -> float:
+    vals = [v for v in (float(getattr(r, attr)) for r in rs) if not math.isnan(v)]
+    return sum(vals) / len(vals) if vals else float("nan")
+
+
+def _trajectory(rows: Sequence[EvalResult]) -> str:
+    """The frozen prior cycles, quoted beside this one, as a trajectory (T-0117 / #50).
+
+    **The v1 and cycle-3 numbers below are literals and must stay literals.** Prime
+    Directive 2 makes them immutable, and a number this renderer could re-derive is a number
+    it could silently move: the whole value of a prior cycle is that it cannot be adjusted
+    once this cycle knows the answer. They are transcribed from `results/verdict.md` under
+    the `v1-frozen` tag and from LIMITATIONS.md §8.3a / `CYCLE4-VERDICT.txt` under
+    `cycle3-ladder-immutable`, and each cell names its source.
+
+    **The current column is computed from ``rows`` on every render**, for the reason §4 was
+    rewritten to read its artefact: prose in a generated file that asserts a number is prose
+    that goes on asserting it after it stops being true, with nothing failing — v1's
+    `results/ablations.md:94` defect. Nothing here counts rungs or names a ladder length, so
+    a rung landing after this was written changes the numbers and not the claims.
+    """
+    groups = _policy_groups(rows)
+    floor = next((rs for (_r, label, _s), rs in groups.items() if label == FLOOR_LABEL), None)
+    rungs = {k: rs for k, rs in groups.items() if k[0] >= 1}
+    best_key = max(rungs, key=lambda k: _mean(rungs[k], "savings"), default=None)
+
+    d30_fired = sum(1 for rs in groups.values() if _mean(rs, "detection_rate_d30") > 0.0)
+
+    if floor is None or best_key is None:
+        current = [
+            "**Not renderable from these rows.** No `" + FLOOR_LABEL + "` floor row, or no "
+            "rung, is present in this run, so the current column of the trajectory has "
+            "nothing to compare. The two frozen columns are unaffected and stand as quoted."
+        ]
+        table_current = "not renderable from this run"
+        gate: list[str] = []
+    else:
+        best = rungs[best_key]
+        floor_mean = _mean(floor, "savings")
+        best_mean = _mean(best, "savings")
+        n_seeds = len(best)
+        n_above = sum(1 for r in best if r.savings > floor_mean)
+        n_ge_bar = sum(1 for r in best if r.savings >= PREREG_FLOOR_FAIL_BAR)
+        name = best_key[1] or f"rung {best_key[0]}"
+        table_current = (
+            f"best rung `{name}` {_f(best_mean)} against `{FLOOR_LABEL}` {_f(floor_mean)}, "
+            f"**{best_mean - floor_mean:+.4f}** at {n_above}/{n_seeds} seeds — **post-hoc**, "
+            f"see below; `detection_rate_d30` non-zero for {d30_fired} of {len(groups)} "
+            f"policies"
+        )
+        current = []
+        gate = [
+            f"**And this cycle failed its own gate.** The pre-registered floor-fail "
+            f"condition required the best rung to clear **{PREREG_FLOOR_FAIL_BAR:.4f}** on "
+            f"at least 4 of 5 seeds *and* at least 4 of 5 sweep ratios. `{name}` clears it "
+            f"on **{n_ge_bar} of {n_seeds} seeds**, and §4's sweep clears it at none of its "
+            f"ratios. The bar was anchored to the cycle-3 floor plus 0.10 — a figure the "
+            f"cycle-4 regeneration invalidated, since the floor above is "
+            f"{_f(_mean(floor, 'savings'))}. That is an error by the pre-registration's "
+            f"author, it is recorded as one, and it is **not re-anchored**: the gate stands "
+            f"as written and its verdict stands with it. The "
+            f"{best_mean - floor_mean:+.4f} in the table is therefore the comparison the "
+            f"gate was *trying* to make, and it is post-hoc by construction.",
+            "",
+        ]
+        if n_ge_bar >= 4:
+            gate = [
+                f"> **THE GATE'S SEED HALF IS NOW MET BY A ROW SCORED AFTER THE GATE WAS "
+                f"EVALUATED.** `{name}` clears {PREREG_FLOOR_FAIL_BAR:.4f} on "
+                f"{n_ge_bar} of {n_seeds} seeds, while the recorded cycle-4 verdict is FAIL "
+                f"and `open_count` is 0. Do not read this as a pass: a gate is evaluated "
+                f"once, on the ladder that existed when it was evaluated. This needs an "
+                f"explicit decision written down, not a silently regenerated table.",
+                "",
+                *gate,
+            ]
+
+    return "\n".join(
+        [
+            "### The trajectory — v1, cycle 3, and this cycle",
+            "",
+            "The prior cycles are reported here, in the results section, with their own",
+            "numbers. They are **quoted, never recomputed**: `v1-frozen` and",
+            "`cycle3-ladder-immutable` are tags, and Prime Directive 2 makes everything",
+            "under them immutable. **The columns are not commensurable and no delta is taken",
+            "across them** — different generator, different prevalence, different split,",
+            "different capacity K. A difference between two columns measures the harness,",
+            "not the model. What changed between them is the finding.",
+            "",
+            _table(
+                ("", "v1 — `v1-frozen`", "cycle 3 — `cycle3-ladder-immutable`", "this cycle"),
+                [
+                    (
+                        "split reported",
+                        "**test**, opened once (unlock ticket T-0011)",
+                        "val",
+                        "val",
+                    ),
+                    (
+                        "seeds",
+                        "1 (seed 42)",
+                        "1 (seed 42)",
+                        str(max((len(rs) for rs in groups.values()), default=0)),
+                    ),
+                    (
+                        "headline",
+                        "the sequence layer beats the rule engine on savings by **5.9%** "
+                        "relative (0.5176 vs 0.4889) against a **pre-registered bar of 20%** "
+                        "— **kill criterion K2 FIRED**",
+                        "every rung is FLOOR-FAIL: best rung **0.4354** against "
+                        "`volume_rank` **0.6017**, **−27%**",
+                        table_current,
+                    ),
+                    (
+                        "what beat it",
+                        "a **uniform random** score, at 0.5365. The shipped model sat "
+                        "**−0.0188** below that floor",
+                        "`volume_rank`, while the rung caught **61% more** fraud merchants "
+                        "at **52% higher** precision on the same alert budget",
+                        f"`{FLOOR_LABEL}` still beats most of the ladder — see the "
+                        "FLOOR-FAIL banner above",
+                    ),
+                    (
+                        "the model the project was built around",
+                        "HMM PR-AUC **0.3347** at **20.00%** prevalence, against LightGBM's "
+                        "**0.6523** on the same rows: it lost by **0.3176**",
+                        "cohort residuals: K-1's verdict, LIMITATIONS.md §8.2",
+                        "the exposure correction, not a model — §9.2",
+                    ),
+                    (
+                        "detection latency",
+                        "median lag reported *after* a convention correction that reversed "
+                        "the column's reading",
+                        "`det@7d` / `@14d` / `@30d` identically **0.000** for all 7 policies",
+                        f"`det@30d` non-zero for **{d30_fired} of {len(groups)}** policies",
+                    ),
+                    (
+                        "test split",
+                        "opened, once",
+                        "not opened",
+                        "**not opened.** `open_count` is 0",
+                    ),
+                ],
+            ),
+            "",
+            *current,
+            "**v1 → v3: the freeze moved from the claim to the harness.** v1's headline was",
+            "computed at 20% prevalence against a real rate near 1.5% and reported without",
+            "saying so, which is why prevalence is on every row of this report and why there",
+            "is no code path here that prints a PR-AUC without it. v1 also spent its",
+            "one-way door: it opened the test split, and the number it found there **failed",
+            "v1's own pre-registered bar** and sat below a uniform-random floor. That is not",
+            "a footnote to this report. It is the reason the harness in §1 was frozen, and",
+            "hashed, before a single v2 model was written.",
+            "",
+            "**cycle 3 → cycle 4: no model changed and every number did.** Two measurement",
+            "defects moved. The evaluation window opened after nearly every drift onset had",
+            "already happened, so time-to-detection was not merely bad but *unreachable* —",
+            "a perfect oracle scores 0.000 too (LIMITATIONS.md §8.7a). And the decision",
+            "layer was handed the merchant's **declared** GMV as its exposure estimate,",
+            "which tracks realised loss at ρ 0.53 where the observed GMV the floor uses",
+            "tracks it at ρ 0.935 (§8.3a). Fixing the measurement, not the models, is what",
+            "moved the ladder — and a cycle whose whole delta is measurement is the most",
+            "useful thing this trajectory has to say.",
+            "",
+            *gate,
+            "**What two cycles bought, stated plainly.** v1 opened its test split and got a",
+            "number that failed its own bar. This cycle did not open its test split, because",
+            "a gate written before the answer was known said not to, and it was left where",
+            "it was written. That, and not any margin in the table above, is the trajectory.",
+            "",
+        ]
+    )
+
+
 def _main_table(rows: Sequence[EvalResult]) -> str:
     base = [r for r in rows if r.cost_scenario == "base"] or list(rows)
     headline = _table(
@@ -480,8 +678,27 @@ def _main_table(rows: Sequence[EvalResult]) -> str:
             "score — a rung that lost sits where it belongs, in the same table and the same",
             "style as one that won (Prime Directive 6).",
             "",
+            # A reader who lands mid-page needs to know which table is the claim and which
+            # is the evidence. §2.1 is much the longer of the two and was the only one for
+            # three cycles, so without this it is the one an eye falls on first.
+            "**Which table is which.** This section is three parts, in this order. First",
+            "**the trajectory**: what the two frozen prior cycles measured, quoted beside",
+            "this one. Then **§2.0, the headline** — one row per *policy*, pooled over the",
+            "seeds, with the per-seed range beside every mean. **Quote §2.0.** Then **§2.1,",
+            "the raw artefact** — one row per *(policy, seed)*, unpooled: the rows §2.0 is",
+            "computed from, kept in full because a summary nobody can check is not a result.",
+            "It is the longer table and it is not the headline; a single row of it is one",
+            "seed and must not be read as a number for the policy.",
+            "",
+            _trajectory(rows),
             _pooled(rows),
-            "### 2.1 Every row, one per (policy, seed)",
+            "### 2.1 Every row, one per (policy, seed) — the raw artefact, not the headline",
+            "",
+            f"**{len(base)} rows: every (policy, seed) pair scored, unpooled.** This is the",
+            "evidence §2.0 is computed from, kept whole so the pooling can be checked. A",
+            "single row here is a single seed. Read §2.0 for the number that belongs to a",
+            "policy, and read this table when you want to know whether that number is a",
+            "result or a draw.",
             "",
             headline,
             "",

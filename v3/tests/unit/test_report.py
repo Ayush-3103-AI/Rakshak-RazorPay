@@ -541,3 +541,61 @@ def test_a_rung_missing_from_one_ratio_is_not_reported_as_a_flip(fake_root: Path
     assert "THE RANKING FLIPS" not in text
     assert "ranking is stable" in text
     assert "not scored at every ratio" in text
+
+
+# ─────────────────── §2 trajectory: the two branches nothing else reaches ───────────────────
+#
+# T-0117 / #50. `render` exercises `_trajectory`'s happy path on every real ladder, so the
+# 37 tests above already cover it. These two cover the branches a real ladder does not
+# produce, and the first of them is the one that matters: it is a guard against a graded
+# artefact quietly flipping to "PASSED" because a rung landed after the gate was evaluated.
+
+
+def _floor(savings: float) -> EvalResult:
+    return dataclasses.replace(make_row(rung=0, savings=savings), label="volume_rank")
+
+
+def _rung(savings: float, *, name: str = "rung4") -> EvalResult:
+    return dataclasses.replace(make_row(rung=4, savings=savings), label=name)
+
+
+def test_trajectory_refuses_to_call_a_post_hoc_rung_a_pass() -> None:
+    """A rung scored AFTER the gate was evaluated must not flip §2 to a pass.
+
+    The pre-registered floor-fail gate was evaluated once, on the ladder that existed then,
+    and its verdict is FAIL with ``open_count`` 0. Rungs 5b/7b/8 land afterwards. If one of
+    them clears 0.7017 on 4+ seeds, the renderer must escalate for a written decision rather
+    than regenerate a table asserting the gate passed — that silent flip is exactly v1's
+    ``results/ablations.md:94`` defect, in the one place it would matter most.
+    """
+    from rakshak.eval.report import PREREG_FLOOR_FAIL_BAR, _trajectory
+
+    over = PREREG_FLOOR_FAIL_BAR + 0.05
+    out = _trajectory([_floor(0.5240), *(_rung(over) for _ in range(5))])
+
+    assert "SCORED AFTER THE GATE WAS EVALUATED" in out
+    assert "Do not read this as a pass" in out
+    # The escalation is prepended to the standing FAIL account, never a replacement for it.
+    assert "not re-anchored" in out
+    assert "5 of 5 seeds" in out
+
+
+def test_trajectory_stays_below_the_bar_on_the_real_shape() -> None:
+    """The mirror of the above: at cycle-4's actual margins the escalation must NOT fire."""
+    from rakshak.eval.report import _trajectory
+
+    out = _trajectory([_floor(0.5240), *(_rung(0.5981) for _ in range(5))])
+
+    assert "SCORED AFTER THE GATE WAS EVALUATED" not in out
+    assert "0 of 5 seeds" in out
+    assert "not re-anchored" in out
+
+
+def test_trajectory_renders_rather_than_crashes_with_no_floor_row() -> None:
+    """The frozen columns are quotable even when this run has nothing to compare them to."""
+    from rakshak.eval.report import _trajectory
+
+    out = _trajectory([_rung(0.5981)])
+
+    assert "Not renderable from these rows" in out
+    assert "stand as quoted" in out
