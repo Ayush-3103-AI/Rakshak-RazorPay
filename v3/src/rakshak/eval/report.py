@@ -480,6 +480,9 @@ def _main_table(rows: Sequence[EvalResult]) -> str:
             "score — a rung that lost sits where it belongs, in the same table and the same",
             "style as one that won (Prime Directive 6).",
             "",
+            _pooled(rows),
+            "### 2.1 Every row, one per (policy, seed)",
+            "",
             headline,
             "",
             "`alert Jaccard w/w` target is >= 0.60 (NFR-09); `det@Nd` is the share of",
@@ -489,6 +492,91 @@ def _main_table(rows: Sequence[EvalResult]) -> str:
             "",
         ]
     )
+
+
+def _pooled(rows: Sequence[EvalResult]) -> str:
+    """One row per policy: the mean over seeds, with the per-seed range beside it.
+
+    The table below this one is one row per (policy, seed) and always has been. That is the
+    right raw artefact and it is kept, but it is not a headline: eighty rows of four-decimal
+    numbers do not tell a reader whether a 0.04 margin is a result or a seed. This does.
+
+    The spread is reported as min-max rather than a standard deviation on purpose. Five
+    seeds is not enough to estimate a standard deviation anyone should quote, and a range is
+    the honest summary of five numbers -- it cannot imply a distribution that was not
+    measured. Where the range is zero to four decimals the column says `=`, which is itself
+    informative: it means the seed does not enter that metric at all (the floors' scores,
+    and every rung's PR-AUC, are seed-invariant by construction; only `random_at_k` and the
+    fitted models move).
+    """
+    base = [r for r in rows if r.cost_scenario == "base"] or list(rows)
+    # Group on the POLICY, not on `_rung_name`, which bakes the FLOOR-FAIL tag into the
+    # string. Keying on the decorated name splits a policy whose verdict is not unanimous
+    # across seeds into two rows that look like two policies — which is the opposite of
+    # what this table is for, and how the non-unanimity below stayed invisible.
+    groups: dict[tuple[int, str, str], list[EvalResult]] = {}
+    for r in base:
+        groups.setdefault((r.rung, r.label or "", r.split), []).append(r)
+
+    def cell(rs: Sequence[EvalResult], attr: str, nd: int = 4) -> str:
+        vals = [v for v in (getattr(r, attr) for r in rs) if not math.isnan(v)]
+        if not vals:
+            return "n/a"
+        lo, hi = min(vals), max(vals)
+        mean = sum(vals) / len(vals)
+        if f"{hi - lo:.{nd}f}" == f"{0.0:.{nd}f}":
+            return f"{mean:.{nd}f} ="
+        return f"{mean:.{nd}f} [{lo:.{nd}f}–{hi:.{nd}f}]"
+
+    body = []
+    for (rung, label, split), rs in sorted(groups.items()):
+        n_fail = sum(1 for r in rs if r.floor_fail)
+        verdict = ("**FLOOR-FAIL**" if n_fail == len(rs)
+                   else f"**FLOOR-FAIL {n_fail}/{len(rs)}**" if n_fail
+                   else "ok")
+        body.append((
+            f"**Rung {rung}**" + (f" `{label}`" if label else ""),
+            split,
+            str(len(rs)),
+            cell(rs, "pr_auc"),
+            cell(rs, "savings"),
+            cell(rs, "precision_at_k"),
+            cell(rs, "detection_rate_d30"),
+            verdict,
+        ))
+
+    mixed = [f"`{label}` ({sum(1 for r in rs if r.floor_fail)}/{len(rs)})"
+             for (_rung, label, _split), rs in sorted(groups.items())
+             if 0 < sum(1 for r in rs if r.floor_fail) < len(rs)]
+    lines = [
+        "### 2.0 Pooled over seeds, with the per-seed range",
+        "",
+        "Every headline in this project is a mean over five seeds. A mean without its spread",
+        "invites a reader to treat a margin inside the noise as a result — which is exactly",
+        "what cycle 3's single-seed ladder did, and why cycle 4 scores all five. `=` means",
+        "the range is zero to four decimals: that metric does not depend on the seed.",
+        "",
+        _table(
+            ("policy", "split", "seeds", "PR-AUC", "savings", "P@K", "det@30d", "verdict"),
+            body,
+        ),
+        "",
+    ]
+    if mixed:
+        lines += [
+            f"**FLOOR-FAIL is not unanimous across seeds for {len(mixed)} policies: "
+            f"{', '.join(mixed)}** (seeds failing / seeds scored). Those rows carry the "
+            "count rather than a bare verdict, because a bare verdict would be a choice "
+            "about which seed to believe.",
+            "",
+            "This is the concrete cost of cycle 3's single-seed ladder, and it is worth "
+            "stating plainly: for these policies, **which seed you drew decided whether the "
+            "rung was reported as beating the floor.** Cycle 4 scores five for exactly this "
+            "reason, and a margin this close to a floor should be read as a coin-flip, not "
+            "as a win or a loss.",
+            "",
+        ]
+    return "\n".join(lines)
 
 
 def _typology_table(rows: Sequence[EvalResult]) -> str:

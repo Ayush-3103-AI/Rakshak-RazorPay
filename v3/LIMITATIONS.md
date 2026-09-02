@@ -1274,3 +1274,40 @@ time-to-detection an equal-standing win condition, and `rung4` — the best row 
 above — has `ttd_median_days` of `inf` in both arms. **The rung that wins the money argument
 is the one that never detects inside the window.** §9.5 already recorded that savings and
 latency pull against each other; §10 does not soften it.
+
+### 10.5 FLOOR-FAIL is seed-dependent for three policies, and nobody could see it
+
+`docs/results_v2.md` §2 has always been one row per (policy, seed) — 80 rows of four-decimal
+numbers, which is the right raw artefact and a poor headline. §2.0 now pools them: mean over
+seeds with the per-seed **range** beside it (a range, not a standard deviation — five seeds
+does not estimate one, and a range cannot imply a distribution nobody measured).
+
+Pooling them surfaced something the 80-row dump contained and hid:
+
+| policy | savings, mean [range] | seeds FLOOR-FAIL |
+|---|---|---|
+| `rung4_realised_exposure` | 0.5981 [0.5862–0.6211] | **0 of 5** |
+| `rung2_realised_exposure` | 0.5386 [0.5169–0.5563] | 1 of 5 |
+| `rung3_realised_exposure` | 0.4955 [0.4680–0.5523] | 4 of 5 |
+| `rung9_realised_exposure` | 0.4919 [0.4397–0.5582] | 4 of 5 |
+
+**For three policies the FLOOR-FAIL verdict flips with the seed.** `rung3_realised_exposure`
+and `rung9_realised_exposure` each beat every floor on exactly one seed of five;
+`rung2_realised_exposure` fails on exactly one of five. A single-seed ladder — which is what
+cycle 3 was — would have reported any of those three as a pass or a fail depending on which
+seed it drew, with four decimal places of apparent precision either way.
+
+Two things follow.
+
+1. **Rung 4 under arm B is the only unanimous non-FLOOR-FAIL row on the ladder**, at 0 of 5.
+   That is a stronger statement than its mean, and it is the one worth making: it is not
+   ahead on average, it is ahead on every seed scored. It is also consistent with §10.2 —
+   the same row is ahead at every cost ratio.
+2. **The other three should not be reported as beating or losing to the floor at all.** A
+   margin whose sign depends on the seed is a coin-flip reported to four decimals, and the
+   §2.0 table now prints `FLOOR-FAIL n/5` rather than a bare verdict for exactly that reason.
+   Choosing a bare verdict would be choosing which seed to believe.
+
+The pre-registration anticipated this in general terms — §6 says every four-decimal number in
+the cycle-3 table "is weaker than it looks" — but it was an argument for scoring five seeds,
+not a measurement of what the single seed had cost. This is that measurement.

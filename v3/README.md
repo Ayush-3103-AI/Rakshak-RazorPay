@@ -41,6 +41,13 @@ Headline findings, all with numbers in `LIMITATIONS.md` §9:
   magnitude** of false-hold/fraud-loss asymmetry and beats the `volume_rank` floor at 5 of
   5 ratios, with the shipped cost matrix inside the swept grid. The gate's verdict does not
   move; how completely it was evaluated does.
+- **FLOOR-FAIL turns out to be seed-dependent for three policies (§10.5).** Pooling the
+  80-row table by policy — mean with the per-seed range beside it — shows
+  `rung3_realised_exposure` and `rung9_realised_exposure` beating every floor on exactly one
+  seed of five, and `rung2_realised_exposure` failing on exactly one of five. A single-seed
+  ladder, which is what cycle 3 was, would have reported any of them either way with four
+  decimals of apparent precision. **Rung 4 under arm B is the only unanimous non-FLOOR-FAIL
+  row on the ladder, at 0 of 5** — ahead on every seed, not merely on the mean.
 - **Where that margin comes from, decomposed (§10.3), because it is not the ranking.** With
   HOLD made unreachable and nothing else changed, Rung 4's margin over the floor falls from
   +0.0740 to +0.0403 — it still wins, at 5/5 ratios, but the pricing asymmetry the

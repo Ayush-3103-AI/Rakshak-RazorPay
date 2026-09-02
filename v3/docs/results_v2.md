@@ -124,6 +124,38 @@ mistake that made v1's headline meaningless. Rows are ordered by rung, not by
 score — a rung that lost sits where it belongs, in the same table and the same
 style as one that won (Prime Directive 6).
 
+### 2.0 Pooled over seeds, with the per-seed range
+
+Every headline in this project is a mean over five seeds. A mean without its spread
+invites a reader to treat a margin inside the noise as a result — which is exactly
+what cycle 3's single-seed ladder did, and why cycle 4 scores all five. `=` means
+the range is zero to four decimals: that metric does not depend on the seed.
+
+| policy | split | seeds | PR-AUC | savings | P@K | det@30d | verdict |
+|---|---|---|---|---|---|---|---|
+| **Rung 0** `all_pass` | val | 5 | 0.0107 = | 0.0000 = | n/a | 0.0000 = | **FLOOR-FAIL** |
+| **Rung 0** `random_at_k` | val | 5 | 0.0108 [0.0106–0.0110] | 0.0024 [-0.0008–0.0042] | 0.0120 [0.0106–0.0133] | 0.0154 [0.0000–0.0308] | **FLOOR-FAIL** |
+| **Rung 0** `volume_rank` | val | 5 | 0.1428 = | 0.5240 = | 0.2667 = | 0.0000 = | **FLOOR-FAIL** |
+| **Rung 1** `rung1` | val | 5 | 0.2984 = | 0.3587 = | 0.1656 = | 0.0462 = | **FLOOR-FAIL** |
+| **Rung 1** `rung1_realised_exposure` | val | 5 | 0.2984 = | 0.5224 = | 0.4094 = | 0.0462 = | **FLOOR-FAIL** |
+| **Rung 2** `rung2` | val | 5 | 0.7303 [0.7025–0.7537] | 0.4276 [0.3629–0.5069] | 0.7520 [0.6572–0.8506] | 0.0862 [0.0769–0.1077] | **FLOOR-FAIL** |
+| **Rung 2** `rung2_realised_exposure` | val | 5 | 0.7303 [0.7025–0.7537] | 0.5386 [0.5169–0.5563] | 0.8904 [0.8333–0.9339] | 0.0769 [0.0615–0.0923] | **FLOOR-FAIL 1/5** |
+| **Rung 3** `rung3` | val | 5 | 0.7385 [0.7141–0.7574] | 0.4522 [0.3984–0.5100] | 0.7819 [0.7400–0.8272] | 0.0708 [0.0462–0.0923] | **FLOOR-FAIL** |
+| **Rung 3** `rung3_realised_exposure` | val | 5 | 0.7385 [0.7141–0.7574] | 0.4955 [0.4680–0.5523] | 0.8864 [0.8756–0.9083] | 0.0738 [0.0615–0.0923] | **FLOOR-FAIL 4/5** |
+| **Rung 4** `rung4` | val | 5 | 0.7693 [0.7641–0.7788] | 0.4883 [0.4685–0.5079] | 0.3582 [0.3339–0.3744] | 0.0585 [0.0462–0.0615] | **FLOOR-FAIL** |
+| **Rung 4** `rung4_realised_exposure` | val | 5 | 0.7693 [0.7641–0.7788] | 0.5981 [0.5862–0.6211] | 0.5444 [0.5272–0.5700] | 0.0462 = | ok |
+| **Rung 5** `rung5_mil` | val | 5 | 0.7836 [0.7823–0.7841] | 0.0824 [0.0749–0.0919] | 0.8533 [0.8333–0.8833] | 0.0000 = | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.05` | val | 5 | 0.6692 [0.6328–0.6910] | 0.4222 [0.3312–0.5286] | 0.6707 [0.6000–0.8256] | 0.0788 [0.0606–0.0909] | **FLOOR-FAIL** |
+| **Rung 6** `rung6_crc_base2_alpha0.1` | val | 5 | 0.6692 [0.6328–0.6910] | 0.4222 [0.3312–0.5286] | 0.6707 [0.6000–0.8256] | 0.0788 [0.0606–0.0909] | **FLOOR-FAIL** |
+| **Rung 9** `rung9` | val | 5 | 0.7455 [0.7225–0.7637] | 0.4580 [0.3951–0.5227] | 0.8518 [0.8167–0.8889] | 0.0831 [0.0615–0.1077] | **FLOOR-FAIL** |
+| **Rung 9** `rung9_realised_exposure` | val | 5 | 0.7455 [0.7225–0.7637] | 0.4919 [0.4397–0.5582] | 0.9132 [0.9022–0.9356] | 0.0615 [0.0462–0.0769] | **FLOOR-FAIL 4/5** |
+
+**FLOOR-FAIL is not unanimous across seeds for 3 policies: `rung2_realised_exposure` (1/5), `rung3_realised_exposure` (4/5), `rung9_realised_exposure` (4/5)** (seeds failing / seeds scored). Those rows carry the count rather than a bare verdict, because a bare verdict would be a choice about which seed to believe.
+
+This is the concrete cost of cycle 3's single-seed ladder, and it is worth stating plainly: for these policies, **which seed you drew decided whether the rung was reported as beating the floor.** Cycle 4 scores five for exactly this reason, and a margin this close to a floor should be read as a coin-flip, not as a win or a loss.
+
+### 2.1 Every row, one per (policy, seed)
+
 | rung | split | prevalence | PR-AUC | savings | floor all_pass | floor all_hold | floor random@K | floor volume_rank | gap to oracle | median TTD (d) | det@30d | P@K | alerts/day | p99 ms | verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **Rung 0** `all_pass` · **FLOOR-FAIL** | val | 1.20% | 0.0107 | **0.0000 — FLOOR-FAIL** | 0.0000 | -13.6984 | 0.0007 | 0.5240 | 100.00% | inf | 0.00% | n/a | 0.0 | n/a | **FLOOR-FAIL** |

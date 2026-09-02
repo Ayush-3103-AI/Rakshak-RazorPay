@@ -841,3 +841,51 @@ Numbers:     Rung 4 arm B **+0.5853 → +0.6001** across ratios 0.01–100, best
 Next:        #50 (T-0117), the report. Unblocked — #49 closed as superseded. Remaining:
              v1 beside v3 as the trajectory, per-seed spread beside every pooled headline,
              clean-clone `make all`. Recommended cut: #58/#59/#65/#66.
+
+---
+
+## POST-CYCLE-4 | Pooling the ladder by policy, and the verdict that flips with the seed
+
+Built:       `eval/report.py` §2.0 — one row per policy, mean over seeds with the per-seed
+             **range** beside it, above the existing 80-row per-(policy, seed) table, which
+             is kept as §2.1. Range rather than standard deviation: five seeds does not
+             estimate one, and a range cannot imply a distribution nobody measured. `=`
+             where the range is zero to four decimals, which is itself informative — it
+             says the seed does not enter that metric.
+
+Surprised:   **Two, and the first one is a bug that produced the second one.**
+
+             1. The first cut keyed the grouping on `_rung_name`, which bakes the
+                FLOOR-FAIL tag into the string. So a policy whose verdict was not unanimous
+                across seeds **split into two rows that looked like two policies** — the
+                exact failure the table was built to prevent, in the table built to prevent
+                it. Caught only because `rung2_realised_exposure` appeared twice with
+                `seeds 1` and `seeds 4`, which is not a thing five seeds can produce.
+
+             2. Fixing it surfaced the finding: **FLOOR-FAIL flips with the seed for three
+                policies.** `rung3_realised_exposure` and `rung9_realised_exposure` beat
+                every floor on exactly ONE seed of five; `rung2_realised_exposure` fails on
+                exactly one of five. All three have been sitting in the committed 80-row
+                table since the rescore, visible to anyone willing to read eighty rows of
+                four-decimal numbers and cross-tabulate them by hand, which is to say
+                invisible. **A single-seed ladder would have called any of them a pass or a
+                fail depending on the draw.** That is what cycle 3 was.
+
+                The pre-registration anticipated this in general — §6 says every cycle-3
+                four-decimal number "is weaker than it looks" — but as an argument for
+                scoring five seeds, not as a measurement of what one seed had cost. §10.5
+                is that measurement.
+
+Broke:       Nothing. `results_v2.parquet` byte-identical again; the `results_v2.md` diff is
+             confined to the new §2.0 and the §2.1 heading. `report.py` is not in
+             `EVAL_MODULES`.
+
+Numbers:     `rung4_realised_exposure` **0 of 5 seeds FLOOR-FAIL** — the only unanimous
+             non-FLOOR-FAIL row on the ladder, savings 0.5981 [0.5862–0.6211]. It is also
+             the row that wins at every cost ratio (§10.2), so "ahead on every seed and at
+             every asymmetry" is the strongest true form of the savings claim.
+             `rung2_realised_exposure` 1/5, `rung3_realised_exposure` 4/5,
+             `rung9_realised_exposure` 4/5.
+
+Next:        Unchanged — #50's remaining criterion is the v1 result beside the v3 result as
+             the trajectory. Clean-clone `make all` was confirmed earlier on 2026-09-02.
