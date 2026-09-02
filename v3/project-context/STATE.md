@@ -1,19 +1,23 @@
 <!-- HEAD
 FILE:     STATE.md
 PHASE:    resume point
-UPDATED:  2026-09-02
+UPDATED:  2026-09-03
 STATUS:   live — update at the end of EVERY session
 SUMMARY:  The resume point for Rakshak v3. Read this first, every session, before anything
           else. It names the current cycle, what is running, and the exact next action.
           Nothing else should be loaded speculatively.
 OPEN:     Cycle 4 is COMPLETE — all 8 protocol steps. The test split was not opened; the
           pre-registered gate that governs it was not met, now on BOTH its conjuncts.
-          See LIMITATIONS.md §9 and §10.
+          #50 (the report) is CLOSED, all seven acceptance criteria met. The four
+          new-rung tickets this file recommended cutting (#58/#59/#65/#66) were built
+          and scored anyway, on real cycle-4 data — all four NOT ADOPTED, all negative
+          results, all documented (LIMITATIONS.md §§12–15). Nothing code-side is open.
+          See "Post-#50 session" below.
 -->
 
 # STATE — Rakshak, cycle 4
 
-**Cycle:** 4 · **Phase:** 5 (execute) · **Freeze:** 3 Sep 2026 · **Submission:** 5 Sep
+**Cycle:** 4 · **Phase:** 5 (execute), CLOSED · **Freeze:** 3 Sep 2026 · **Submission:** 5 Sep
 
 ---
 
@@ -162,31 +166,52 @@ v1's `results/ablations.md:94` defect. `eval/report.py` now reads the artefact w
 parquet holds one cost scenario, and still prints the honest "not run" paragraph when it does
 not. `report.py` is **not** in `EVAL_MODULES`, so the lock hash is untouched.
 
-## Next action
+## Post-#50 session — 2026-09-02 evening / 2026-09-03
 
-**#50 (T-0117), the report.** Unblocked — #49 closed as superseded — and **five** of its
-acceptance criteria closed today: the cost-asymmetry sweep, its stability statement, per-seed
-spread beside every pooled headline (§2.0), the failed-rung list made readable (§7, 15 bullets
-instead of 69), and the roster the dashboard reads. Clean-clone `make all` was confirmed
-earlier on 2026-09-02, so K-5 stands (on CI/Linux; the two Windows `perf` misses below are
-recorded, not fixed).
+**#50 (T-0117), the report — CLOSED, all seven acceptance criteria met.** The one that was
+left ("the v1 result reported beside the v3 result, unmodified, as the trajectory rather
+than as a footnote") landed as a new `_trajectory` section at the top of `docs/results_v2.md`
+§2, above the headline table: v1 and cycle-3 numbers are literals transcribed from
+`results/verdict.md` (`v1-frozen`) and `LIMITATIONS.md` §8.3a (`cycle3-ladder-immutable`),
+each naming its source (Prime Directive 2 — not re-derived); the current column computes
+from live rows every render, so it stayed correct as four more rungs landed afterward.
+Also built: a guard against the report silently flipping to "PASSED" if a rung landed after
+the gate was evaluated and cleared the bar — the exact failure mode v1's own
+`results/ablations.md:94` recorded. Commits `8fdf55a`, `a8f58f0`.
 
-**One acceptance criterion is genuinely left: the v1 result reported beside the v3 result,
-unmodified, as the trajectory rather than as a footnote.** It is editorial, not
-computational — v1's numbers are immutable under Prime Directive 2 and live in `ver-1/`.
+**This file's own "recommended cut" was overtaken by events.** ADR-V3-001 (no-autograd) was
+reversed by lead decision (`b1903f0`, on evidence arguing *against* the reversal — recorded,
+not hidden), and all four new-rung tickets were built and scored on real cycle-4 data rather
+than cut:
 
-A second thing worth an owner, found while pooling §2: **`docs/results_v2.md` §2.1 is still 80
-rows.** That is the right raw artefact and should stay, but §2.0 is now the headline and the
-report should say which is which to a reader who lands mid-page.
+| ticket | rung | result |
+|---|---|---|
+| #58 (T-0124) | 7b, onset localisation | NOT ADOPTED — loses to "onset = alert day" on every statistic, both EM seeds (§13) |
+| #59 (T-0125) | 8, Hawkes/NB TPP | NOT ADOPTED — circularity objection fired; reported as a method demonstration only (§12) |
+| #65 (T-0131) | 5b, gated-attention MIL | NOT ADOPTED — learned attention loses to the fixed pooling it was meant to replace (§14) |
+| #66 (T-0132) | 8b, neural intensity | NOT ADOPTED — circularity got worse, as predicted (§15) |
 
-**Recommended cut: #58, #59, #65, #66 — the new rungs.** A new rung buys a ladder row, not a
-claim. The latency half is powered at 7 evaluable merchants (~19 pp standard error) and no
-rung fixes that before the 3 Sep freeze.
+Four negative results, all documented with numbers per Prime Directive 6, none changing any
+adopted rung or the shut test split. `configs/rung_roster.yaml`, `LIMITATIONS.md` (§§12–15),
+and `docs/LOGBOOK.md` were reconciled in one pass afterward (`a8f58f0`) — two roster
+collisions (a status the roster's own vocabulary disagreed with the note beside it, and two
+agents claiming the same LIMITATIONS section number) were caught by
+`test_artifacts_contract.py` and fixed there, not worked around.
+
+**`feature/v3-block-1` is pushed to `origin`, and `main` has been fast-forwarded to match
+(2026-09-03)** — the repo's default branch now shows the real implementation, not the
+original planning-docs-only commit. All 78 GitHub issues are closed with evidence in each;
+none needs updating.
+
+**Nothing code-side is open.** What remains is off-repo: the 5-minute pitch video (window
+Wed 2 Sep – Thu 3 Sep) and architecture documentation for the panel, per `CLAUDE.md`'s
+deliverables list. `docs/results_v2.md` §2.1 still being 80 rows (noted below §2.0's new
+headline) is cosmetic and has no owner assigned — low priority, not blocking.
 
 **On the test split: leave it shut.** #49 and #78 both closed on that decision and §10 makes
 the case stronger, not weaker. §4.4 ranks the test-split opening as the *second* thing to cut;
 §5 says in as many words that "a held-out number is not worth spending the one-way door on a
-rung that did not earn it"; and §10.3 now shows that ~45% of the margin the door would confirm
+rung that did not earn it"; and §10.3 shows that ~45% of the margin the door would confirm
 comes from the pricing asymmetry §4.3 already told the reader not to trust. Amending a sealed
 pre-registration after reading validation, to open a door the pre-registration says to cut,
 would cost more credibility than the number could buy.
