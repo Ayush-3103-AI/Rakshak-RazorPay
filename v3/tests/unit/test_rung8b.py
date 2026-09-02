@@ -66,7 +66,13 @@ def test_the_cumulative_hazard_is_monotone_in_tau_and_zero_at_zero() -> None:
     grid = torch.as_tensor(np.geomspace(1e-6, 5.0, 40), dtype=torch.float64)
     for tau in (grid,):
         values = torch.stack([fitted.net.cumulative(tau, h[k : k + 1]) for k in range(h.shape[0])])
-        assert bool((values.diff(dim=1) >= 0.0).all()), "Lambda decreased in tau"
+        # >= -1e-9, not >= 0.0: Phi is monotone in tau analytically (softplus(w_tau) >= 0
+        # times two tau-increasing features, through tanh/softplus, both monotone), but at
+        # a 40-point geomspace grid down to tau=1e-6 the matmul reduction order is BLAS-
+        # backend-dependent, and CI's Linux backend produces ULP-scale negative diffs a
+        # Windows dev run does not. `compensator_increments` already clips at 0 for exactly
+        # this reason (see its docstring); this is that same tolerance, not a weaker claim.
+        assert bool((values.diff(dim=1) >= -1e-9).all()), "Lambda decreased in tau"
     zero = fitted.net.cumulative(torch.zeros(h.shape[0], dtype=torch.float64), h)
     assert float(zero.abs().max()) == pytest.approx(0.0, abs=1e-12)
 
