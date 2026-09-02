@@ -79,19 +79,31 @@ def test_loo_median_is_not_quadratic() -> None:
     10,000 merchants x 180 epochs x 17 residual features is 3e7 cohort passes; an O(N²)
     median inside that is not slow, it is a different project. Ten times the members must
     not cost anywhere near a hundred times the work.
+
+    Timed as the MINIMUM over several independent trials, not one cumulative sum: a shared
+    CI runner's scheduling jitter and GC pauses only ever add delay, never subtract it, so
+    the minimum is the standard way to recover the true cost from a noisy wall clock. A
+    single-trial version of this test measured n=2,000 at 0.43ms on GitHub Actions — small
+    enough that one stray pause pushed the ratio past a fixed bound with no algorithmic
+    change at all (observed: 25.7x on a run that otherwise passed 782/783 other tests).
     """
     import time
 
-    rng = np.random.default_rng(0)
-    times = []
-    for n in (2_000, 20_000):
+    def _min_trial_time(n: int, *, trials: int = 7, reps: int = 20) -> float:
+        rng = np.random.default_rng(0)
         v = rng.normal(size=n)
         cohort.loo_median(v)  # warm any lazy import
-        t0 = time.perf_counter()
-        for _ in range(5):
-            cohort.loo_median(v)
-        times.append(time.perf_counter() - t0)
-    assert times[1] < times[0] * 25, times
+        best = float("inf")
+        for _ in range(trials):
+            t0 = time.perf_counter()
+            for _ in range(reps):
+                cohort.loo_median(v)
+            best = min(best, time.perf_counter() - t0)
+        return best
+
+    small = _min_trial_time(2_000)
+    large = _min_trial_time(20_000)
+    assert large < small * 25, (small, large)
 
 
 # ── cohort assignment and the backoff chain ───────────────────────────────────
