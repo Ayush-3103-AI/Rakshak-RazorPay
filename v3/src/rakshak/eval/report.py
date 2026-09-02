@@ -904,15 +904,43 @@ def _limitations(rows: Sequence[EvalResult]) -> str:
         "",
     ]
     if failed:
+        # One bullet per POLICY, not per (policy, seed). The per-seed form printed 69
+        # near-identical lines that named no policy, so the reader could not tell one rung
+        # from another or a repeat from a distinct failure — a list nobody could read is
+        # not the disclosure Prime Directive 6 asks for. `_pooled` learned the same lesson
+        # in §2.0; this is the same grouping applied to the same defect.
+        groups: dict[tuple[int, str, str, str], list[EvalResult]] = {}
+        for r in failed:
+            groups.setdefault((r.rung, r.label or "", r.split, r.cost_scenario), []).append(r)
+        total: dict[tuple[int, str, str, str], list[EvalResult]] = {}
+        for r in rows:
+            total.setdefault((r.rung, r.label or "", r.split, r.cost_scenario), []).append(r)
+
+        bullets = []
+        for key, rs in sorted(groups.items()):
+            rung, label, split, scenario = key
+            n, n_all = len(rs), len(total.get(key, rs))
+            sv = [r.savings for r in rs if not math.isnan(r.savings)]
+            beneath = sorted({f for r in rs for f in r.floor_fail})
+            when = "every seed" if n == n_all else f"**{n} of {n_all} seeds**"
+            bullets.append(
+                f"- **Rung {rung}** `{label}` ({split}, `{scenario}`, prevalence "
+                f"{_pct(sum(r.prevalence for r in rs) / n)}): below "
+                f"{', '.join(beneath)} on {when}; savings "
+                + (f"{_f(sv[0])}" if len(set(f"{v:.4f}" for v in sv)) == 1
+                   else f"{_f(sum(sv) / len(sv))} [{_f(min(sv))}–{_f(max(sv))}]")
+                + f". PR-AUC {_f(sum(r.pr_auc for r in rs) / n)} does not redeem it."
+            )
         lines += [
-            "Failed rungs on this run, with their numbers:",
+            f"Failed policies on this run — {len(groups)} of {len(total)}, with their "
+            "numbers. A policy that fails on some seeds and not others says so; that is "
+            "not a rounding detail, it is §10.5.",
             "",
-            *[
-                f"- **Rung {r.rung}** ({r.split}, `{r.cost_scenario}`, prevalence "
-                f"{_pct(r.prevalence)}): savings {_f(r.savings)}, below "
-                f"{', '.join(r.floor_fail)}. PR-AUC {_f(r.pr_auc)} does not redeem it."
-                for r in failed
-            ],
+            *bullets,
+            "",
+            "`volume_rank` appears here below itself: `metrics.failed_by` uses "
+            "`savings <= floor`, so the floor ties its own comparison. That lives inside "
+            "`eval_module_sha256` and is named rather than corrected.",
             "",
         ]
     else:

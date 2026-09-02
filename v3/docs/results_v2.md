@@ -484,74 +484,22 @@ Naming the gap here beats rendering three empty tables.
 Full text: [`LIMITATIONS.md`](../LIMITATIONS.md). Everything that did not work is
 on this page and in that file, with its number. Nothing is in an appendix.
 
-Failed rungs on this run, with their numbers:
+Failed policies on this run — 15 of 16, with their numbers. A policy that fails on some seeds and not others says so; that is not a rounding detail, it is §10.5.
 
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0000, below all_pass, random_at_k, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0000, below all_pass, random_at_k, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0000, below all_pass, random_at_k, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0000, below all_pass, random_at_k, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0000, below all_pass, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0007, below random_at_k, volume_rank. PR-AUC 0.0107 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0042, below volume_rank. PR-AUC 0.0108 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0036, below volume_rank. PR-AUC 0.0110 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.0041, below volume_rank. PR-AUC 0.0108 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings -0.0008, below all_pass, random_at_k, volume_rank. PR-AUC 0.0106 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.5240, below volume_rank. PR-AUC 0.1428 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.5240, below volume_rank. PR-AUC 0.1428 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.5240, below volume_rank. PR-AUC 0.1428 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.5240, below volume_rank. PR-AUC 0.1428 does not redeem it.
-- **Rung 0** (val, `base`, prevalence 1.20%): savings 0.5240, below volume_rank. PR-AUC 0.1428 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.5224, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.5224, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.5224, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.5224, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.5224, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.3587, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.3587, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.3587, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.3587, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 1** (val, `base`, prevalence 1.20%): savings 0.3587, below volume_rank. PR-AUC 0.2984 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.5169, below volume_rank. PR-AUC 0.7281 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.3753, below volume_rank. PR-AUC 0.7281 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.4359, below volume_rank. PR-AUC 0.7537 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.4569, below volume_rank. PR-AUC 0.7205 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.3629, below volume_rank. PR-AUC 0.7025 does not redeem it.
-- **Rung 2** (val, `base`, prevalence 1.20%): savings 0.5069, below volume_rank. PR-AUC 0.7468 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4953, below volume_rank. PR-AUC 0.7141 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4747, below volume_rank. PR-AUC 0.7380 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4680, below volume_rank. PR-AUC 0.7291 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4872, below volume_rank. PR-AUC 0.7574 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.5100, below volume_rank. PR-AUC 0.7541 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4729, below volume_rank. PR-AUC 0.7141 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.3984, below volume_rank. PR-AUC 0.7380 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4452, below volume_rank. PR-AUC 0.7291 does not redeem it.
-- **Rung 3** (val, `base`, prevalence 1.20%): savings 0.4346, below volume_rank. PR-AUC 0.7574 does not redeem it.
-- **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4685, below volume_rank. PR-AUC 0.7641 does not redeem it.
-- **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4878, below volume_rank. PR-AUC 0.7677 does not redeem it.
-- **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4811, below volume_rank. PR-AUC 0.7673 does not redeem it.
-- **Rung 4** (val, `base`, prevalence 1.20%): savings 0.5079, below volume_rank. PR-AUC 0.7788 does not redeem it.
-- **Rung 4** (val, `base`, prevalence 1.20%): savings 0.4961, below volume_rank. PR-AUC 0.7686 does not redeem it.
-- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0832, below all_hold, volume_rank. PR-AUC 0.7840 does not redeem it.
-- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0749, below all_hold, volume_rank. PR-AUC 0.7836 does not redeem it.
-- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0759, below all_hold, volume_rank. PR-AUC 0.7823 does not redeem it.
-- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0919, below all_hold, volume_rank. PR-AUC 0.7838 does not redeem it.
-- **Rung 5** (val, `base`, prevalence 45.00%): savings 0.0860, below all_hold, volume_rank. PR-AUC 0.7841 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3670, below volume_rank. PR-AUC 0.6666 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4184, below volume_rank. PR-AUC 0.6900 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4660, below volume_rank. PR-AUC 0.6654 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3312, below volume_rank. PR-AUC 0.6328 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.5286, below volume_rank. PR-AUC 0.6910 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3670, below volume_rank. PR-AUC 0.6666 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4184, below volume_rank. PR-AUC 0.6900 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.4660, below volume_rank. PR-AUC 0.6654 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.3312, below volume_rank. PR-AUC 0.6328 does not redeem it.
-- **Rung 6** (val, `base`, prevalence 1.26%): savings 0.5286, below volume_rank. PR-AUC 0.6910 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.5075, below volume_rank. PR-AUC 0.7225 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4397, below volume_rank. PR-AUC 0.7450 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4717, below volume_rank. PR-AUC 0.7371 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4824, below volume_rank. PR-AUC 0.7637 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.5227, below volume_rank. PR-AUC 0.7592 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4847, below volume_rank. PR-AUC 0.7225 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.3951, below volume_rank. PR-AUC 0.7450 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4326, below volume_rank. PR-AUC 0.7371 does not redeem it.
-- **Rung 9** (val, `base`, prevalence 1.20%): savings 0.4548, below volume_rank. PR-AUC 0.7637 does not redeem it.
+- **Rung 0** `all_pass` (val, `base`, prevalence 1.20%): below all_pass, random_at_k, volume_rank on every seed; savings 0.0000. PR-AUC 0.0107 does not redeem it.
+- **Rung 0** `random_at_k` (val, `base`, prevalence 1.20%): below all_pass, random_at_k, volume_rank on every seed; savings 0.0024 [-0.0008–0.0042]. PR-AUC 0.0108 does not redeem it.
+- **Rung 0** `volume_rank` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.5240. PR-AUC 0.1428 does not redeem it.
+- **Rung 1** `rung1` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.3587. PR-AUC 0.2984 does not redeem it.
+- **Rung 1** `rung1_realised_exposure` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.5224. PR-AUC 0.2984 does not redeem it.
+- **Rung 2** `rung2` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.4276 [0.3629–0.5069]. PR-AUC 0.7303 does not redeem it.
+- **Rung 2** `rung2_realised_exposure` (val, `base`, prevalence 1.20%): below volume_rank on **1 of 5 seeds**; savings 0.5169. PR-AUC 0.7281 does not redeem it.
+- **Rung 3** `rung3` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.4522 [0.3984–0.5100]. PR-AUC 0.7385 does not redeem it.
+- **Rung 3** `rung3_realised_exposure` (val, `base`, prevalence 1.20%): below volume_rank on **4 of 5 seeds**; savings 0.4813 [0.4680–0.4953]. PR-AUC 0.7346 does not redeem it.
+- **Rung 4** `rung4` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.4883 [0.4685–0.5079]. PR-AUC 0.7693 does not redeem it.
+- **Rung 5** `rung5_mil` (val, `base`, prevalence 45.00%): below all_hold, volume_rank on every seed; savings 0.0824 [0.0749–0.0919]. PR-AUC 0.7836 does not redeem it.
+- **Rung 6** `rung6_crc_base2_alpha0.05` (val, `base`, prevalence 1.26%): below volume_rank on every seed; savings 0.4222 [0.3312–0.5286]. PR-AUC 0.6692 does not redeem it.
+- **Rung 6** `rung6_crc_base2_alpha0.1` (val, `base`, prevalence 1.26%): below volume_rank on every seed; savings 0.4222 [0.3312–0.5286]. PR-AUC 0.6692 does not redeem it.
+- **Rung 9** `rung9` (val, `base`, prevalence 1.20%): below volume_rank on every seed; savings 0.4580 [0.3951–0.5227]. PR-AUC 0.7455 does not redeem it.
+- **Rung 9** `rung9_realised_exposure` (val, `base`, prevalence 1.20%): below volume_rank on **4 of 5 seeds**; savings 0.4753 [0.4397–0.5075]. PR-AUC 0.7421 does not redeem it.
+
+`volume_rank` appears here below itself: `metrics.failed_by` uses `savings <= floor`, so the floor ties its own comparison. That lives inside `eval_module_sha256` and is named rather than corrected.
