@@ -6,8 +6,15 @@ requires-python = ">=3.11,<3.12"
 license = { text = "MIT" }
 
 # Every pin here is justified in CLAUDE.md §Tech Stack. CPU-only, no GPU, no cloud.
-# Explicitly rejected and not to be added without a LOGBOOK line: torch, transformers,
+# Explicitly rejected and not to be added without a LOGBOOK line: transformers,
 # any GNN library, hmmlearn, TabPFN, river, pandas, any cloud SDK.
+#
+# `torch` WAS on that rejected list and was removed from it on 2026-09-02. It is admitted
+# CPU-only, for exactly two rungs (T-0131 #65, T-0132 #66), by the lead decision recorded
+# in docs/adr/ADR-V3-001-no-autograd.md §AMENDMENT. Read that amendment before using it
+# anywhere else: it records that the ADR's own revisit trigger did NOT fire and that the
+# label constraint the ADR rests on is still binding. Both rungs carry adoption gates
+# declared in advance there. No existing rung is to be rewritten onto torch.
 dependencies = [
     "polars>=1.0,<2", # offline dataframes. pandas is NOT used.
     "numpy>=2.0,<3", # online state: plain arrays, no DataFrame in the hot path
@@ -23,7 +30,20 @@ dependencies = [
     # system tzdb and would never have caught this. Pinned so the tz-aware-UTC contract
     # in 09-interfaces.md holds on both, rather than on whichever OS ran it last.
     "tzdata>=2024.1",
+    # ADR-V3-001 §AMENDMENT 2026-09-02. CPU-only build, sourced from the PyTorch CPU index
+    # below — NOT from PyPI. On Linux (which is what CI runs) the PyPI `torch` wheel bundles
+    # CUDA and would add gigabytes to the clean-clone job that charter K-5 is measured on.
+    # The explicit index is what keeps NFR-12 affordable; do not drop it.
+    "torch>=2.4,<3",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [project.optional-dependencies]
 dev = [
