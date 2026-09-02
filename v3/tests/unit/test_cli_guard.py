@@ -157,6 +157,7 @@ def test_a_sidecar_carrying_unreconstructed_state_refuses_to_load(
     ordinary and raises nowhere, because a bare TrainedRung is perfectly valid.
     """
     _write_sidecar(tmp_path, monkeypatch, {"pooling": "lse", "tau": 3.0})
+    monkeypatch.setattr(cli, "_model_path", lambda rung, seed: tmp_path / "absent.txt")
     with pytest.raises(typer.BadParameter, match="pooling"):
         cli._load_trained(5, 42)
 
@@ -166,7 +167,10 @@ def test_the_guard_does_not_fire_on_the_sidecar_train_actually_writes(
 ) -> None:
     """The negative control. A guard that rejects everything would pass the test above
     while breaking rungs 2-4, so this pins the exact key set `train` emits today."""
-    _write_sidecar(tmp_path, monkeypatch, {})
+    _write_sidecar(tmp_path, monkeypatch, {
+        "pooling": "lse", "tau": 5.0, "passes": 2,
+        "n_train_bags": 100, "n_train_positive_bags": 10,
+    })
     monkeypatch.setattr(cli, "_model_path", lambda rung, seed: tmp_path / "absent.txt")
     # Gets past the guard and fails later, on the missing booster — which is the point.
     with pytest.raises(Exception) as exc:

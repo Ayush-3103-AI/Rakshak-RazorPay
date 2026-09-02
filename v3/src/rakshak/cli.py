@@ -843,6 +843,16 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung | rung5_mil.Tr
             f"that fitted state and score with defaults under the right name. Extend "
             f"_load_trained and _SIDECAR_RECONSTRUCTED together, or do not persist it."
         )
+    if rung == 5:
+        missing = sorted({"pooling", "tau", "passes", "n_train_bags", "n_train_positive_bags"}
+                         - set(sidecar))
+        if missing:
+            raise typer.BadParameter(
+                f"rung 5 seed {seed}: the sidecar is missing {missing}. Rung 5 is an instance "
+                "model PLUS a fitted pooling; without those keys the booster on disk is only "
+                "half of it, and scoring it under the default pooling would produce a wrong "
+                "number wearing the right name. Re-run `train --rung 5`."
+            )
     booster = rung2_lgbm.TrainedRung(
         rung=rung,
         booster=lgb.Booster(model_file=str(path)),
@@ -855,15 +865,6 @@ def _load_trained(rung: int, seed: int) -> rung2_lgbm.TrainedRung | rung5_mil.Tr
     )
     if rung != 5:
         return booster
-    missing = sorted({"pooling", "tau", "passes", "n_train_bags", "n_train_positive_bags"}
-                     - set(sidecar))
-    if missing:
-        raise typer.BadParameter(
-            f"rung 5 seed {seed}: the sidecar is missing {missing}. Rung 5 is an instance "
-            "model PLUS a fitted pooling; without those keys the booster on disk is only "
-            "half of it, and scoring it under the default pooling would produce a wrong "
-            "number wearing the right name. Re-run `train --rung 5`."
-        )
     return rung5_mil.TrainedMIL(
         instance=booster,
         pooling=sidecar["pooling"],
