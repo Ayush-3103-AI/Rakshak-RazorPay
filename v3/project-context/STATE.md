@@ -164,12 +164,20 @@ not. `report.py` is **not** in `EVAL_MODULES`, so the lock hash is untouched.
 
 ## Next action
 
-**#50 (T-0117), the report.** It is unblocked — #49 closed as superseded — and three of its
-acceptance criteria closed today (the sweep, its stability statement, and the roster the
-dashboard reads). What is left on it: the v1 result reported beside the v3 result as the
-trajectory, per-seed spread beside every pooled headline, and a clean-clone `make all`
-end to end (~11 min gen + ~47 min features; K-5 is retired on CI/Linux, and the two Windows
-`perf` misses below are recorded, not fixed).
+**#50 (T-0117), the report.** Unblocked — #49 closed as superseded — and **five** of its
+acceptance criteria closed today: the cost-asymmetry sweep, its stability statement, per-seed
+spread beside every pooled headline (§2.0), the failed-rung list made readable (§7, 15 bullets
+instead of 69), and the roster the dashboard reads. Clean-clone `make all` was confirmed
+earlier on 2026-09-02, so K-5 stands (on CI/Linux; the two Windows `perf` misses below are
+recorded, not fixed).
+
+**One acceptance criterion is genuinely left: the v1 result reported beside the v3 result,
+unmodified, as the trajectory rather than as a footnote.** It is editorial, not
+computational — v1's numbers are immutable under Prime Directive 2 and live in `ver-1/`.
+
+A second thing worth an owner, found while pooling §2: **`docs/results_v2.md` §2.1 is still 80
+rows.** That is the right raw artefact and should stay, but §2.0 is now the headline and the
+report should say which is which to a reader who lands mid-page.
 
 **Recommended cut: #58, #59, #65, #66 — the new rungs.** A new rung buys a ladder row, not a
 claim. The latency half is powered at 7 evaluable merchants (~19 pp standard error) and no
