@@ -43,6 +43,8 @@ import ctypes
 import dataclasses
 import gc
 import json
+import os
+import sys
 import time as _time
 from datetime import timedelta
 from pathlib import Path
@@ -141,13 +143,16 @@ class _MEMORYSTATUSEX(ctypes.Structure):
 def _free_gb() -> float:
     """Free physical RAM, stdlib-only (no psutil pinned in this env).
 
-    ponytail: Windows-only (``ctypes.windll``); add psutil if this ever needs to run
-    cross-platform.
+    CI runs this module's import (via ``cli.py``/``rung5b_score.py``) on Linux, where
+    ``ctypes.windll`` does not exist — the POSIX branch is what keeps the clean-clone
+    job (charter K-5) from crashing there, not a hypothetical portability nicety.
     """
-    stat = _MEMORYSTATUSEX()
-    stat.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
-    ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
-    return float(stat.ullAvailPhys) / 1e9
+    if sys.platform == "win32":
+        stat = _MEMORYSTATUSEX()
+        stat.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+        return float(stat.ullAvailPhys) / 1e9
+    return os.sysconf("SC_AVAIL_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1e9
 
 
 # ─────────────────────────────────────────────────────────────────────────────
