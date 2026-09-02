@@ -11,8 +11,13 @@ It answers, in order:
 2. **Did the exposure finding survive contact with new data?**  Arm B raises savings for
    the scoring rungs. §7 row 3 — if it does not, `LIMITATIONS.md` §8.3a is wrong and gets
    reported as falsified.
-3. **Is the floor-fail closed?**  Best rung under arm B reaches savings ≥ 0.7017 at ≥ 4/5
-   seeds. §4.2.
+3. **Is the floor-fail closed?**  §5 condition 1 has TWO conjuncts — best rung under arm B
+   reaches savings ≥ 0.7017 at ≥ 4/5 **seeds** *and* at ≥ 4/5 **sweep ratios**. Until
+   2026-09-02 only the seed half was ever computed, because `sweep_cost_asymmetry` had
+   never been run on the ladder and the ratio half had no input. It is computed now, from
+   `docs/results/cost_sweep.json`. The verdict does not change — the gate failed on the
+   threshold at every ratio — but a gate reported as evaluated on half its terms is not a
+   gate, and §3b below now says which half.
 4. **Is the win degenerate?**  `alert_jaccard_wow < 0.95` and `alerts_per_day ≥ 0.9·K`. §4.2.
 5. **Were the two failures one failure?**  §7 row 4: does arm A close the floor-fail on its
    own, with no exposure correction? If it does, the stationary-window hypothesis explains
@@ -41,6 +46,8 @@ MIN_SEEDS = 4  # §4.2: holding at >= 4 of 5 seeds
 MAX_JACCARD = 0.95  # §4.2 anti-degeneracy
 MIN_ALERT_FRACTION = 0.9  # §4.2 anti-degeneracy
 CYCLE3_VOLUME_RANK_SAVINGS = 0.6017  # the immutable reference line
+MIN_RATIOS = 4  # §5 condition 1: holding at >= 4 of the 5 declared sweep ratios
+SWEEP_JSON = ROOT / "docs" / "results" / "cost_sweep.json"
 
 
 def load() -> dict[tuple[str, str], list[dict[str, Any]]]:
@@ -62,6 +69,45 @@ def _mean(rows: list[dict[str, Any]], key: str) -> float | None:
 
 def _fmt(v: float | None, nd: int = 4) -> str:
     return "—" if v is None else f"{v:.{nd}f}"
+
+
+def _sweep_half(label: str) -> bool | None:
+    """The other conjunct of §5 condition 1: the gate across the declared sweep ratios.
+
+    Returns None when `docs/results/cost_sweep.json` is absent, and says so rather than
+    printing a pass or a fail it cannot support. A missing artefact is a missing
+    measurement; scoring it as either outcome would be worse than admitting the gap.
+    """
+    print(f"\n3a. FLOOR-FAIL, THE OTHER HALF — {label} across the declared sweep ratios")
+    if not SWEEP_JSON.exists():
+        print(f"      NOT EVALUATED: {SWEEP_JSON.relative_to(ROOT)} does not exist.")
+        print("      §5 condition 1 requires the gate to hold at >= 4 of 5 sweep ratios as")
+        print("      well as >= 4 of 5 seeds. Run `uv run python scripts/cost_sweep.py`.")
+        return None
+    sweep = json.loads(SWEEP_JSON.read_text(encoding="utf-8"))
+    arm_b = sweep["hold_capable"]["realised"]
+    ratios = [str(r) for r in sweep["meta"]["ratios"]]
+    per_ratio = [(r, float(arm_b[r][label])) for r in ratios if label in arm_b.get(r, {})]
+    if not per_ratio:
+        print(f"      NOT EVALUATED: {label!r} is not in the sweep. The sweep covers the")
+        print("      rungs that go through select_actions; Rungs 5 and 6 do not.")
+        return None
+    n_pass = sum(1 for _, v in per_ratio if v >= SAVINGS_GATE)
+    ok = n_pass >= MIN_RATIOS
+    for r, v in per_ratio:
+        print(f"      ratio {float(r):>8g}   savings={v:+.4f}   "
+              f"{'>=' if v >= SAVINGS_GATE else ' <'} {SAVINGS_GATE}")
+    print(f"      {n_pass}/{len(per_ratio)} ratios >= {SAVINGS_GATE} "
+          f"(need {MIN_RATIOS}) -> {'PASS' if ok else 'FAIL'}")
+    lo, hi = min(v for _, v in per_ratio), max(v for _, v in per_ratio)
+    print(f"      spread across four orders of magnitude of cost asymmetry: "
+          f"{lo:+.4f} to {hi:+.4f} ({hi - lo:.4f})")
+    print("      NOTE: this conjunct of §5 condition 1 was not computed in the cycle-4")
+    print("      verdict as first published. `sweep_cost_asymmetry` was built and tested")
+    print("      but had never been run on the ladder, so the gate was reported as failed")
+    print("      on its seed half alone. The failure verdict is unchanged; the record of")
+    print("      how completely it was evaluated is.")
+    return ok
 
 
 def main() -> int:
@@ -138,6 +184,7 @@ def main() -> int:
               f"per-seed={[round(s, 4) for s in per_seed]}")
         print(f"      {n_pass}/{len(per_seed)} seeds >= {SAVINGS_GATE} "
               f"(need {MIN_SEEDS}) -> {'PASS' if gate3 else 'FAIL'}")
+        _sweep_half(label)
         jac, alerts = _mean(rows, "alert_jaccard_wow"), _mean(rows, "alerts_per_day")
         k = _mean(rows, "capacity_k")
         ok_j = jac is None or jac < MAX_JACCARD
