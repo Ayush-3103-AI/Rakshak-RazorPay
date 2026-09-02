@@ -1,0 +1,145 @@
+# The three generations, as committed literals (#79).
+#
+# Hand-maintained and reviewed, exactly like `rung_roster.yaml`. Prime Directive 2 closes
+# prior harnesses forever — no G1 or G2 number is recomputed, corrected or improved — so
+# every figure below is a literal carrying the document it was read out of. `build_journey`
+# refuses an entry or a figure that cites nothing, because a literal without its document
+# is an assertion.
+#
+# WHY THESE LABELS. The internal vocabulary collides. `00-charter-v2.md` calls the HMM
+# sentinel "v1" and this tree "v2", while the constrained-RL tree in the sibling repository
+# calls itself "v1". G1/G2/G3 collide with nothing. No charter, lock, ADR or results file
+# was edited to introduce them; `naming` on the emitted artefact carries the map back.
+#
+# NOTHING HERE IS READ ACROSS A REPOSITORY BOUNDARY. G1 lives in another repo and its
+# numbers arrive here as committed text, marked `external: true` and rendered as "cited,
+# not recomputed". Reaching into a sibling checkout would break the clean-clone build the
+# charter makes a stop-work condition.
+
+source: project-context/00-charter-v2.md
+
+generations:
+  - id: G1
+    charter_name: null
+    external: true
+    source_repo: https://github.com/Ayush-3103-AI/razorpay-project
+    title: Constrained-RL merchant risk manager
+    era: Aug 2026
+    thesis: >-
+      Every merchant carries a rupee-denominated risk budget; a reinforcement-learning
+      policy spends it under a hard mathematical constraint, and a deterministic safety
+      filter holds final veto. The question it answers is "how much risk can this merchant
+      afford right now", asked per transaction.
+    outcome: >-
+      Superseded by a different question, not by a losing number. G1's metrics are its own
+      and stand unedited; what changed is the unit of analysis. This project's charter
+      opens on a merchant-level problem — a pattern only visible at the merchant-week
+      level, which a transaction scorer cannot see — so G2 started from a new thesis and a
+      new harness rather than tuning G1.
+    citation:
+      - ver1/README.md
+      - project-context/00-charter-v2.md §1
+    figures:
+      - label: Net financial value
+        value: INR 13.96 L
+        note: against INR 12.77 L for a static threshold, on G1's own simulated stream
+        citation: [ver1/README.md]
+      - label: Fraud value prevented
+        value: 95.6%
+        note: against 77.3% for a static threshold
+        citation: [ver1/README.md]
+      - label: Hard-limit violations, post-filter
+        value: 0.0%
+        citation: [ver1/README.md]
+      - label: Unseen-regime recall, slow-ramp attack
+        value: "0.949"
+        citation: [ver1/README.md]
+
+  - id: G2
+    charter_name: v1
+    external: false
+    source_repo: https://github.com/Ayush-3103-AI/Rakshak-RazorPay
+    title: Per-merchant HMM sentinel
+    era: Aug 2026
+    thesis: >-
+      Run a Hidden Markov Model over each merchant's transaction stream, update a belief
+      over four latent risk states with every new window, and convert that belief into
+      pass / review / hold under per-merchant cost economics and a fixed analyst budget.
+    outcome: >-
+      The pre-registered claim failed and was reported rather than tuned away. Underneath
+      it sat a larger finding: on the held-out test window a uniform random score beat
+      every fitted model on the savings metric, which is a property of the metric at this
+      generator's 20% prevalence rather than a property of any model. Every savings number
+      G2 published is printed net of that floor, with PR-AUC beside it.
+    citation:
+      - results/verdict.md
+      - results/ablations.md
+      - 00-charter.md §2
+    figures:
+      - label: K2, pre-registered bar 20% relative
+        value: +5.9% — FAILED
+        note: holds at no point across the full swept asymmetry range 0.7–146.9
+        citation: [results/verdict.md]
+      - label: Savings, random floor vs best model
+        value: 0.5365 vs 0.5176
+        note: random ranks at PR-AUC 0.2449, i.e. at prevalence, with no discriminating power
+        citation: [results/verdict.md]
+      - label: Ablation — HMM off
+        value: +0.3176 PR-AUC
+        note: removing the sequence layer improved ranking; the component was close to decoration
+        citation: [results/ablations.md]
+      - label: Random floor on BAF at 1.47% prevalence
+        value: "-28.2169"
+        note: the savings metric's sensitivity to a random baseline is a property of prevalence
+        citation: [results/baf_validation.md]
+
+  - id: G3
+    charter_name: v2
+    external: false
+    source_repo: https://github.com/Ayush-3103-AI/Rakshak-RazorPay
+    title: The rung ladder, on a fixed generator and a sealed harness
+    era: Aug–Sep 2026
+    thesis: >-
+      Fix the generator and the evaluation harness first, seal them, then race a ladder of
+      policies against explicit floors — five seeds, both exposure arms, every rung
+      adopted only if it beats the previous one by a margin declared before the run.
+    outcome: >-
+      The test split stayed shut: the pre-registered gate that governs it failed on both
+      conjuncts, and the threshold it was anchored to was itself invalidated by this
+      cycle's regeneration — recorded as a pre-registration error rather than re-anchored
+      after the fact. Every G3 number is validation-split. Four new rungs were built and
+      scored on real cycle-4 data; all four were NOT ADOPTED and documented with numbers.
+    citation:
+      - README.md
+      - LIMITATIONS.md §§9–10
+      - EVAL-LOCK-CYCLE4.json
+      - docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md
+    figures:
+      - label: Dataset
+        value: 40,000 merchants × 365 days
+        note: 121.9M transactions, panel 6.15M rows
+        citation: [README.md, project-context/STATE.md]
+      - label: Test split opened
+        value: 0 times
+        note: open_count 0 across all four sealed locks
+        citation: [EVAL-LOCK-CYCLE4.json]
+      - label: Unanimous non-FLOOR-FAIL rows on the ladder
+        value: 1 of 80
+        note: >-
+          Rung 4 under realised exposure, ahead on every seed rather than on the mean;
+          three other policies flip with the seed
+        citation: [LIMITATIONS.md §10.5]
+      - label: Rung 4 margin across four orders of magnitude
+        value: +0.5853 to +0.6001
+        note: beats the volume_rank floor at 5 of 5 ratios, shipped cost matrix inside the grid
+        citation: [docs/results/cost_sweep.md, LIMITATIONS.md §10]
+      - label: Margin with HOLD made unreachable
+        value: +0.0740 → +0.0403
+        note: >-
+          roughly 45% of the advantage is the decision layer, not the ranker; priced as a
+          raw REVIEW-only ranking every rung loses to volume_rank
+        citation: [LIMITATIONS.md §10.3, docs/results/cost_sweep.md]
+      - label: Scoring throughput
+        value: 121.9M transactions in 215.3 s
+        note: 6.78× inside the NFR-10 budget
+        citation: [project-context/STATE.md]

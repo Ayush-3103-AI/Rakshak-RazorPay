@@ -25,6 +25,8 @@ const FILES = {
   ladder: "ladder.json",
   g5_confounder_null: "g5_confounder_null.json",
   rung_roster: "rung_roster.json",
+  cost_sweep: "cost_sweep.json",
+  journey: "journey.json",
 };
 
 // Successful loads are shared; failures are evicted so re-entering a section retries.

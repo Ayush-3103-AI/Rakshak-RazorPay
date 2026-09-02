@@ -72,7 +72,9 @@ from rakshak.schemas import EvalResult
 
 __all__ = [
     "build_all",
+    "build_cost_sweep",
     "build_g5",
+    "build_journey",
     "build_ladder",
     "build_lock_state",
     "build_rung_roster",
@@ -89,6 +91,18 @@ DEFAULT_G5_PATH: Final = Path("data/v2/gates/g5_series.json")
 #: that were scored, so a cut or deferred rung is invisible to it; this is where one is
 #: named as cut (#64).
 DEFAULT_ROSTER_PATH: Final = Path("configs/rung_roster.yaml")
+#: Written by `scripts/cost_sweep.py`, which owns the measurement. Nothing here computes
+#: a savings number; this module reshapes a committed dump into chart-ready series.
+DEFAULT_SWEEP_PATH: Final = Path("docs/results/cost_sweep.json")
+#: Hand-maintained and committed, exactly like the roster. Prime Directive 2 makes prior
+#: generations' numbers immutable, so they are literals with citations rather than a
+#: computation — and a literal nobody can trace is an assertion, so the builder refuses one.
+DEFAULT_JOURNEY_PATH: Final = Path("configs/journey.yaml")
+
+#: The public generation labels. The charter's own vocabulary ("v1", "v2") means something
+#: different in the sibling repo, where "v1" is the constrained-RL tree; these three names
+#: collide with nothing and the mapping travels on the artefact so the two can be reconciled.
+GENERATION_IDS: Final[tuple[str, ...]] = ("G1", "G2", "G3")
 
 LOCK_HASH_KEYS: Final = (
     "eval_module_sha256",
@@ -674,6 +688,209 @@ def build_rung_roster(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# cost_sweep — the sweep that ran once and was never rendered
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The four pricing arms `scripts/cost_sweep.py` dumps, mapped to the series names the
+#: panel plots. `hold_capable` is nested one level deeper (by exposure arm) than the other
+#: two, which is why this is a map rather than a loop over the dump's top-level keys.
+_SWEEP_ARMS: Final[tuple[tuple[str, tuple[str, ...]], ...]] = (
+    ("declared", ("hold_capable", "declared")),
+    ("realised", ("hold_capable", "realised")),
+    ("review_only", ("review_only",)),
+    ("hold_forbidden", ("hold_forbidden_arm_b",)),
+)
+
+
+def _sweep_at(doc: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any]:
+    node: Any = doc
+    for step in path:
+        if not isinstance(node, dict) or step not in node:
+            raise ArtifactSchemaError(
+                "cost_sweep", f"sweep dump is missing {'.'.join(path)!r} (looked for {step!r})"
+            )
+        node = node[step]
+    if not isinstance(node, dict):
+        raise ArtifactSchemaError("cost_sweep", f"{'.'.join(path)!r} is not a ratio -> policy map")
+    return node
+
+
+def build_cost_sweep(doc: dict[str, Any]) -> dict[str, Any]:
+    """Reshape the committed sweep dump into one series per policy, per pricing arm.
+
+    The dump is keyed ratio-first (``{"0.01": {"rung4": ...}}``) because that is the order
+    it was computed in; a chart needs it policy-first, with every series the same length as
+    the shared x-axis. Doing that reshape here rather than in the view is what makes the
+    ragged case a **refusal**: a policy absent at one ratio would otherwise render as a
+    curve that silently shifts along the axis, which is indistinguishable from a real
+    change in the number. Nothing here computes a savings figure — ``scripts/cost_sweep.py``
+    owns the measurement and this module never recomputes one.
+
+    ``shipped_ratio_within_grid`` exists because the sweep's own document argues the grid
+    must not be extended after seeing the curve. Whether the config's operating point falls
+    inside the declared grid is therefore a property a reader is entitled to check on the
+    figure, not a claim they have to take from prose.
+    """
+    meta = doc.get("meta")
+    if not isinstance(meta, dict):
+        raise ArtifactSchemaError("cost_sweep", "sweep dump is missing its 'meta' block")
+
+    arms: dict[str, list[dict[str, Any]]] = {}
+    axis: list[float] | None = None
+    for label, path in _SWEEP_ARMS:
+        by_ratio = _sweep_at(doc, path)
+        ratios = sorted(float(r) for r in by_ratio)
+        if axis is None:
+            axis = ratios
+        elif ratios != axis:
+            raise ArtifactSchemaError(
+                "cost_sweep",
+                f"arm {label!r} was swept over ratio grid {ratios}, but an earlier arm used "
+                f"{axis}. A series shorter than the axis plots as a shifted curve, which "
+                "reads as a change in the number rather than as missing data.",
+            )
+        # Keyed by the raw string the dump used, since float(r) round-trips but the key does not.
+        raw = {float(r): r for r in by_ratio}
+        policies = sorted({p for r in by_ratio for p in by_ratio[r]})
+        arms[label] = [
+            {"policy": p, "values": [by_ratio[raw[r]].get(p) for r in ratios]} for p in policies
+        ]
+        for row in arms[label]:
+            if any(v is None for v in row["values"]):
+                raise ArtifactSchemaError(
+                    "cost_sweep",
+                    f"arm {label!r} policy {row['policy']!r} has no value at every ratio; a "
+                    "gap is a refusal rather than a padded point",
+                )
+
+    assert axis is not None  # _SWEEP_ARMS is non-empty, so the loop ran at least once
+
+    # What the HOLD action is worth, arm B against the same rows with HOLD unreachable.
+    # This is the decomposition the narrative leans on; computing it here keeps it out of
+    # the view, where it would become a typed-in constant nobody could re-derive.
+    with_hold = {r["policy"]: r["values"] for r in arms["realised"]}
+    without_hold = {r["policy"]: r["values"] for r in arms["hold_forbidden"]}
+    best = axis.index(min(axis, key=lambda r: abs(r - float(meta.get("shipped_ratio", axis[0])))))
+    decomposition = [
+        {
+            "policy": policy,
+            "with_hold": with_hold[policy][best],
+            "without_hold": without_hold[policy][best],
+            "delta": with_hold[policy][best] - without_hold[policy][best],
+        }
+        for policy in sorted(set(with_hold) & set(without_hold))
+    ]
+
+    shipped = meta.get("shipped_ratio")
+    return {
+        "ratios": axis,
+        "arms": arms,
+        "meta": meta,
+        "shipped_ratio": shipped,
+        "shipped_ratio_within_grid": (
+            isinstance(shipped, (int, float)) and axis[0] <= float(shipped) <= axis[-1]
+        ),
+        "shipped_ratio_nearest_index": best,
+        "hold_decomposition": decomposition,
+        "arm_note": (
+            "declared/realised price each policy on the actions it actually takes and may "
+            "HOLD; review_only prices every policy the floors' way, REVIEW-only, which is "
+            "the only like-for-like comparison against a floor; hold_forbidden is arm B "
+            "with HOLD made unreachable and nothing else changed. The decomposition is "
+            "taken at the swept ratio nearest the shipped cost matrix."
+        ),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# journey — the three generations, as committed literals
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def build_journey(doc: dict[str, Any]) -> dict[str, Any]:
+    """Pass the generation waypoints through, checked. Like the roster, a source file.
+
+    Prime Directive 2 closes prior harnesses forever: no G1 or G2 number is recomputed,
+    corrected or improved. So these are literals — and the only thing that separates a
+    literal from an assertion is the document it was read out of, which is why an entry or
+    a figure that cites nothing is a refusal rather than an entry with an empty field.
+
+    ``external`` marks a generation living in a **different repository**. It must name that
+    repository: the panel renders the marker as "cited, not recomputed", and a marker with
+    nothing behind it is worse than no marker at all. Nothing in this module reads across a
+    repository boundary — doing so would break the clean-clone build the charter makes a
+    stop-work condition — so an external generation's numbers arrive here the same way the
+    rest of this file's inputs do, as committed text.
+    """
+    for key in ("generations", "source"):
+        if key not in doc:
+            raise ArtifactSchemaError("journey", f"journey YAML is missing {key!r}")
+
+    generations: list[dict[str, Any]] = []
+    for i, raw in enumerate(doc["generations"]):
+        if not isinstance(raw, dict):
+            raise ArtifactSchemaError("journey", f"generations[{i}] is not an object")
+        entry = {str(k): v for k, v in raw.items()}
+        for key in ("id", "title", "thesis", "outcome", "citation"):
+            if key not in entry:
+                raise ArtifactSchemaError("journey", f"generations[{i}] is missing {key!r}")
+        if entry["id"] not in GENERATION_IDS:
+            raise ArtifactSchemaError(
+                "journey",
+                f"generations[{i}] has id {entry['id']!r}, not one of {list(GENERATION_IDS)}. "
+                "The public labels are pinned so they cannot drift back into the charter's "
+                "'v1'/'v2', which name different trees in the two repositories.",
+            )
+        if not entry["citation"]:
+            raise ArtifactSchemaError(
+                "journey",
+                f"generations[{i}] ({entry['id']}) cites nothing. A prior-generation "
+                "number is a literal; a literal without its document is an assertion.",
+            )
+        external = bool(entry.get("external"))
+        if external and not entry.get("source_repo"):
+            raise ArtifactSchemaError(
+                "journey",
+                f"generations[{i}] ({entry['id']}) is marked external but names no "
+                "'source_repo'. External means it came from another repository, and which "
+                "repository is the whole content of the claim.",
+            )
+        for j, figure in enumerate(entry.get("figures") or []):
+            for key in ("label", "value", "citation"):
+                if key not in figure:
+                    raise ArtifactSchemaError(
+                        "journey", f"generations[{i}].figures[{j}] is missing {key!r}"
+                    )
+            if not figure["citation"]:
+                raise ArtifactSchemaError(
+                    "journey",
+                    f"generations[{i}].figures[{j}] ({figure['label']!r}) cites nothing.",
+                )
+        entry["external"] = external
+        entry["provenance_note"] = "cited, not recomputed" if external else "built in this tree"
+        entry.setdefault("charter_name", None)
+        entry.setdefault("figures", [])
+        generations.append(entry)
+
+    return {
+        "generations": generations,
+        "source": doc["source"],
+        "n_external": sum(1 for g in generations if g["external"]),
+        "naming": {
+            "public": list(GENERATION_IDS),
+            "charter": {g["id"]: g["charter_name"] for g in generations},
+            "note": (
+                "The public labels G1/G2/G3 exist because the internal vocabulary collides: "
+                "the charter calls the HMM sentinel 'v1' and this tree 'v2', while the "
+                "constrained-RL tree in the sibling repository calls itself 'v1'. No charter, "
+                "lock or results file was edited to introduce these labels; this map is how "
+                "the two vocabularies reconcile."
+            ),
+        },
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Emit
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -692,12 +909,16 @@ def build_all(
     results_dir: Path | None = None,
     g5_path: Path | None = None,
     roster_path: Path | None = None,
+    sweep_path: Path | None = None,
+    journey_path: Path | None = None,
     out_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Emit every artefact this tree has input for. Returns the manifest payload."""
     results = root / (results_dir or DEFAULT_RESULTS_DIR)
     g5_file = root / (g5_path or DEFAULT_G5_PATH)
     roster_file = root / (roster_path or DEFAULT_ROSTER_PATH)
+    sweep_file = root / (sweep_path or DEFAULT_SWEEP_PATH)
+    journey_file = root / (journey_path or DEFAULT_JOURNEY_PATH)
     target = out_dir if out_dir is not None else root / ARTIFACTS_DIR
     target.mkdir(parents=True, exist_ok=True)
 
@@ -838,6 +1059,51 @@ def build_all(
             "absent from the dashboard rather than named as cut",
         )
 
+    if sweep_file.is_file():
+        sweep, _ = sanitise(build_cost_sweep(_read_json(sweep_file)))
+        record(
+            "cost_sweep",
+            envelope(
+                "cost_sweep",
+                sweep,
+                split="VALIDATION",
+                provenance={**base_provenance, "inputs": _inputs_provenance([sweep_file], root)},
+            ),
+            split="VALIDATION",
+            reason="",
+        )
+    else:
+        record(
+            "cost_sweep",
+            None,
+            split="VALIDATION",
+            reason=f"no cost sweep at {_rel(sweep_file, root)}; run "
+            "`python scripts/cost_sweep.py` — until it has, every savings number this "
+            "project publishes is a single point estimate at one cost matrix",
+        )
+
+    if journey_file.is_file():
+        journey = build_journey(yaml.safe_load(journey_file.read_text(encoding="utf-8")))
+        record(
+            "journey",
+            envelope(
+                "journey",
+                journey,
+                split=None,
+                provenance={**base_provenance, "inputs": _inputs_provenance([journey_file], root)},
+            ),
+            split=None,
+            reason="",
+        )
+    else:
+        record(
+            "journey",
+            None,
+            split=None,
+            reason=f"no generation waypoints at {_rel(journey_file, root)}; the panel would "
+            "then present this tree with no account of the two generations before it",
+        )
+
     manifest_payload = {
         "contract": "rakshak-v3-dashboard",
         "artifacts": sorted(index, key=lambda a: str(a["name"])),
@@ -856,6 +1122,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--results-dir", type=Path, default=None)
     parser.add_argument("--g5", type=Path, default=None)
     parser.add_argument("--roster", type=Path, default=None)
+    parser.add_argument("--sweep", type=Path, default=None)
+    parser.add_argument("--journey", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -865,6 +1133,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             results_dir=args.results_dir,
             g5_path=args.g5,
             roster_path=args.roster,
+            sweep_path=args.sweep,
+            journey_path=args.journey,
             out_dir=args.out,
         )
     except ArtifactSchemaError as exc:

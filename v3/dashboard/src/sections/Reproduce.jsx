@@ -16,6 +16,8 @@ const ARTIFACT_BLURB = {
   ladder: "Every scored rung against the four floors and the oracle gap.",
   g5_confounder_null: "The confounder-null gate at zero prevalence — raw vs cohort-residual.",
   rung_roster: "Rungs 5-8's status where the ladder has no row to show them.",
+  cost_sweep: "The savings ranking re-priced across four orders of magnitude of cost asymmetry.",
+  journey: "The three generations as committed literals — G1's figures cited, not recomputed.",
 };
 
 function stagger(reduce) {
@@ -30,7 +32,7 @@ function stagger(reduce) {
   };
 }
 
-export default function Overview() {
+export default function Reproduce() {
   const manifest = useArtifact("manifest");
   const lockState = useArtifact("lock_state");
   const reduce = useReducedMotion();
@@ -42,23 +44,33 @@ export default function Overview() {
     <div className="border-b border-border px-[var(--spacing-8)] py-[var(--spacing-10)] max-md:px-[var(--spacing-5)] max-md:py-[var(--spacing-7)]">
       <div className="mx-auto max-w-[1180px]">
         <p className="m-0 mb-[var(--spacing-3)] font-mono text-xs font-bold tracking-[0.16em] text-primary-text uppercase">
-          §0 · Overview
+          §5 · Reproduce
         </p>
-        <h1 className="m-0 max-w-[22ch] font-heading text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">
-          RAKSHAK v3 — the evidence panel
-        </h1>
-        <p className="mt-[var(--spacing-5)] max-w-[62ch] text-lg leading-relaxed text-muted-foreground">
+        <h2 className="m-0 max-w-[24ch] font-heading text-3xl font-bold tracking-tight text-foreground">
+          Every figure above, and the file it came out of
+        </h2>
+        <p className="mt-[var(--spacing-5)] max-w-[68ch] text-lg leading-relaxed text-muted-foreground">
           Every number on this panel is read live from the committed, versioned artefact contract
           under <code className="rounded bg-canvas-well px-[6px] py-[2px] font-mono text-sm text-primary-text">artifacts/*.json</code> —
           no backend, no hardcoded figure. A missing or malformed artefact renders a named error, never a
-          blank chart standing in for a number nobody measured.
+          blank chart standing in for a number nobody measured. Below is the manifest's own account of
+          each one, with the sha256 you can check against your own clone.
         </p>
+
+        <pre className="mt-[var(--spacing-5)] overflow-x-auto rounded-[var(--radius-sm)] border border-border bg-canvas-well p-[var(--spacing-5)] font-mono text-xs leading-relaxed text-muted-foreground">
+{`uv sync
+make all      # lint → parity → gen → gates → perf → test, from a clean clone
+make report   # regenerate docs/results_v2.md from the frozen eval
+
+# make eval refuses the locked test split unless RAKSHAK_UNLOCK=1.
+# It is not set anywhere in this repo.`}
+        </pre>
 
         {!lockState.loading && lockState.data && !testOpen && (
           <div className="mt-[var(--spacing-6)] inline-flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-sm)] border border-dashed border-notice-border bg-notice-bg px-[var(--spacing-4)] py-[var(--spacing-3)] text-sm font-medium text-notice">
             <FileWarning className="h-4 w-4 shrink-0" aria-hidden="true" />
-            The test split has not opened (open counter is 0). Every figure below is VALIDATION until
-            T-0116 opens it — nothing here is rendered in a locked register.
+            The test split has not opened (open counter is 0). Every figure on this panel is VALIDATION
+            — nothing here is rendered in a locked register.
           </div>
         )}
 

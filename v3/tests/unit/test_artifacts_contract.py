@@ -34,10 +34,13 @@ from rakshak.artifacts import (
     validate_file,
 )
 from rakshak.artifacts.build import (
+    DEFAULT_JOURNEY_PATH,
     DEFAULT_ROSTER_PATH,
     REPO_ROOT,
     build_all,
+    build_cost_sweep,
     build_g5,
+    build_journey,
     build_ladder,
     build_lock_state,
     build_rung_roster,
@@ -725,9 +728,9 @@ def test_a_row_scored_under_a_superseded_cycle_is_recorded_not_refused(tmp_path:
     results.mkdir()
     # Cycle 2's real sha. Cycle 1 re-sealed unchanged, so it names BOTH locks — which is
     # what makes this the row the pre-registration is about: superseded, still legible.
-    superseded = json.loads(
-        (REPO_ROOT / "EVAL-LOCK-CYCLE2.json").read_text(encoding="utf-8")
-    )["eval_module_sha256"]
+    superseded = json.loads((REPO_ROOT / "EVAL-LOCK-CYCLE2.json").read_text(encoding="utf-8"))[
+        "eval_module_sha256"
+    ]
     row = _row("val", eval_lock_sha=superseded)
     del row["_source"], row["_seed"]
     (results / "rung2_val_seed42.json").write_text(json.dumps(row), encoding="utf-8")
@@ -984,3 +987,204 @@ def test_a_missing_roster_is_a_named_absence(tmp_path: Path) -> None:
     assert entry["status"] == "MISSING"
     assert "no-such-roster.yaml" in entry["reason"]
     assert not (tmp_path / "rung_roster.json").exists()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# cost_sweep — the sweep that ran once and was never rendered (#79)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _sweep_doc() -> dict[str, Any]:
+    """A structurally valid sweep dump, shaped like `scripts/cost_sweep.py` writes it."""
+    ratios = ["0.01", "1.0", "100.0"]
+    per_ratio = {r: {"rung1": 0.35, "rung4": 0.59} for r in ratios}
+    return {
+        "meta": {
+            "k": 30,
+            "seeds": [42, 43],
+            "n_pos": 3865,
+            "n_rows": 361500,
+            "n_merchants": 6025,
+            "reference_fraud_loss_inr": 51953.8,
+            "shipped_ratio": 0.15398,
+            "params": {"review_cost_inr": 250.0, "false_hold_cost_inr_base": 8000.0},
+        },
+        "hold_capable": {"declared": per_ratio, "realised": per_ratio},
+        "review_only": {r: {"volume_rank": 0.524, "rung4": 0.2348} for r in ratios},
+        "hold_forbidden_arm_b": {r: {"rung1": 0.35, "rung4": 0.564} for r in ratios},
+    }
+
+
+def test_the_sweep_artefact_carries_every_swept_ratio_in_numeric_order() -> None:
+    """A chart that plots ratios in dict order plots four orders of magnitude scrambled."""
+    payload = build_cost_sweep(_sweep_doc())
+    assert payload["ratios"] == [0.01, 1.0, 100.0]
+
+
+def test_the_sweep_artefact_reshapes_each_arm_into_one_series_per_policy() -> None:
+    payload = build_cost_sweep(_sweep_doc())
+    series = {s["policy"]: s["values"] for s in payload["arms"]["realised"]}
+    assert series["rung4"] == [0.59, 0.59, 0.59]
+    assert sorted(series) == ["rung1", "rung4"]
+
+
+def test_every_sweep_series_is_as_long_as_the_ratio_axis() -> None:
+    """A short series silently shifts a policy curve along the x-axis."""
+    payload = build_cost_sweep(_sweep_doc())
+    for arm, rows in payload["arms"].items():
+        for row in rows:
+            assert len(row["values"]) == len(payload["ratios"]), f"{arm}/{row['policy']}"
+
+
+def test_the_sweep_states_where_the_shipped_cost_matrix_sits_on_the_grid() -> None:
+    """A reader must be able to see the operating point, not take it on trust."""
+    payload = build_cost_sweep(_sweep_doc())
+    assert payload["shipped_ratio"] == pytest.approx(0.15398)
+    assert payload["shipped_ratio_within_grid"] is True
+
+
+def test_a_shipped_ratio_outside_the_swept_grid_is_reported_not_hidden() -> None:
+    doc = _sweep_doc()
+    doc["meta"]["shipped_ratio"] = 5000.0
+    assert build_cost_sweep(doc)["shipped_ratio_within_grid"] is False
+
+
+def test_the_sweep_decomposes_the_margin_the_hold_action_is_worth() -> None:
+    """The decomposition the narrative leans on is computed here, never typed into a view."""
+    payload = build_cost_sweep(_sweep_doc())
+    row = next(r for r in payload["hold_decomposition"] if r["policy"] == "rung4")
+    assert row["with_hold"] == pytest.approx(0.59)
+    assert row["without_hold"] == pytest.approx(0.564)
+    assert row["delta"] == pytest.approx(0.026)
+
+
+def test_a_sweep_arm_with_ragged_ratios_is_refused_rather_than_padded() -> None:
+    doc = _sweep_doc()
+    del doc["hold_capable"]["realised"]["100.0"]
+    with pytest.raises(ArtifactSchemaError, match="ratio"):
+        build_cost_sweep(doc)
+
+
+def test_a_sweep_missing_an_arm_is_refused_by_name() -> None:
+    doc = _sweep_doc()
+    del doc["review_only"]
+    with pytest.raises(ArtifactSchemaError, match="review_only"):
+        build_cost_sweep(doc)
+
+
+def test_a_missing_sweep_is_a_named_absence(tmp_path: Path) -> None:
+    manifest = build_all(
+        REPO_ROOT, sweep_path=Path("docs/results/no-such-sweep.json"), out_dir=tmp_path
+    )
+    entry = next(a for a in manifest["artifacts"] if a["name"] == "cost_sweep")
+    assert entry["status"] == "MISSING"
+    assert "no-such-sweep.json" in entry["reason"]
+    assert not (tmp_path / "cost_sweep.json").exists()
+
+
+def test_the_sweep_is_emitted_on_the_validation_split(tmp_path: Path) -> None:
+    """It reports validation-split rows; labelling it null would launder its provenance."""
+    build_all(REPO_ROOT, out_dir=tmp_path)
+    doc = json.loads((tmp_path / "cost_sweep.json").read_text(encoding="utf-8"))
+    assert doc["split"] == "VALIDATION"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# journey — G1/G2 waypoints, immutable by prime directive (#79)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _journey_doc() -> dict[str, Any]:
+    return {
+        "source": "project-context/00-charter-v2.md",
+        "generations": [
+            {
+                "id": "G1",
+                "charter_name": None,
+                "external": True,
+                "source_repo": "https://github.com/Ayush-3103-AI/razorpay-project",
+                "title": "Constrained-RL merchant risk manager",
+                "thesis": "Spend a per-merchant rupee risk budget under a hard constraint.",
+                "outcome": "Superseded.",
+                "citation": ["ver1/README.md"],
+                "figures": [
+                    {
+                        "label": "Net financial value",
+                        "value": "INR 13.96 L",
+                        "citation": ["ver1/README.md"],
+                    }
+                ],
+            },
+            {
+                "id": "G2",
+                "charter_name": "v1",
+                "external": False,
+                "title": "Per-merchant HMM sentinel",
+                "thesis": "A belief over four latent risk states.",
+                "outcome": "K2 FAILED at +5.9% against a 20% bar.",
+                "citation": ["results/verdict.md"],
+                "figures": [],
+            },
+        ],
+    }
+
+
+def test_the_journey_names_every_generation_and_its_charter_alias() -> None:
+    """The public G1/G2/G3 labels and the charter v1/v2 must reconcile on screen."""
+    payload = build_journey(_journey_doc())
+    aliases = {g["id"]: g["charter_name"] for g in payload["generations"]}
+    assert aliases == {"G1": None, "G2": "v1"}
+
+
+def test_an_external_generation_is_marked_cited_not_recomputed() -> None:
+    payload = build_journey(_journey_doc())
+    g1 = next(g for g in payload["generations"] if g["id"] == "G1")
+    assert g1["external"] is True
+    assert g1["provenance_note"] == "cited, not recomputed"
+    assert payload["n_external"] == 1
+
+
+def test_an_external_generation_without_a_source_repo_is_refused() -> None:
+    """External means from another repo. Which repo is the whole content of the claim."""
+    doc = _journey_doc()
+    del doc["generations"][0]["source_repo"]
+    with pytest.raises(ArtifactSchemaError, match="source_repo"):
+        build_journey(doc)
+
+
+def test_a_generation_that_cites_nothing_is_refused() -> None:
+    doc = _journey_doc()
+    doc["generations"][1]["citation"] = []
+    with pytest.raises(ArtifactSchemaError, match="cites nothing"):
+        build_journey(doc)
+
+
+def test_a_journey_figure_that_cites_nothing_is_refused() -> None:
+    """Prior-generation numbers are literals; a literal without a citation is an assertion."""
+    doc = _journey_doc()
+    doc["generations"][0]["figures"][0]["citation"] = []
+    with pytest.raises(ArtifactSchemaError, match="cites nothing"):
+        build_journey(doc)
+
+
+def test_a_generation_with_an_unknown_id_is_refused_rather_than_rendered() -> None:
+    doc = _journey_doc()
+    doc["generations"][0]["id"] = "v0"
+    with pytest.raises(ArtifactSchemaError, match="v0"):
+        build_journey(doc)
+
+
+def test_the_committed_journey_parses_and_covers_all_three_generations() -> None:
+    doc = yaml.safe_load((REPO_ROOT / DEFAULT_JOURNEY_PATH).read_text(encoding="utf-8"))
+    payload = build_journey(doc)
+    assert [g["id"] for g in payload["generations"]] == ["G1", "G2", "G3"]
+    assert all(g["citation"] for g in payload["generations"])
+
+
+def test_a_missing_journey_is_a_named_absence(tmp_path: Path) -> None:
+    manifest = build_all(
+        REPO_ROOT, journey_path=Path("configs/no-such-journey.yaml"), out_dir=tmp_path
+    )
+    entry = next(a for a in manifest["artifacts"] if a["name"] == "journey")
+    assert entry["status"] == "MISSING"
+    assert "no-such-journey.yaml" in entry["reason"]

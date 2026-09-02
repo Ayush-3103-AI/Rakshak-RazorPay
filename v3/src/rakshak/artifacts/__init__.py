@@ -104,6 +104,15 @@ ARTIFACT_NAMES: Final[dict[str, tuple[str, ...]]] = {
         "series",
     ),
     "rung_roster": ("roster", "statuses", "source"),
+    # The sweep ran once, over the whole ladder, and lived only in a markdown table.
+    # `ratios` is the x-axis every arm is plotted against; `arms` holds one series per
+    # policy per pricing arm; `shipped_ratio` is where the config's own cost matrix
+    # falls on that axis, so a reader can see the operating point rather than trust it.
+    "cost_sweep": ("ratios", "arms", "shipped_ratio", "meta", "hold_decomposition"),
+    # G1/G2 waypoints. Committed literals, not a computation: Prime Directive 2 makes
+    # prior-generation results immutable, so nothing here recomputes them and every
+    # figure carries the document it was read out of.
+    "journey": ("generations", "source", "naming"),
 }
 
 #: The roster's vocabulary, pinned here rather than in the YAML alone so a hand-edited

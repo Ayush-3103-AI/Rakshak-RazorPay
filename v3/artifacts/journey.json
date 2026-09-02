@@ -1,0 +1,203 @@
+{
+  "artifact": "journey",
+  "payload": {
+    "generations": [
+      {
+        "charter_name": null,
+        "citation": [
+          "ver1/README.md",
+          "project-context/00-charter-v2.md §1"
+        ],
+        "era": "Aug 2026",
+        "external": true,
+        "figures": [
+          {
+            "citation": [
+              "ver1/README.md"
+            ],
+            "label": "Net financial value",
+            "note": "against INR 12.77 L for a static threshold, on G1's own simulated stream",
+            "value": "INR 13.96 L"
+          },
+          {
+            "citation": [
+              "ver1/README.md"
+            ],
+            "label": "Fraud value prevented",
+            "note": "against 77.3% for a static threshold",
+            "value": "95.6%"
+          },
+          {
+            "citation": [
+              "ver1/README.md"
+            ],
+            "label": "Hard-limit violations, post-filter",
+            "value": "0.0%"
+          },
+          {
+            "citation": [
+              "ver1/README.md"
+            ],
+            "label": "Unseen-regime recall, slow-ramp attack",
+            "value": "0.949"
+          }
+        ],
+        "id": "G1",
+        "outcome": "Superseded by a different question, not by a losing number. G1's metrics are its own and stand unedited; what changed is the unit of analysis. This project's charter opens on a merchant-level problem — a pattern only visible at the merchant-week level, which a transaction scorer cannot see — so G2 started from a new thesis and a new harness rather than tuning G1.",
+        "provenance_note": "cited, not recomputed",
+        "source_repo": "https://github.com/Ayush-3103-AI/razorpay-project",
+        "thesis": "Every merchant carries a rupee-denominated risk budget; a reinforcement-learning policy spends it under a hard mathematical constraint, and a deterministic safety filter holds final veto. The question it answers is \"how much risk can this merchant afford right now\", asked per transaction.",
+        "title": "Constrained-RL merchant risk manager"
+      },
+      {
+        "charter_name": "v1",
+        "citation": [
+          "results/verdict.md",
+          "results/ablations.md",
+          "00-charter.md §2"
+        ],
+        "era": "Aug 2026",
+        "external": false,
+        "figures": [
+          {
+            "citation": [
+              "results/verdict.md"
+            ],
+            "label": "K2, pre-registered bar 20% relative",
+            "note": "holds at no point across the full swept asymmetry range 0.7–146.9",
+            "value": "+5.9% — FAILED"
+          },
+          {
+            "citation": [
+              "results/verdict.md"
+            ],
+            "label": "Savings, random floor vs best model",
+            "note": "random ranks at PR-AUC 0.2449, i.e. at prevalence, with no discriminating power",
+            "value": "0.5365 vs 0.5176"
+          },
+          {
+            "citation": [
+              "results/ablations.md"
+            ],
+            "label": "Ablation — HMM off",
+            "note": "removing the sequence layer improved ranking; the component was close to decoration",
+            "value": "+0.3176 PR-AUC"
+          },
+          {
+            "citation": [
+              "results/baf_validation.md"
+            ],
+            "label": "Random floor on BAF at 1.47% prevalence",
+            "note": "the savings metric's sensitivity to a random baseline is a property of prevalence",
+            "value": "-28.2169"
+          }
+        ],
+        "id": "G2",
+        "outcome": "The pre-registered claim failed and was reported rather than tuned away. Underneath it sat a larger finding: on the held-out test window a uniform random score beat every fitted model on the savings metric, which is a property of the metric at this generator's 20% prevalence rather than a property of any model. Every savings number G2 published is printed net of that floor, with PR-AUC beside it.",
+        "provenance_note": "built in this tree",
+        "source_repo": "https://github.com/Ayush-3103-AI/Rakshak-RazorPay",
+        "thesis": "Run a Hidden Markov Model over each merchant's transaction stream, update a belief over four latent risk states with every new window, and convert that belief into pass / review / hold under per-merchant cost economics and a fixed analyst budget.",
+        "title": "Per-merchant HMM sentinel"
+      },
+      {
+        "charter_name": "v2",
+        "citation": [
+          "README.md",
+          "LIMITATIONS.md §§9–10",
+          "EVAL-LOCK-CYCLE4.json",
+          "docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md"
+        ],
+        "era": "Aug–Sep 2026",
+        "external": false,
+        "figures": [
+          {
+            "citation": [
+              "README.md",
+              "project-context/STATE.md"
+            ],
+            "label": "Dataset",
+            "note": "121.9M transactions, panel 6.15M rows",
+            "value": "40,000 merchants × 365 days"
+          },
+          {
+            "citation": [
+              "EVAL-LOCK-CYCLE4.json"
+            ],
+            "label": "Test split opened",
+            "note": "open_count 0 across all four sealed locks",
+            "value": "0 times"
+          },
+          {
+            "citation": [
+              "LIMITATIONS.md §10.5"
+            ],
+            "label": "Unanimous non-FLOOR-FAIL rows on the ladder",
+            "note": "Rung 4 under realised exposure, ahead on every seed rather than on the mean; three other policies flip with the seed",
+            "value": "1 of 80"
+          },
+          {
+            "citation": [
+              "docs/results/cost_sweep.md",
+              "LIMITATIONS.md §10"
+            ],
+            "label": "Rung 4 margin across four orders of magnitude",
+            "note": "beats the volume_rank floor at 5 of 5 ratios, shipped cost matrix inside the grid",
+            "value": "+0.5853 to +0.6001"
+          },
+          {
+            "citation": [
+              "LIMITATIONS.md §10.3",
+              "docs/results/cost_sweep.md"
+            ],
+            "label": "Margin with HOLD made unreachable",
+            "note": "roughly 45% of the advantage is the decision layer, not the ranker; priced as a raw REVIEW-only ranking every rung loses to volume_rank",
+            "value": "+0.0740 → +0.0403"
+          },
+          {
+            "citation": [
+              "project-context/STATE.md"
+            ],
+            "label": "Scoring throughput",
+            "note": "6.78× inside the NFR-10 budget",
+            "value": "121.9M transactions in 215.3 s"
+          }
+        ],
+        "id": "G3",
+        "outcome": "The test split stayed shut: the pre-registered gate that governs it failed on both conjuncts, and the threshold it was anchored to was itself invalidated by this cycle's regeneration — recorded as a pre-registration error rather than re-anchored after the fact. Every G3 number is validation-split. Four new rungs were built and scored on real cycle-4 data; all four were NOT ADOPTED and documented with numbers.",
+        "provenance_note": "built in this tree",
+        "source_repo": "https://github.com/Ayush-3103-AI/Rakshak-RazorPay",
+        "thesis": "Fix the generator and the evaluation harness first, seal them, then race a ladder of policies against explicit floors — five seeds, both exposure arms, every rung adopted only if it beats the previous one by a margin declared before the run.",
+        "title": "The rung ladder, on a fixed generator and a sealed harness"
+      }
+    ],
+    "n_external": 1,
+    "naming": {
+      "charter": {
+        "G1": null,
+        "G2": "v1",
+        "G3": "v2"
+      },
+      "note": "The public labels G1/G2/G3 exist because the internal vocabulary collides: the charter calls the HMM sentinel 'v1' and this tree 'v2', while the constrained-RL tree in the sibling repository calls itself 'v1'. No charter, lock or results file was edited to introduce these labels; this map is how the two vocabularies reconcile.",
+      "public": [
+        "G1",
+        "G2",
+        "G3"
+      ]
+    },
+    "source": "project-context/00-charter-v2.md"
+  },
+  "provenance": {
+    "authoritative_lock": "EVAL-LOCK-CYCLE4.json",
+    "eval_lock_sha": "c009e38d984901cd689c66b0a5c12246a82825e078d81b92f2b6e39190e8f0c3",
+    "frozen_at_git_sha": "2ee69720c0cde9d9cb9be2dd00433d9fa21407b1",
+    "inputs": [
+      {
+        "path": "configs/journey.yaml",
+        "sha256": "fc345739d5ad8f89c95cf04a9ea36005cdbd7f89c6b14fa83d769a2116274ac2"
+      }
+    ],
+    "open_count": 0
+  },
+  "schema_version": "v3.1.0",
+  "split": null
+}

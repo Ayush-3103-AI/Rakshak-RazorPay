@@ -62,7 +62,10 @@ const TONE = {
   neutral: "border-information-border bg-information-bg",
 };
 
-export default function G5Figure() {
+// `eyebrow` is a prop rather than a literal because #79 re-homed this figure
+// under §3 (Results) — the section number is now the shell's to decide, not
+// this component's. Everything else about the figure is unchanged.
+export default function G5Figure({ eyebrow = "§3c · G5 confounder null" }) {
   const g5 = useArtifact("g5_confounder_null");
   const reduce = useReducedMotion();
   const payload = g5.data?.payload;
@@ -76,7 +79,7 @@ export default function G5Figure() {
     <div className="border-b border-border px-[var(--spacing-8)] py-[var(--spacing-10)] max-md:px-[var(--spacing-5)] max-md:py-[var(--spacing-7)]">
       <div className="mx-auto max-w-[1180px]">
         <p className="m-0 mb-[var(--spacing-3)] font-mono text-xs font-bold tracking-[0.16em] text-primary-text uppercase">
-          §1 · G5 confounder null
+          {eyebrow}
         </p>
         <h2 className="m-0 max-w-[26ch] font-heading text-3xl font-bold tracking-tight text-foreground">
           Can it tell platform drift from fraud?

@@ -137,17 +137,19 @@ export default function DeferredRungs() {
     <div className="px-[var(--spacing-8)] py-[var(--spacing-10)] max-md:px-[var(--spacing-5)] max-md:py-[var(--spacing-7)]">
       <div className="mx-auto max-w-[1180px]">
         <p className="m-0 mb-[var(--spacing-3)] font-mono text-xs font-bold tracking-[0.16em] text-primary-text uppercase">
-          §3 · Rungs 5–8
+          §4 · What we killed
         </p>
         <h2 className="m-0 max-w-[30ch] font-heading text-3xl font-bold tracking-tight text-foreground">
-          Specified, gated, and deliberately unscored
+          Specified, gated, and either unscored or not adopted
         </h2>
         <p className="mt-[var(--spacing-4)] max-w-[70ch] text-base leading-relaxed text-muted-foreground">
-          Four capabilities sit behind the cycle-3 lock. None of them has a row in the ladder, and that is
-          the intended state: a rung that lands after the lock is post-lock and ineligible for adoption, so
-          shipping one early would cost more than it bought. This section says which they are, what each
-          would claim, and exactly what is blocking it — read from the roster, which carries a citation for
-          every line.
+          This section is the counterweight to §3, and it is deliberately not an apology. Prime Directive 6
+          says a rung that loses is a finding: four new rungs were built and scored on real cycle-4 data and
+          all four were <strong className="text-foreground">NOT ADOPTED</strong>, with the numbers written
+          down. Other capabilities sit behind a lock unscored on purpose — a rung landing after the lock is
+          post-lock and ineligible for adoption, so shipping one early would cost more than it bought. Each
+          entry below says what it is, what it would have claimed, and exactly what happened to it, read
+          from the roster, which carries a citation for every line.
         </p>
 
         {roster.loading && (

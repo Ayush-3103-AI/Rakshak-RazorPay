@@ -3,11 +3,27 @@
   "payload": {
     "artifacts": [
       {
+        "file": "cost_sweep.json",
+        "name": "cost_sweep",
+        "reason": null,
+        "sha256": "9941d65652680b9b222afc0c2eddde0f4cb52b9cdb530d32c8783785438e330d",
+        "split": "VALIDATION",
+        "status": "PRESENT"
+      },
+      {
         "file": "g5_confounder_null.json",
         "name": "g5_confounder_null",
         "reason": null,
         "sha256": "bde0b83f393992f8b3eeeaebbe30070613b497126a95b0134b76b50f2cf0cb52",
         "split": "NULL_RUN",
+        "status": "PRESENT"
+      },
+      {
+        "file": "journey.json",
+        "name": "journey",
+        "reason": null,
+        "sha256": "947c87b7361dded1f8ad467d6599d6cf9aa385b0a642625b55ffc0212cf32b7b",
+        "split": null,
         "status": "PRESENT"
       },
       {

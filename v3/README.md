@@ -1,67 +1,78 @@
-# Rakshak v2 — post-onboarding merchant risk sentinel
+# Rakshak G3 — the tree
 
-Razorpay scores every *transaction* (Vulcan) and reviews every *merchant* once, at
-onboarding (Bumblebee). Nothing watches a merchant that already cleared onboarding as its
-behaviour drifts over the following weeks. Rakshak is that sentinel: every day, for every
-cleared merchant, it emits `PASS` / `REVIEW` / `HOLD` under a hard analyst-capacity budget,
-with a merchant-readable reason attached to every non-`PASS`.
+> **The story, the results and the live panel are in the [repo README](../README.md).**
+> This file is operational: what this tree is, how to run it, and the rules that govern it.
+> It deliberately does not repeat a results table — one copy of a number, in the file that
+> generates it, is what stops this repo's documents from drifting apart.
 
-This tree (`ver-2/v3`) is v2 of the project — see `CLAUDE.md` for the full architecture,
-stack, and the prime directives (frozen eval harness, immutable v1 results, no ground-truth
-leakage into features/models). Details in `LIMITATIONS.md` (honest failures, with numbers)
-and `project-context/STATE.md` (current resume point).
+`ver-2/v3` is **G3**, the third generation. `CLAUDE.md` and
+`project-context/00-charter-v2.md` call it **"v2"**, and call the tree at the repository root
+**"v1"**; the separate [G1 repository](https://github.com/Ayush-3103-AI/razorpay-project) also
+calls itself "v1". The public G1/G2/G3 labels exist to break that collision and are defined in
+[`configs/journey.yaml`](configs/journey.yaml). No charter, lock or results file was edited to
+introduce them.
 
-## Cycle 4
+## Prime directives
 
-Cycle 4 regenerated the dataset at full scale (40,000 merchants × 365 days, 121.9M
-transactions), rescored the entire 80-row ladder across five seeds instead of one, built
-and scored Rungs 5–7 (previously deferred, reversed by GitHub #51 — see `LIMITATIONS.md`
-§9.9), and ran the pre-registered gate that decides whether the test split opens.
+The full set is in [`CLAUDE.md`](CLAUDE.md). The two that constrain every session:
 
-**The test split stayed shut.** The floor-fail gate failed on both its conjuncts — 0/5
-seeds and 0/5 cost-asymmetry ratios (`EVAL-LOCK-CYCLE4.json`, `open_count: 0`) — because it
-was anchored to a stale cycle-3 threshold (0.7017) invalidated by cycle 4's own regeneration
-(the real floor is 0.5240): an acknowledged pre-registration error, not a re-anchor after
-the fact. Every number in `docs/results_v2.md` is validation-split only.
+1. **The eval harness is frozen before any model is written.** The test split opens exactly
+   once, at the end, and only if a pre-registered gate says so. It has never opened —
+   `open_count` is 0 on all four locks. Debug on validation.
+2. **Prior generations' results are immutable.** No G1 or G2 number is edited, re-run or
+   "corrected". They are carried forward as cited literals.
 
-Headline findings, all with numbers in `LIMITATIONS.md` §9:
-- Correcting exposure lifts savings on 5 of 5 rungs (§9.2); cycle 3's "Rung 4 cut" was an
-  artefact of the exposure defect it fixed, and Rung 4 is now the best savings rung (§9.7).
-- Rung 5 has the best PR-AUC on the ladder but near-worst savings — a calibration problem,
-  not a ranking one (§9.9).
-- `make all`'s `parity` and `perf` stages had been silently red for a cycle and a half
-  before this cycle, and the one remaining red test (`test_cohort.py`, a 14.3%-vs-15%
-  threshold drift) is now resolved — the tree is fully green and K-5 is retired in fact,
-  not just recorded as retired (§9.10).
-- **The cost-asymmetry sweep, run for the first time (§10).** `sweep_cost_asymmetry` had
-  been in the tree, unit-tested, since T-132 and had never been run over the ladder — so
-  every savings number the project has published was a single point estimate at one cost
-  matrix, and half of a pre-registered gate had no input to read. Run now
-  (`docs/results/cost_sweep.md`): Rung 4 holds **+0.5853 to +0.6001 across four orders of
-  magnitude** of false-hold/fraud-loss asymmetry and beats the `volume_rank` floor at 5 of
-  5 ratios, with the shipped cost matrix inside the swept grid. The gate's verdict does not
-  move; how completely it was evaluated does.
-- **FLOOR-FAIL turns out to be seed-dependent for three policies (§10.5).** Pooling the
-  80-row table by policy — mean with the per-seed range beside it — shows
-  `rung3_realised_exposure` and `rung9_realised_exposure` beating every floor on exactly one
-  seed of five, and `rung2_realised_exposure` failing on exactly one of five. A single-seed
-  ladder, which is what cycle 3 was, would have reported any of them either way with four
-  decimals of apparent precision. **Rung 4 under arm B is the only unanimous non-FLOOR-FAIL
-  row on the ladder, at 0 of 5** — ahead on every seed, not merely on the mean.
-- **Where that margin comes from, decomposed (§10.3), because it is not the ranking.** With
-  HOLD made unreachable and nothing else changed, Rung 4's margin over the floor falls from
-  +0.0740 to +0.0403 — it still wins, at 5/5 ratios, but the pricing asymmetry the
-  pre-registration disclosed (§4.3) is worth about 45% of it. Priced as a raw REVIEW-only
-  ranking, **every rung loses to `volume_rank`**, and the best pure rupee-ranker among them
-  is Rung 1, the rule engine. The advantage is a decision-layer result, not a modelling one.
-
-## Reproducing
+## Commands
 
 ```bash
 uv sync
-make all      # lint → parity → gen → gates → perf → test; must pass from a clean clone
+
+make all      # lint → parity → gen → gates → perf → test. Must pass from a clean clone.
+make gen      # regenerate the dataset from configs/scenario_v2.yaml
+make gates    # G1–G5 generator parity gates. Must be green before any model trains.
+make eval RUNG=n
 make report   # regenerate docs/results_v2.md from the frozen eval
+make artifacts    # emit artifacts/*.json — the dashboard's only data source
+make lint     # ruff check + mypy --strict src/
+make test     # pytest, all suites
 ```
 
-`make eval` refuses to run against the locked test split unless `RAKSHAK_UNLOCK=1` is set.
-It is not set anywhere in this repo.
+**`make eval` refuses the locked test split unless `RAKSHAK_UNLOCK=1` is set.** It is not set
+anywhere in this repo, and setting it is a deliberate, once-only act governed by the
+pre-registration.
+
+**`make all` from a clean `git clone` is a stop-work condition.** G1's single biggest
+disqualification risk was `make eval` not reproducing on a fresh checkout, so
+[`.github/workflows/v3-ci.yml`](../.github/workflows/v3-ci.yml) clones into a scratch path and
+builds from nothing on every push. If it goes red, the sprint stops until it is green — do not
+weaken `make all` to make it pass.
+
+## Dashboard
+
+A static React build over the committed artifacts. **No backend, ever** — the panel's only data
+source is `artifacts/*.json`, and a missing or malformed artifact renders a named error rather
+than a blank chart standing in for a number nobody measured.
+
+```bash
+cd dashboard
+npm ci
+npm run dev      # http://localhost:5173
+npm test         # loader contract + a whole-app render against the real artifacts
+npm run build    # -> dist/, deployed to GitHub Pages by ../.github/workflows/pages.yml
+```
+
+`predev`/`prebuild` copy `artifacts/` into `public/`, so dev and build serve the same bytes a
+reader can open in the repo.
+
+## Where things are
+
+| | |
+|---|---|
+| [`LIMITATIONS.md`](LIMITATIONS.md) | Every failure, with the number. Prime Directive 6. |
+| [`project-context/STATE.md`](project-context/STATE.md) | The resume point. Read first, every session. |
+| [`project-context/`](project-context/) | Charter, requirements, feature register, generator and harness specs, tickets. |
+| [`docs/results/`](docs/results/) | Generated result tables — the cost sweep, the cycle-4 verdict. |
+| [`docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md`](docs/PRE-REGISTRATION-CYCLE4-2026-09-01.md) | What cycle 4 committed to, before it ran. |
+| [`configs/rung_roster.yaml`](configs/rung_roster.yaml) | Every rung's status and citation — including the ones with no ladder row. |
+| [`configs/journey.yaml`](configs/journey.yaml) | The three generations as cited literals. |
+| `EVAL-LOCK*.json` | The lock chain. Never hand-edited. |

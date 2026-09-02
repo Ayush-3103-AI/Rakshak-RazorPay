@@ -1,0 +1,61 @@
+# Deploy the G3 evidence panel to GitHub Pages.
+#
+# The `build` job is the point of splitting this in two. Before #79 nothing in CI
+# built the dashboard at all — `v3-ci.yml` runs ruff/mypy/pytest and a clean-clone
+# `make all`, none of which touches `dashboard/`. A broken `npm run build` or a
+# failing render test would therefore have published a blank page with every check
+# green. Deployment now depends on the build AND the test suite, so a red panel
+# fails loudly instead of shipping silently.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "v3/dashboard/**"
+      - "v3/artifacts/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: v3/dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: v3/dashboard/package-lock.json
+      - run: npm ci
+      # The render test mounts the whole panel against the REAL committed
+      # artifacts, so this also catches an artifact that was regenerated into a
+      # shape the panel cannot read.
+      - run: npm test
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: v3/dashboard/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
