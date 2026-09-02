@@ -320,7 +320,34 @@ PyPI wheel happens to be CPU-only, but **CI runs on Linux, where the PyPI `torch
 bundles CUDA** and would add several gigabytes to the clean-clone job that charter K-5 is
 measured on. The pin is what keeps NFR-12 affordable and must not be dropped as tidying.
 
-**Still owed:** an end-to-end clean-clone `make all` on CI/Linux with `torch` present.
-Until that is green, item 5 is **not** fully discharged, and the withdrawal clause above
-stands: if admitting `torch` breaks clean-clone `make all` and it cannot be repaired inside
-the freeze window, this reversal is withdrawn and both rungs return to `conditional`.
+**Item 5 is now DISCHARGED — confirmed 2026-09-02/03**, GitHub Actions run
+[33678237824](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/actions/runs/33678237824)
+on `feature/v3-block-1`, both `v3-ci` jobs green: `lint-and-test` (`ruff`, `mypy --strict`,
+full `pytest`) and `clean-clone` (fresh `git clone`, `uv sync`, `make all` end to end).
+`torch` present throughout. The withdrawal clause did not fire.
+
+**It took five pushes to get there, and none of the four failures were about `torch`.**
+Recorded here because a reader tracing K-5's history should see what actually happened,
+not a single green checkmark with the debugging erased:
+
+1. `src/rakshak/score_rung5.py` called `ctypes.windll` with no platform guard — a
+   pre-existing bug (since the module's original commit, unrelated to this ADR) that
+   `mypy --strict` had never caught because CI had never gone green before. Fixed with a
+   `sys.platform` branch and a stdlib `os.sysconf` POSIX path; this was a real latent
+   crash on Linux, not a false alarm.
+2. `tests/unit/test_rung8b.py`'s cumulative-hazard monotonicity check used a zero
+   floating-point tolerance across a 40-point grid; Linux's BLAS reduction order produced
+   a ULP-scale negative diff a mathematically-monotone-by-construction function does not
+   have on every backend. Given the tolerance the scoring path (`compensator_increments`)
+   already used for the same reason.
+3. `tests/unit/test_cohort.py`'s O(n log n) timing guard measured a sub-millisecond
+   baseline and used a 25x bound; three independent GitHub Actions runs measured 25.7x,
+   44.2x and 44.7x on code confirmed O(n log n) by reading it. Not flakiness to be timed
+   away — `np.argsort`'s fixed per-call overhead genuinely inflates the ratio at this n.
+   Widened to 60x, still far below the ~100x an actual O(n²) regression would show.
+
+**None of these three bugs were introduced by this session's four rung tickets** —
+they were latent in the tree because CI had never actually completed a run before. The
+project's own CI history (`gh run list`) shows every prior push failing, which means the
+STATE.md claim of an earlier confirmed clean-clone pass on CI/Linux did not hold; this
+is the run that made it true rather than the run that restated it.

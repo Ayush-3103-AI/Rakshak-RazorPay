@@ -12,6 +12,8 @@ OPEN:     Cycle 4 is COMPLETE — all 8 protocol steps. The test split was not o
           new-rung tickets this file recommended cutting (#58/#59/#65/#66) were built
           and scored anyway, on real cycle-4 data — all four NOT ADOPTED, all negative
           results, all documented (LIMITATIONS.md §§12–15). Nothing code-side is open.
+          K-5 is now genuinely confirmed on GitHub Actions (run 33678237824), not just
+          read as retired from a local clean-clone — see "Carried defects" item 4.
           See "Post-#50 session" below.
 -->
 
@@ -296,6 +298,21 @@ from `artifacts/rung_roster.json`).
 `06-requirements-v2.md` §E said Rungs 5–8 must not be started; GitHub #51 reversed that
 explicitly and Rungs 5–7 were built and scored (Rung 8 remains `planned`). Both documents
 now say so.
+
+**4. CORRECTED 2026-09-03. "K-5 is read as retired" above was true of a local clean-clone,
+not of CI.** `gh run list` shows every push this branch made to GitHub Actions' `v3-ci`
+failing, on every run, before this correction — the claim had never actually been checked
+against the platform it names. Confirmed now for real:
+[run 33678237824](https://github.com/Ayush-3103-AI/Rakshak-RazorPay/actions/runs/33678237824),
+both jobs green, `torch` present (ADR-V3-001's item 5). Three pre-existing bugs surfaced
+and were fixed on the way, none from this session's rung tickets and none about `torch`
+itself: `score_rung5.py`'s unguarded `ctypes.windll` call (a real Linux crash, not a lint
+nit), `test_rung8b.py`'s zero-tolerance monotonicity check (BLAS reduction order differs
+by platform), and `test_cohort.py`'s O(n log n) timing bound calibrated too tight for
+`np.argsort`'s overhead profile on GitHub's runners (25x → 60x, still far under the ~100x
+an actual O(n²) regression would show). Full detail in `docs/adr/ADR-V3-001-no-autograd.md`
+§AMENDMENT's verification block, which is the canonical account — this entry is the pointer
+to it, not a second copy.
 
 ---
 
