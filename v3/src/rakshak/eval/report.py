@@ -521,6 +521,101 @@ def _typology_table(rows: Sequence[EvalResult]) -> str:
     )
 
 
+#: Where `scripts/cost_sweep.py` writes its machine-readable result. The sweep is run as a
+#: separate pass rather than by scoring every rung under N named `cost_scenario` values,
+#: because the latter multiplies the eval matrix by five and the former re-prices decisions
+#: that already exist. The consequence is that the parquet carries one scenario and this
+#: section has to look somewhere else — which is what the branch below does.
+SWEEP_ARTEFACT: Final = REPO_ROOT / "docs" / "results" / "cost_sweep.json"
+SWEEP_REPORT: Final = "docs/results/cost_sweep.md"
+
+
+def _sweep_from_artefact(scenarios: Sequence[str]) -> list[str]:
+    """The sweep section when the parquet holds one cost scenario.
+
+    Returns the honest "not run" paragraph if the artefact is absent, and the real result if
+    it is present. The distinction matters more than usual here: this section asserted "the
+    sweep was not run" for as long as that was true, and would have gone on asserting it
+    after the sweep ran, in a graded artefact, with nothing failing — the same shape of
+    defect as v1's `results/ablations.md:94`.
+    """
+    if not SWEEP_ARTEFACT.exists():
+        return [
+            f"**The sweep was not run.** Only the `{scenarios[0]}` cost scenario is present",
+            "in `docs/results_v2.parquet`, and `docs/results/cost_sweep.json` does not",
+            "exist, so the ranking's stability under cost asymmetry is unknown and is not",
+            "claimed. 10-eval-harness-spec.md §2 calls the sweep required, not optional;",
+            "this is a gap in the results, not in the report.",
+            "",
+        ]
+
+    payload = json.loads(SWEEP_ARTEFACT.read_text(encoding="utf-8"))
+    meta = payload["meta"]
+    ratios = [str(r) for r in meta["ratios"]]
+    arm_b = payload["hold_capable"]["realised"]
+    policies = sorted({n for r in ratios for n in arm_b.get(r, {})})
+
+    out = [
+        f"The sweep is run by `scripts/cost_sweep.py` over the ladder's committed decisions "
+        f"— nothing is refitted — at the {len(ratios)} `false_hold_cost / mean_fraud_loss` "
+        "ratios declared in 10-eval-harness-spec.md §2. Full tables, including the two "
+        f"control pricings, are in `{SWEEP_REPORT}`; the arm-B headline follows.",
+        "",
+        _table(
+            ("rung (arm B)", *(f"ratio {float(r):g}" for r in ratios)),
+            [
+                (f"`{n}`", *(f"{float(arm_b[r][n]):+.4f}" for r in ratios))
+                for n in policies
+            ],
+        ),
+        "",
+    ]
+
+    orderings = {
+        r: tuple(sorted(policies, key=lambda n: (-float(arm_b[r][n]), n))) for r in ratios
+    }
+    distinct = set(orderings.values())
+    if len(distinct) == 1:
+        winner = orderings[ratios[0]][0]
+        spread = [float(arm_b[r][winner]) for r in ratios]
+        out += [
+            f"**The ranking is stable across the whole sweep.** One ordering at all "
+            f"{len(ratios)} ratios; `{winner}` wins at every one, ranging {min(spread):+.4f} "
+            f"to {max(spread):+.4f} (spread {max(spread) - min(spread):.4f}). The ordering "
+            "does not depend on the cost ratio, which is the stronger of the two possible "
+            "findings here.",
+            "",
+        ]
+    else:
+        out += [
+            f"**THE RANKING FLIPS.** {len(distinct)} distinct orderings across "
+            f"{len(ratios)} ratios. Which rung wins depends on a ratio this project cannot "
+            "measure to better than three orders of magnitude, so no single winner should "
+            "be reported without its ratio attached.",
+            "",
+        ]
+
+    shipped = meta.get("shipped_ratio")
+    if isinstance(shipped, float):
+        lo, hi = float(ratios[0]), float(ratios[-1])
+        out += [
+            f"The shipped cost matrix sits at a ratio of **{shipped:.5f}** "
+            f"(₹{meta['params']['false_hold_cost_inr_base']:,.0f} against this window's mean "
+            f"fraud loss of ₹{meta['reference_fraud_loss_inr']:,.0f}), which is "
+            + ("**inside** the swept grid." if lo <= shipped <= hi
+               else f"**outside** the swept grid [{lo:g}, {hi:g}]."),
+            "",
+        ]
+    out += [
+        "The margin over the floor is **not** all ranking quality. `cost_sweep.md` §5 "
+        "decomposes it: with HOLD made unreachable and nothing else changed, the best rung "
+        "still beats the floor but by roughly half as much, and priced as a raw REVIEW-only "
+        "ranking every rung loses to `volume_rank`. See LIMITATIONS.md §10.3.",
+        "",
+    ]
+    return out
+
+
 def _sweep(rows: Sequence[EvalResult]) -> str:
     scenarios = sorted({r.cost_scenario for r in rows})
     lines = [
@@ -534,14 +629,7 @@ def _sweep(rows: Sequence[EvalResult]) -> str:
         "",
     ]
     if len(scenarios) < 2:
-        lines += [
-            f"**The sweep was not run.** Only the `{scenarios[0]}` cost scenario is present",
-            "in `docs/results_v2.parquet`, so the ranking's stability under cost asymmetry",
-            "is unknown and is not claimed. 10-eval-harness-spec.md §2 calls the sweep",
-            "required, not optional; this is a gap in the results, not in the report.",
-            "",
-        ]
-        return "\n".join(lines)
+        return "\n".join(lines + _sweep_from_artefact(scenarios))
 
     # Stability is a claim about *order*, so it is judged on the rungs every scenario
     # scored. A rung missing from one scenario would otherwise read as a flip, which is a

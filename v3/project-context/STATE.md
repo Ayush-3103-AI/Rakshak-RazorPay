@@ -7,7 +7,8 @@ SUMMARY:  The resume point for Rakshak v3. Read this first, every session, befor
           else. It names the current cycle, what is running, and the exact next action.
           Nothing else should be loaded speculatively.
 OPEN:     Cycle 4 is COMPLETE — all 8 protocol steps. The test split was not opened; the
-          pre-registered gate that governs it was not met. See LIMITATIONS.md §9.
+          pre-registered gate that governs it was not met, now on BOTH its conjuncts.
+          See LIMITATIONS.md §9 and §10.
 -->
 
 # STATE — Rakshak, cycle 4
@@ -112,11 +113,75 @@ verdict; `docs/results_v2.md` is the rendered table. Reproduce either with
 error, larger than every d30 difference above. The savings half is measured over the whole
 population. They do not carry equal weight and §9.8 says so.
 
+## Post-cycle-4 session — 2026-09-02, afternoon
+
+Three pieces of housekeeping-that-turned-out-not-to-be, none of which moved a committed
+number and all of which are in `LIMITATIONS.md` §10 or the roster.
+
+**1. The roster was the last file disagreeing with the ladder.** `configs/rung_roster.yaml`
+still said Rung 4 was `cut` and Rungs 5/6 were `planned` after cycle 4 scored all three, and
+Rung 7a was `planned` after #57 closed COMPLETED. **The dashboard renders that file**, so the
+judge-facing site was contradicting `docs/results_v2.md`. Corrected, with the historical
+`reason`/`decided_in` blocks left intact and dated `amended:` blocks added beside them — a
+status quietly rewritten to match a later result is not a record. `n_unverified` is 0: Rung 6b
+resolved to `cut` on GitHub's own close reason (#56 NOT_PLANNED, the same sweep that closed
+#57 COMPLETED), which is what the entry's LEAD ACTION note was waiting for.
+
+**2. Fifteen issues described finished work.** #67–#78 (the whole cycle-4 spine), #54, #33,
+#10, #49, #72. Closed with the evidence in each. Seven remain open and only two of them are
+live: **#50** (the report — now unblocked, since #49 closed as superseded) and #58/#59/#65/#66
+(new rungs).
+
+**3. The cost-asymmetry sweep had never been run, and half a gate depended on it.** This is
+the one that matters and it is §10 in full. `sweep_cost_asymmetry` has been unit-tested in the
+tree since T-132 with no artefact, no results section and no figure — so every savings number
+in every cycle was a point estimate at one cost matrix. Worse: **`PRE-REGISTRATION-CYCLE4` §5
+condition 1 is a conjunction** (≥ 4/5 seeds AND ≥ 4/5 sweep ratios) and only the seed half was
+ever computed, because the ratio half had nothing to read. `cycle4_verdict.py` §3a computes it
+now — **0/5 ratios clear 0.7017, and the FAIL stands.** The gate's verdict did not move; the
+record of how completely it was evaluated did.
+
+What the sweep found, for the report and the video:
+
+- **Stable.** Rung 4 arm B holds **+0.5853 to +0.6001** across ratios 0.01 → 100 and beats
+  the `volume_rank` floor (+0.5240) at **5 of 5**. The shipped matrix sits at ratio 0.154 —
+  inside the grid, checked rather than assumed.
+- **The margin is mostly not ranking.** Against the floor, Rung 4 is +0.0740 as scored,
+  **+0.0403** with HOLD made unreachable and nothing else changed, and **−0.2892** as a raw
+  REVIEW-only ranking. §4.3's disclosed 33× asymmetry is worth ~45% of the margin — the rung
+  still wins without it, so the verdict does not rest on the unfair half, but quoting +0.0740
+  without +0.0403 beside it is quoting the flattering number.
+- **The best pure rupee-ranker among the rungs is Rung 1, the rule engine.** The models that
+  rank fraud far better capture fewer rupees once the decision layer is taken away. The
+  contribution is cost-aware capacity-constrained decisioning, not a better fraud ranker.
+- **Not softened:** Rung 4, the best row in every table, has `ttd_median_days` of `inf`.
+
+`docs/results_v2.md` §4 said "**The sweep was not run**" — a sentence that would have stayed
+true-looking in a graded artefact after it stopped being true, with nothing failing, exactly
+v1's `results/ablations.md:94` defect. `eval/report.py` now reads the artefact when the
+parquet holds one cost scenario, and still prints the honest "not run" paragraph when it does
+not. `report.py` is **not** in `EVAL_MODULES`, so the lock hash is untouched.
+
 ## Next action
 
-Cycle 4 is closed. Before anything new: **`make all` from a clean clone** has not been run
-end to end this cycle (it regenerates the dataset, ~11 min gen + ~47 min features). The
-carried defects below are the shortest list of things worth fixing first.
+**#50 (T-0117), the report.** It is unblocked — #49 closed as superseded — and three of its
+acceptance criteria closed today (the sweep, its stability statement, and the roster the
+dashboard reads). What is left on it: the v1 result reported beside the v3 result as the
+trajectory, per-seed spread beside every pooled headline, and a clean-clone `make all`
+end to end (~11 min gen + ~47 min features; K-5 is retired on CI/Linux, and the two Windows
+`perf` misses below are recorded, not fixed).
+
+**Recommended cut: #58, #59, #65, #66 — the new rungs.** A new rung buys a ladder row, not a
+claim. The latency half is powered at 7 evaluable merchants (~19 pp standard error) and no
+rung fixes that before the 3 Sep freeze.
+
+**On the test split: leave it shut.** #49 and #78 both closed on that decision and §10 makes
+the case stronger, not weaker. §4.4 ranks the test-split opening as the *second* thing to cut;
+§5 says in as many words that "a held-out number is not worth spending the one-way door on a
+rung that did not earn it"; and §10.3 now shows that ~45% of the margin the door would confirm
+comes from the pricing asymmetry §4.3 already told the reader not to trust. Amending a sealed
+pre-registration after reading validation, to open a door the pre-registration says to cut,
+would cost more credibility than the number could buy.
 
 ---
 

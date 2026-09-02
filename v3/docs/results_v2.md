@@ -391,10 +391,21 @@ cannot be assumed, so the ranking is reported at every ratio. **A ranking stable
 across the sweep is a far stronger claim than a win at one guessed ratio — and if
 it flips, that is the finding.**
 
-**The sweep was not run.** Only the `base` cost scenario is present
-in `docs/results_v2.parquet`, so the ranking's stability under cost asymmetry
-is unknown and is not claimed. 10-eval-harness-spec.md §2 calls the sweep
-required, not optional; this is a gap in the results, not in the report.
+The sweep is run by `scripts/cost_sweep.py` over the ladder's committed decisions — nothing is refitted — at the 5 `false_hold_cost / mean_fraud_loss` ratios declared in 10-eval-harness-spec.md §2. Full tables, including the two control pricings, are in `docs/results/cost_sweep.md`; the arm-B headline follows.
+
+| rung (arm B) | ratio 0.01 | ratio 0.1 | ratio 1 | ratio 10 | ratio 100 |
+|---|---|---|---|---|---|
+| `rung1` | +0.5227 | +0.5227 | +0.5232 | +0.5227 | +0.5227 |
+| `rung2` | +0.5388 | +0.5387 | +0.5385 | +0.5388 | +0.5388 |
+| `rung3` | +0.4958 | +0.4956 | +0.4947 | +0.4958 | +0.4955 |
+| `rung4` | +0.5980 | +0.5981 | +0.5986 | +0.6001 | +0.5853 |
+| `rung9` | +0.4921 | +0.4919 | +0.4907 | +0.4899 | +0.4788 |
+
+**The ranking is stable across the whole sweep.** One ordering at all 5 ratios; `rung4` wins at every one, ranging +0.5853 to +0.6001 (spread 0.0148). The ordering does not depend on the cost ratio, which is the stronger of the two possible findings here.
+
+The shipped cost matrix sits at a ratio of **0.15398** (₹8,000 against this window's mean fraud loss of ₹51,954), which is **inside** the swept grid.
+
+The margin over the floor is **not** all ranking quality. `cost_sweep.md` §5 decomposes it: with HOLD made unreachable and nothing else changed, the best rung still beats the floor but by roughly half as much, and priced as a raw REVIEW-only ranking every rung loses to `volume_rank`. See LIMITATIONS.md §10.3.
 
 ## 5. The G5 figure
 

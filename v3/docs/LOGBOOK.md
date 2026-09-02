@@ -779,3 +779,65 @@ Numbers:     `tests/unit` + `tests/parity`: 2 failures remaining, both pre-exist
              this lane. Wall tests green (30 passed).
 
 Next:        The parity fixture (defect 2 above) needs an owner before T-0116.
+
+---
+
+## POST-CYCLE-4 | The sweep that was never run, and the half-gate it left behind
+
+Built:       `scripts/cost_sweep.py` — `sweep_cost_asymmetry` over the ladder's committed
+             decisions, five seeds, five declared ratios, both exposure arms, nothing
+             refitted and no locked file touched. Three tables, because one moves two
+             things at once: A (rungs on the actions they take), B (every policy as a raw
+             REVIEW-only ranking) and C (arm B through the decision layer with HOLD made
+             unreachable via `hold_expected_loss_floor_inr = inf`). `cycle4_verdict.py`
+             §3a; `LIMITATIONS.md` §10; `eval/report.py` §4 reading the artefact;
+             `tests/unit/test_cost_sweep.py`; roster corrected against the ladder.
+
+Surprised:   **Three things, in ascending order of how much they should have been caught
+             earlier.**
+
+             1. `sweep_cost_asymmetry` has been in the tree, unit-tested, since T-132 with
+                no artefact and no results section. `docs/results_v2.md` §4 said "**The
+                sweep was not run**" — correctly — and would have gone on saying it after
+                the sweep ran, in a graded artefact, with nothing failing. That is v1's
+                `results/ablations.md:94` defect exactly, a second time, in the same repo,
+                after it was written up as a lesson. The fix is not the paragraph; it is
+                that the section now reads the artefact and cannot assert its absence.
+
+             2. **`PRE-REGISTRATION-CYCLE4` §5 condition 1 is a conjunction and only one
+                conjunct was ever computed.** "≥ 4/5 seeds AND ≥ 4/5 sweep ratios" — the
+                ratio half had no input, so `cycle4_verdict.py` silently evaluated the
+                gate on half its terms. Nobody noticed because the half that WAS computed
+                failed, and a failed gate stops the reader. Had it passed on seeds, the
+                test split could have opened on a gate that was never fully checked. The
+                general form is worth keeping: **a conjunction reported as one verdict
+                hides which conjuncts were evaluated.**
+
+             3. **Table B inverted the hypothesis it was built to test.** The expectation
+                going in was that the 33× floor/rung pricing asymmetry flatters the rungs.
+                Priced identically — every policy as a raw REVIEW-only ranking — every rung
+                lands between +0.2349 and +0.2589 against `volume_rank`'s +0.5240, and the
+                best rupee-ranker among them is **Rung 1, the rule engine**. The LightGBM
+                rungs rank fraud at PR-AUC 0.73–0.77 against Rung 1's 0.30 and capture
+                fewer rupees. So the asymmetry does not flatter the rungs into a win; the
+                decision layer carries them, and the asymmetry is worth ~45% of that.
+
+Broke:       Nothing, and that was checked rather than assumed: `docs/results_v2.parquet`
+             is byte-identical, `git diff` on `results_v2.md` is confined to §4, and
+             `report.py` is not in `EVAL_MODULES` so `eval_module_sha256` is untouched.
+             One duplication was unavoidable — `sweep_cost_asymmetry` does not export the
+             swept `CostParams` and the floor side has to rebuild them; adding an exported
+             helper to `capacity.py` WOULD have moved the lock hash. Four duplicated lines,
+             pinned by `test_cost_sweep.py::test_swept_matches_the_sweeps_own_cost_params`
+             at every declared ratio.
+
+Numbers:     Rung 4 arm B **+0.5853 → +0.6001** across ratios 0.01–100, best rung at every
+             one, above the `volume_rank` floor (+0.5240) at 5/5. Margin decomposition at
+             ratio 0.01: **+0.0740** as scored, **+0.0403** with HOLD unreachable (still
+             5/5 above the floor), **−0.2892** as a raw ranking. Shipped cost matrix sits
+             at ratio **0.154** — inside the grid. Gate: **0/5 ratios ≥ 0.7017**, FAIL,
+             matching the seed half. `ruff` and `mypy --strict` clean on 49 source files.
+
+Next:        #50 (T-0117), the report. Unblocked — #49 closed as superseded. Remaining:
+             v1 beside v3 as the trajectory, per-seed spread beside every pooled headline,
+             clean-clone `make all`. Recommended cut: #58/#59/#65/#66.
