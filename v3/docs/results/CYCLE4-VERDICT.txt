@@ -43,6 +43,20 @@ THE PRE-REGISTERED QUESTIONS
       rung4: mean=0.5981, per-seed=[0.5862, 0.5927, 0.5927, 0.6211, 0.5976]
       0/5 seeds >= 0.7017 (need 4) -> FAIL
 
+3a. FLOOR-FAIL, THE OTHER HALF — rung4 across the declared sweep ratios
+      ratio     0.01   savings=+0.5980    < 0.7017
+      ratio      0.1   savings=+0.5981    < 0.7017
+      ratio        1   savings=+0.5986    < 0.7017
+      ratio       10   savings=+0.6001    < 0.7017
+      ratio      100   savings=+0.5853    < 0.7017
+      0/5 ratios >= 0.7017 (need 4) -> FAIL
+      spread across four orders of magnitude of cost asymmetry: +0.5853 to +0.6001 (0.0148)
+      NOTE: this conjunct of §5 condition 1 was not computed in the cycle-4
+      verdict as first published. `sweep_cost_asymmetry` was built and tested
+      but had never been run on the ladder, so the gate was reported as failed
+      on its seed half alone. The failure verdict is unchanged; the record of
+      how completely it was evaluated is.
+
 4. ANTI-DEGENERACY — is the win a re-derived watchlist?
       alert_jaccard_wow=0.3760 < 0.95 -> PASS
       alerts_per_day=30.0 >= 0.9*K=27.0 -> PASS
@@ -71,7 +85,7 @@ THE PRE-REGISTERED QUESTIONS
       -> arm A still loses to the floor, so in-window onsets alone do not close it. The two failures are not the same failure.
 
 6. TEST SPLIT — the four §5 conditions
-      1. best arm-B rung savings >= 0.7017 at >= 4/5 seeds              FAIL
+      1. best arm-B rung savings >= 0.7017 at >= 4/5 seeds AND >= 4/5 sweep ratios FAIL
       2. both anti-degeneracy conditions hold                           PASS
       3. detection_rate_d30 non-zero for at least one policy            PASS
       4. lock verifies and eval_module_sha256 unchanged                 UNCHECKED (verify_lock)

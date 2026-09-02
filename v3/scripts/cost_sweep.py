@@ -25,18 +25,22 @@ and not extended: choosing a denser grid after seeing the shape of the curve is 
 becomes an argument. ``review_cost_inr`` and ``p_catch`` are held fixed, so the result is
 interpretable as *the* asymmetry moving rather than everything moving at once.
 
-THE SECOND TABLE IS THE POINT
------------------------------
-``STATE.md`` records an unowned defect: floors are priced REVIEW-only (Rs.250/error) while
-rungs are priced on their own actions, which may HOLD (Rs.8,250/error) -- a 33x asymmetry
-inside the very comparison that decides FLOOR-FAIL. ``savings_of_ranking``'s docstring
-claims the comparison differs only in the score vector, which is true floor-vs-floor and
-false floor-vs-rung. Fixing that means editing the locked eval package, so it cannot be
-fixed here.
+THREE TABLES, BECAUSE ONE WOULD MOVE TWO THINGS AT ONCE
+-------------------------------------------------------
+``PRE-REGISTRATION-CYCLE4`` §4.3 disclosed, and declined to fix, an asymmetry inside the
+comparison that decides FLOOR-FAIL: floors are priced REVIEW-only (Rs.250/error) while rungs
+are priced on their own actions, which may HOLD (Rs.8,250/error) -- 33x. Fixing it means
+editing the locked eval package, which §3 forbids. It can be *measured* without touching the
+hash, and that is what the three tables do:
 
-It can be *measured* here, and that costs nothing. Table B prices every policy -- floors and
-rungs alike -- REVIEW-only, through the same ``savings_of_ranking`` the floors already go
-through. Table A minus Table B is the size of the handicap, per rung, per ratio.
+- **A** -- rungs on the actions they actually take, the ladder's own convention.
+- **B** -- every policy, floors included, as a pure ranking priced REVIEW-only.
+- **C** -- arm B through the decision layer with HOLD made unreachable, and nothing else
+  changed. B alone would not settle it: it strips the HOLD action *and* the expected-value
+  re-ranking, so a gap measured against it is two effects added together.
+
+A, then C, then B decomposes the rung-vs-floor margin into the HOLD privilege, the
+exposure-aware re-ranking, and the score ranking itself.
 """
 
 from __future__ import annotations
@@ -448,8 +452,6 @@ def _write(hold: Any, review: Any, nohold: Any, **meta: Any) -> None:
     a("")
     best_b = max(policies, key=lambda n: _mean(review[ratios[0]][n]))
     b_gap = floor_v - _mean(review[ratios[0]][best_b])
-    c_best_name = max(policies, key=lambda n: _mean(nohold[ratios[0]][n]))
-    c_best = _mean(nohold[ratios[0]][c_best_name])
     a(f"**2. The rungs do not out-rank the size floor on rupees. The decision layer is what "
       f"puts them ahead.** Priced as pure rankings under the floors' own REVIEW-only "
       f"convention (Table B), the best rung (`{best_b}`) loses to `volume_rank` by "
@@ -457,13 +459,35 @@ def _write(hold: Any, review: Any, nohold: Any, **meta: Any) -> None:
       f"the cost matrix: `volume_rank` is an exposure estimator, and on rupees an exposure "
       f"estimator beats a fraud-probability ranker that is never told what is at stake.")
     a("")
-    a(f"**3. So the 33x pricing asymmetry does not flatter the rungs — it carries much of "
-      f"the margin.** With HOLD unreachable but the expected-value selection intact "
-      f"(Table C), the best rung (`{c_best_name}`) scores **{c_best:+.4f}** against the "
-      f"floor's {floor_v:+.4f}. Read A, then C, then B, and the rung-vs-floor gap "
-      f"decomposes into three separable parts: the HOLD privilege, the exposure-aware "
-      f"re-ranking, and the ranking itself. The ladder's FLOOR-FAIL column collapses all "
-      f"three into one comparison, and `savings_of_ranking`'s docstring says it does not.")
+    a_best_name = best_a[ratios[0]]
+    a_best = _mean(hold["realised"][ratios[0]][a_best_name])
+    c_of_a = _mean(nohold[ratios[0]][a_best_name])
+    margin_full = a_best - floor_v
+    margin_nohold = c_of_a - floor_v
+    hold_share = (margin_full - margin_nohold) / margin_full if margin_full else float("nan")
+    nohold_beats = [r for r in ratios if _mean(nohold[r][a_best_name]) > floor_v]
+    a(f"**3. The margin survives the pricing asymmetry §4.3 disclosed, but not by much, and "
+      f"the decomposition should be reported rather than the headline alone.** Take "
+      f"`{a_best_name}`, the best row in Table A, at ratio {ratios[0]:g}:")
+    a("")
+    a(f"   - Table A, as scored (HOLD permitted): **{a_best:+.4f}**, "
+      f"a margin of **{margin_full:+.4f}** over the floor.")
+    a(f"   - Table C, HOLD unreachable, everything else identical: **{c_of_a:+.4f}**, "
+      f"a margin of **{margin_nohold:+.4f}**. It still beats the floor, at "
+      f"**{len(nohold_beats)} of {len(ratios)}** ratios.")
+    a(f"   - Table B, the raw ranking: **{_mean(review[ratios[0]][a_best_name]):+.4f}**, "
+      f"a margin of **{_mean(review[ratios[0]][a_best_name]) - floor_v:+.4f}** — negative, "
+      f"and by a wide margin.")
+    a("")
+    a(f"So the HOLD privilege is worth about **{hold_share:.0%}** of the rung's margin over "
+      f"the floor, the exposure-aware re-ranking supplies the rest, and the score ranking "
+      f"on its own is worth less than nothing against a size ranking. §4.3 of the "
+      f"pre-registration disclosed the 33x asymmetry and declined to fix it inside a locked "
+      f"harness; this quantifies what it was worth. **The direction matters: the rung would "
+      f"still beat the floor with HOLD switched off**, so the FLOOR-FAIL verdict does not "
+      f"rest on the unfair half of the comparison — but a report that quotes "
+      f"{margin_full:+.4f} without {margin_nohold:+.4f} beside it is quoting the flattering "
+      f"one.")
     a("")
     a("**4. What this does not settle.** Every number here is on the **validation** split "
       "(`open_count` is 0). None of it is a test-split result and none of it was "

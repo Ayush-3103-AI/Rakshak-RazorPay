@@ -17,7 +17,7 @@ It answers, in order:
    never been run on the ladder and the ratio half had no input. It is computed now, from
    `docs/results/cost_sweep.json`. The verdict does not change — the gate failed on the
    threshold at every ratio — but a gate reported as evaluated on half its terms is not a
-   gate, and §3b below now says which half.
+   gate, and §3a below now says which half.
 4. **Is the win degenerate?**  `alert_jaccard_wow < 0.95` and `alerts_per_day ≥ 0.9·K`. §4.2.
 5. **Were the two failures one failure?**  §7 row 4: does arm A close the floor-fail on its
    own, with no exposure correction? If it does, the stationary-window hypothesis explains
@@ -175,6 +175,7 @@ def main() -> int:
     print(f"\n3. FLOOR-FAIL — best rung under arm B vs the gate {SAVINGS_GATE:.4f}")
     bb = best("realised")
     gate3 = gate4 = False
+    gate3_ratios: bool | None = None
     if bb:
         label, rows = bb
         per_seed = [r["savings"] for r in rows if r.get("savings") is not None]
@@ -184,7 +185,7 @@ def main() -> int:
               f"per-seed={[round(s, 4) for s in per_seed]}")
         print(f"      {n_pass}/{len(per_seed)} seeds >= {SAVINGS_GATE} "
               f"(need {MIN_SEEDS}) -> {'PASS' if gate3 else 'FAIL'}")
-        _sweep_half(label)
+        gate3_ratios = _sweep_half(label)
         jac, alerts = _mean(rows, "alert_jaccard_wow"), _mean(rows, "alerts_per_day")
         k = _mean(rows, "capacity_k")
         ok_j = jac is None or jac < MAX_JACCARD
@@ -249,8 +250,16 @@ def main() -> int:
 
     # 6 — the test split
     print("\n6. TEST SPLIT — the four §5 conditions")
+    # Condition 1 is a conjunction and is reported as one. `gate3` is the seed half (§3);
+    # `gate3_ratios` is the sweep half (§3a) and is None when the sweep artefact is absent,
+    # in which case the condition is reported as not fully evaluated rather than as passed.
+    if gate3_ratios is None:
+        cond1: bool | None = None if gate3 else False
+    else:
+        cond1 = bool(gate3 and gate3_ratios)
     for i, (desc, ok) in enumerate((
-        (f"best arm-B rung savings >= {SAVINGS_GATE} at >= {MIN_SEEDS}/5 seeds", gate3),
+        (f"best arm-B rung savings >= {SAVINGS_GATE} at >= {MIN_SEEDS}/5 seeds "
+         f"AND >= {MIN_RATIOS}/5 sweep ratios", cond1),
         ("both anti-degeneracy conditions hold", gate4),
         ("detection_rate_d30 non-zero for at least one policy", bool(fired)),
         ("lock verifies and eval_module_sha256 unchanged", None),

@@ -1184,3 +1184,93 @@ state load path, calibrated tight (2x margin) on hardware this local machine doe
 **Unverified, not fixed, not weakened** — CI is green on Linux and that is what K-5 measures;
 this is recorded as an open question about the two tightest perf budgets on a platform the
 project was never claiming to guarantee.
+
+---
+
+## 10. The cost-asymmetry sweep — the measurement the ladder was missing
+
+`docs/results/cost_sweep.md` is the full account and it is generated; the numbers below cite
+it rather than restating it, because a hand-copied number in a hand-maintained file is
+exactly the defect this project already shipped once (`results/ablations.md:94`, v1). Regenerate
+with `uv run python scripts/cost_sweep.py`.
+
+### 10.1 It had never been run, and half a pre-registered gate depended on it
+
+`eval.capacity.sweep_cost_asymmetry` has been in the tree, unit-tested, since T-132. It had
+never been run over the ladder — no artefact, no results section, no figure. So every savings
+number this project has published, in every cycle, was a **single point estimate at one cost
+matrix**, and `metrics.CostParams`' own docstring says that is not enough: v1 measured the
+asymmetry at 47.5 / 13.1 / 61,368 against a literature band of 400–600.
+
+The consequence is sharper than a missing robustness check. **`PRE-REGISTRATION-CYCLE4` §5
+condition 1 is a conjunction** — the best arm-B rung must clear 0.7017 at *≥ 4 of 5 seeds*
+**and** at *≥ 4 of 5 sweep ratios*. `cycle4_verdict.py` only ever evaluated the seed half,
+because the ratio half had no input to read. §9.3's FAIL was therefore rendered on half the
+terms the gate was written with, and nobody noticed, because the half that was computed
+failed and a failed gate stops the reader.
+
+**It is computed now, and the verdict does not move: 0 of 5 ratios clear 0.7017, spread
++0.5853 to +0.6001.** `cycle4_verdict.py` §3a carries it, and §6 condition 1 now names both
+conjuncts. What changed is not the outcome but the record of how completely it was evaluated
+— and the general lesson, which is the one worth keeping: **a gate written as a conjunction
+must be reported conjunct by conjunct, or a missing input silently narrows it.**
+
+### 10.2 The ranking is stable across four orders of magnitude
+
+`rung4` under arm B ranges **+0.5853 to +0.6001** across ratios 0.01 → 100, and is the best
+rung at every one of them. It beats the cycle-4 `volume_rank` floor of +0.5240 at **5 of 5**
+ratios. Every rung's spread is ≤ 0.0148.
+
+The shipped cost matrix is **inside** the swept grid, not off the end of it: the sweep's
+denominator is the mean `true_loss_amount_inr` over this window's fraud rows, ₹51,954, so the
+config's ₹8,000 false-HOLD cost is a ratio of **0.154**, between the grid's 0.1 and 1.0
+points. That was worth checking rather than assuming — a sweep that does not bracket the
+operating point measures the wrong thing politely.
+
+This is the strongest form the savings claim comes in, and it is the one the report should
+make: **not "Rung 4 beats the size floor", but "Rung 4 beats the size floor at every cost
+asymmetry in the declared range, and the range brackets the matrix we ship."**
+
+### 10.3 Where the margin comes from, decomposed — and it is not the ranking
+
+§4.3 of the pre-registration disclosed an asymmetry it could not fix inside a locked harness:
+floors are priced REVIEW-only (₹250/error) while rungs are priced on their own actions, which
+may HOLD (₹8,250/error). The sweep cannot fix it either, but it can **price** it, with a
+third table that changes exactly one thing — `hold_expected_loss_floor_inr = inf` makes HOLD
+unreachable while the selector, the exposure vector and the top-K stay as scored.
+
+Taking `rung4` at ratio 0.01, against the floor's +0.5240:
+
+| | savings | margin over floor |
+|---|---|---|
+| **A** — as scored, HOLD permitted | +0.5980 | **+0.0740** |
+| **C** — HOLD unreachable, nothing else changed | +0.5644 | **+0.0403** (still above at 5/5 ratios) |
+| **B** — the raw score ranking, REVIEW-only | +0.2349 | **−0.2892** |
+
+Three things follow and all three should be reported together:
+
+1. **The HOLD privilege is worth about 45% of the margin.** Not all of it — the FLOOR-FAIL
+   verdict does not rest on the unfair half of the comparison — but a report that quotes
+   +0.0740 without +0.0403 beside it is quoting the flattering number.
+2. **The rungs' score rankings lose to a size ranking on rupees, badly.** Every rung sits
+   between +0.2349 and +0.2589 in Table B against `volume_rank`'s +0.5240. The best pure
+   ranker on rupees among the rungs is **Rung 1, the rule engine** — the models that rank
+   fraud far better (PR-AUC 0.73–0.77 against Rung 1's 0.30) capture fewer rupees when the
+   decision layer is taken away from them.
+3. **So the system's advantage is a decision-layer result, not a modelling result.** That is
+   consistent with §8.3a and with cycle 4's central finding, and it is the honest framing:
+   the contribution is cost-aware capacity-constrained decisioning over an exposure estimate,
+   not a better fraud ranker.
+
+### 10.4 What §10 does not license
+
+Everything here is **validation** (`open_count` is 0). The sweep was run *after* the ladder
+was scored, so it is a robustness check on a measured result and **not a gate** — it must
+never be reported as one, and §10.1's use of it to complete a pre-registered conjunct is the
+single exception, admissible only because it made a FAIL more completely a FAIL.
+
+It also says nothing about latency. Savings is a rupee metric; charter §2 makes
+time-to-detection an equal-standing win condition, and `rung4` — the best row in every table
+above — has `ttd_median_days` of `inf` in both arms. **The rung that wins the money argument
+is the one that never detects inside the window.** §9.5 already recorded that savings and
+latency pull against each other; §10 does not soften it.
