@@ -537,6 +537,10 @@ def _pooled(rows: Sequence[EvalResult]) -> str:
         body.append((
             f"**Rung {rung}**" + (f" `{label}`" if label else ""),
             split,
+            # FR-021: prevalence travels with every PR-AUC, on the pooled row as much as on
+            # the per-seed one. A PR-AUC without the prevalence it was measured at is the
+            # exact mistake that made v1's headline meaningless.
+            _pct(sum(r.prevalence for r in rs) / len(rs)),
             str(len(rs)),
             cell(rs, "pr_auc"),
             cell(rs, "savings"),
@@ -557,7 +561,8 @@ def _pooled(rows: Sequence[EvalResult]) -> str:
         "the range is zero to four decimals: that metric does not depend on the seed.",
         "",
         _table(
-            ("policy", "split", "seeds", "PR-AUC", "savings", "P@K", "det@30d", "verdict"),
+            ("policy", "split", "prevalence", "seeds", "PR-AUC", "savings", "P@K",
+             "det@30d", "verdict"),
             body,
         ),
         "",
@@ -614,11 +619,11 @@ def _typology_table(rows: Sequence[EvalResult]) -> str:
 #: because the latter multiplies the eval matrix by five and the former re-prices decisions
 #: that already exist. The consequence is that the parquet carries one scenario and this
 #: section has to look somewhere else — which is what the branch below does.
-SWEEP_ARTEFACT: Final = REPO_ROOT / "docs" / "results" / "cost_sweep.json"
+SWEEP_ARTEFACT: Final = Path("docs/results/cost_sweep.json")
 SWEEP_REPORT: Final = "docs/results/cost_sweep.md"
 
 
-def _sweep_from_artefact(scenarios: Sequence[str]) -> list[str]:
+def _sweep_from_artefact(scenarios: Sequence[str], root: Path) -> list[str]:
     """The sweep section when the parquet holds one cost scenario.
 
     Returns the honest "not run" paragraph if the artefact is absent, and the real result if
@@ -627,7 +632,8 @@ def _sweep_from_artefact(scenarios: Sequence[str]) -> list[str]:
     after the sweep ran, in a graded artefact, with nothing failing — the same shape of
     defect as v1's `results/ablations.md:94`.
     """
-    if not SWEEP_ARTEFACT.exists():
+    artefact = root / SWEEP_ARTEFACT
+    if not artefact.exists():
         return [
             f"**The sweep was not run.** Only the `{scenarios[0]}` cost scenario is present",
             "in `docs/results_v2.parquet`, and `docs/results/cost_sweep.json` does not",
@@ -637,7 +643,7 @@ def _sweep_from_artefact(scenarios: Sequence[str]) -> list[str]:
             "",
         ]
 
-    payload = json.loads(SWEEP_ARTEFACT.read_text(encoding="utf-8"))
+    payload = json.loads(artefact.read_text(encoding="utf-8"))
     meta = payload["meta"]
     ratios = [str(r) for r in meta["ratios"]]
     arm_b = payload["hold_capable"]["realised"]
@@ -704,7 +710,7 @@ def _sweep_from_artefact(scenarios: Sequence[str]) -> list[str]:
     return out
 
 
-def _sweep(rows: Sequence[EvalResult]) -> str:
+def _sweep(rows: Sequence[EvalResult], root: Path) -> str:
     scenarios = sorted({r.cost_scenario for r in rows})
     lines = [
         "## 4. Cost-asymmetry sweep",
@@ -717,7 +723,7 @@ def _sweep(rows: Sequence[EvalResult]) -> str:
         "",
     ]
     if len(scenarios) < 2:
-        return "\n".join(lines + _sweep_from_artefact(scenarios))
+        return "\n".join(lines + _sweep_from_artefact(scenarios, root))
 
     # Stability is a claim about *order*, so it is judged on the rungs every scenario
     # scored. A rung missing from one scenario would otherwise read as a flip, which is a
@@ -936,7 +942,7 @@ def render(
             _floor_fail_banner(ordered),
             _main_table(ordered),
             _typology_table(ordered),
-            _sweep(ordered),
+            _sweep(ordered, root),
             _figures(root),
             _ablations(ordered, root, lock_path),
             _limitations(ordered),

@@ -349,6 +349,67 @@ def test_a_single_cost_scenario_reports_the_sweep_as_not_run(fake_root: Path) ->
     assert "The sweep was not run" in text
 
 
+def _write_sweep(root: Path, arm_b: dict[str, dict[str, float]]) -> None:
+    """A `cost_sweep.json` in the shape `scripts/cost_sweep.py` writes."""
+    out = root / "docs" / "results"
+    out.mkdir(parents=True, exist_ok=True)
+    ratios = sorted({float(r) for r in arm_b})
+    (out / "cost_sweep.json").write_text(
+        json.dumps({
+            "meta": {
+                "k": 30, "seeds": [42], "n_pos": 10, "n_rows": 100, "n_merchants": 20,
+                "ratios": ratios, "split": "val",
+                "params": {"review_cost_inr": 250.0, "false_hold_cost_inr_base": 8000.0,
+                           "p_catch": 0.8, "fraud_loss_multiplier": 1.0},
+            },
+            "hold_capable": {"declared": arm_b, "realised": arm_b},
+            "review_only": {}, "hold_forbidden_arm_b": {},
+        }),
+        encoding="utf-8",
+    )
+
+
+def test_the_sweep_section_reads_the_artefact_once_it_exists(fake_root: Path) -> None:
+    """The whole point: the section must stop asserting an absence that ended.
+
+    `results_v2.md` §4 said "The sweep was not run" for as long as that was true and would
+    have gone on saying it afterwards, in a graded artefact, with nothing failing — v1's
+    `results/ablations.md:94` defect. This is the test that would have failed.
+    """
+    _write_sweep(fake_root, {"0.01": {"rung2": 0.50}, "100.0": {"rung2": 0.48}})
+    text = render([make_row()], root=fake_root)
+    assert "The sweep was not run" not in text
+    assert "ranking is stable" in text
+    assert "+0.5000" in text and "+0.4800" in text
+
+
+def test_a_flipping_ranking_in_the_artefact_is_reported_as_the_finding(
+    fake_root: Path,
+) -> None:
+    _write_sweep(
+        fake_root,
+        {"0.01": {"rung1": 0.60, "rung2": 0.20},
+         "100.0": {"rung1": 0.20, "rung2": 0.60}},
+    )
+    text = render([make_row()], root=fake_root)
+    assert "THE RANKING FLIPS" in text
+
+
+def test_the_sweep_section_never_reads_outside_the_root_it_renders_against(
+    fake_root: Path,
+) -> None:
+    """A report built for one tree must not quote another tree's artefact.
+
+    The first cut of this section resolved `cost_sweep.json` against the module-level
+    `REPO_ROOT`, so rendering against `fake_root` would have read the REAL repo's sweep and
+    reported its numbers as this tree's. That is a provenance failure of exactly the kind
+    §1 of the report exists to prevent.
+    """
+    assert not (fake_root / "docs" / "results" / "cost_sweep.json").exists()
+    text = render([make_row()], root=fake_root)
+    assert "The sweep was not run" in text
+
+
 def test_a_stable_ranking_across_the_sweep_is_stated(fake_root: Path) -> None:
     rows = [
         make_row(rung=r, savings=s, cost_scenario=c)
