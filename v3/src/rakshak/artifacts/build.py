@@ -765,12 +765,38 @@ def build_cost_sweep(doc: dict[str, Any]) -> dict[str, Any]:
 
     assert axis is not None  # _SWEEP_ARMS is non-empty, so the loop ran at least once
 
+    # The operating point, resolved ONCE and defensively, because two things downstream
+    # depend on it and they must not disagree. `shipped_ratio` is a float the sweep script
+    # computes from the fraud-loss distribution, so it can arrive as null (no fraud rows in
+    # the window) or NaN (a zero denominator — `cost_sweep.py`'s own markdown renderer
+    # guards against exactly that). Either one used to reach `float()` unguarded: null threw
+    # an uncaught TypeError past `main`'s ArtifactSchemaError handler, and NaN made every
+    # `abs(r - nan)` comparison false so `min` silently returned the FIRST ratio — the
+    # decomposition would then be taken at the cheapest point on the grid while the panel
+    # printed "taken at the swept ratio nearest the shipped cost matrix". A wrong number
+    # under a confident label is the one failure mode this artefact exists to prevent.
+    raw_shipped = meta.get("shipped_ratio")
+    shipped = (
+        float(raw_shipped)
+        if isinstance(raw_shipped, (int, float)) and not isinstance(raw_shipped, bool)
+        else None
+    )
+    if shipped is not None and not math.isfinite(shipped):
+        shipped = None
+    # With no usable operating point there is no "nearest" ratio to be nearest to, so the
+    # decomposition is reported at the grid's own midpoint and says so, rather than
+    # defaulting to an end of the grid that would read as a choice.
+    best = (
+        axis.index(min(axis, key=lambda r: abs(r - shipped)))
+        if shipped is not None
+        else len(axis) // 2
+    )
+
     # What the HOLD action is worth, arm B against the same rows with HOLD unreachable.
     # This is the decomposition the narrative leans on; computing it here keeps it out of
     # the view, where it would become a typed-in constant nobody could re-derive.
     with_hold = {r["policy"]: r["values"] for r in arms["realised"]}
     without_hold = {r["policy"]: r["values"] for r in arms["hold_forbidden"]}
-    best = axis.index(min(axis, key=lambda r: abs(r - float(meta.get("shipped_ratio", axis[0])))))
     decomposition = [
         {
             "policy": policy,
@@ -781,16 +807,18 @@ def build_cost_sweep(doc: dict[str, Any]) -> dict[str, Any]:
         for policy in sorted(set(with_hold) & set(without_hold))
     ]
 
-    shipped = meta.get("shipped_ratio")
     return {
         "ratios": axis,
         "arms": arms,
         "meta": meta,
         "shipped_ratio": shipped,
-        "shipped_ratio_within_grid": (
-            isinstance(shipped, (int, float)) and axis[0] <= float(shipped) <= axis[-1]
-        ),
+        "shipped_ratio_within_grid": shipped is not None and axis[0] <= shipped <= axis[-1],
         "shipped_ratio_nearest_index": best,
+        # The ratio the decomposition was actually taken at, so the panel can print the
+        # number instead of the claim "nearest the shipped cost matrix" — which is only
+        # true when there was a usable shipped ratio to be nearest to.
+        "hold_decomposition_at_ratio": axis[best],
+        "hold_decomposition_anchored": shipped is not None,
         "hold_decomposition": decomposition,
         "arm_note": (
             "declared/realised price each policy on the actions it actually takes and may "

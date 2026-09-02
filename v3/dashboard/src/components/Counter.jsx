@@ -30,8 +30,12 @@ export default function Counter({ value, format = (v) => String(v), duration = 1
     return () => controls.stop();
   }, [seen, value, duration, reduce, animatable]);
 
+  // `data-counter` so a test can find exactly these and nothing else. Querying by
+  // the `tabular-nums` class instead matches every mono figure on the page, which
+  // is how a reduced-motion assertion passes on a journey literal while every
+  // counter it was meant to check is still sitting at zero.
   return (
-    <span ref={ref} className={className}>
+    <span ref={ref} data-counter="" className={className}>
       {format(animatable ? shown : value)}
     </span>
   );

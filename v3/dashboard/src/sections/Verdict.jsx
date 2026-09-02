@@ -40,22 +40,45 @@ export default function Verdict() {
   const survivors = rungs.filter((r) => r.beats_all_floors);
   // Seeds per row rather than the lock's declared list: what a row was actually
   // scored on is the honest denominator, and the lock only says what was intended.
-  const seedCount = Math.max(0, ...rungs.map((r) => r.n_seeds ?? 0));
-  const scoredRows = rungs.reduce((n, r) => n + (r.n_seeds ?? 0), 0);
+  // The MINIMUM, not the maximum — "5 seeds" has to be true of every row it sits
+  // above, and a max would keep printing 5 while a row underneath it was scored on
+  // one. When rows disagree the headline says so rather than picking a number.
+  const seedCounts = rungs.map((r) => r.n_seeds ?? 0);
+  const seedCount = seedCounts.length ? Math.min(...seedCounts) : 0;
+  const seedsUniform = seedCounts.length > 0 && Math.max(...seedCounts) === seedCount;
+  const scoredRows = seedCounts.reduce((n, s) => n + s, 0);
 
-  const realised = sweep.data?.payload?.arms?.realised ?? [];
-  const survivorName = survivors[0]?.label;
-  const survivorSeries = realised.find((s) => s.policy === survivorName?.replace(/_realised_exposure$/, ""));
+  // The exposure arm comes off the surviving row's own label, not a constant. A
+  // declared-exposure survivor read from the `realised` arm would be the right
+  // shape of number under the wrong name, which is the worst kind of wrong here.
+  const survivorLabel = survivors[0]?.label;
+  const survivorArm = survivorLabel?.endsWith("_realised_exposure") ? "realised" : "declared";
+  const survivorPolicy = survivorLabel?.replace(/_realised_exposure$/, "");
+  const survivorSeries = (sweep.data?.payload?.arms?.[survivorArm] ?? []).find(
+    (s) => s.policy === survivorPolicy
+  );
   const band = survivorSeries?.values?.length
     ? [Math.min(...survivorSeries.values), Math.max(...survivorSeries.values)]
     : null;
+
+  // `test_split_opened` is a boolean — `sum(open_count) > 0`. Rendering it as a
+  // count would print "ONCE" for two opens, on the one claim this whole panel is
+  // built to make checkable. The counter itself is on each lock; sum those.
+  const openCount = locks.reduce((n, l) => n + (l.open_count ?? 0), 0);
 
   const loading = ladder.loading || lockState.loading || sweep.loading;
   const failed = ladder.error ?? lockState.error ?? sweep.error;
 
   const TILES = [
     { key: "policies", value: rungs.length, label: "policies on the ladder", note: `${scoredRows} scored rows` },
-    { key: "seeds", value: seedCount, label: "seeds per policy", note: "mean, with the per-seed range beside it" },
+    {
+      key: "seeds",
+      value: seedCount,
+      label: seedsUniform ? "seeds per policy" : "seeds on the thinnest policy",
+      note: seedsUniform
+        ? `every one of the ${rungs.length} rows scored on the same seeds`
+        : `rows disagree — ${Math.max(...seedCounts)} on the widest`,
+    },
     { key: "locks", value: locks.length, label: "sealed eval locks", note: `authoritative: ${live?.file ?? "—"}` },
     {
       key: "survivors",
@@ -140,7 +163,7 @@ export default function Verdict() {
               <p className="m-0 text-sm leading-relaxed text-muted-foreground">
                 <strong className="text-foreground">And the margin is not a point estimate.</strong>{" "}
                 Across the full swept range of false-hold-to-fraud-loss asymmetry — four orders of
-                magnitude — {survivorSeries.policy} under realised exposure holds{" "}
+                magnitude — {survivorSeries.policy} under {survivorArm} exposure holds{" "}
                 <span className="font-mono font-semibold text-foreground">
                   {fmtNum(band[0], 4)} to {fmtNum(band[1], 4)}
                 </span>{" "}
@@ -158,7 +181,7 @@ export default function Verdict() {
           <SplitChip split={ladder.data?.split} />
           <span className="inline-flex items-center gap-[var(--spacing-2)] rounded-[var(--radius-xs)] border border-border bg-card px-[var(--spacing-3)] py-[var(--spacing-1)] font-mono text-2xs font-bold tracking-widest text-faint uppercase">
             <Lock aria-hidden="true" className="h-3 w-3" />
-            test split opened {lockState.data?.payload?.test_split_opened ? "ONCE" : "0 times"}
+            test split opened {openCount} time{openCount === 1 ? "" : "s"}
           </span>
         </motion.div>
 

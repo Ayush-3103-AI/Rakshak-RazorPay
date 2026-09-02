@@ -9,6 +9,7 @@
     "prebuild": "node copy-artifacts.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "pretest": "node copy-artifacts.mjs",
     "test": "vitest run"
   },
   "dependencies": {

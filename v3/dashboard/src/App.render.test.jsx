@@ -17,10 +17,7 @@ import { clearArtifactCache } from "./lib/artifacts.js";
 
 const DIR = join(process.cwd(), "public", "artifacts");
 
-// `reduceMotion` drives the one media query framer-motion reads. The panel must
-// render the same INFORMATION either way — only the transition between states
-// differs — so both paths run the same assertions.
-function stubEnvironment({ reduceMotion = false } = {}) {
+function stubEnvironment() {
   clearArtifactCache();
   // ResizeObserver is what recharts' ResponsiveContainer needs; jsdom has none.
   globalThis.ResizeObserver = class {
@@ -29,7 +26,7 @@ function stubEnvironment({ reduceMotion = false } = {}) {
     disconnect() {}
   };
   globalThis.matchMedia = (query) => ({
-    matches: reduceMotion && String(query).includes("prefers-reduced-motion"),
+    matches: false,
     media: String(query),
     addEventListener() {},
     removeEventListener() {},
@@ -73,7 +70,11 @@ it("renders every section from the committed artefacts without falling back to a
   // Every artifact is fetched in parallel from the same stub, so ONE wait covers
   // the lot. Waiting per section instead multiplies the timeout budget by six for
   // no extra coverage — and that is what pushed this file past the default.
-  await waitFor(() => expect(screen.getByText(/Specified, gated, and either/)).toBeTruthy());
+  //
+  // The wait is on a hash out of lock_state.json, not on a section heading: every
+  // heading here is static copy that renders at frame zero, so waiting on one
+  // returns before any artifact has landed.
+  await waitFor(() => expect(screen.getAllByText("eval_module_sha256").length).toBeGreaterThan(0));
 
   // §0 — the verdict, computed from the artefacts rather than typed into the hero.
   expect(screen.getByText(/policies on the ladder/)).toBeTruthy();
@@ -132,22 +133,8 @@ it("renders every section from the committed artefacts without falling back to a
   expect(screen.queryByText(/MISSING or invalid/)).toBeNull();
 });
 
-it("renders the same figures under prefers-reduced-motion, with no counter left at zero", async () => {
-  vi.unstubAllGlobals();
-  stubEnvironment({ reduceMotion: true });
-  render(<App />);
-
-  await waitFor(() => expect(screen.getByText(/Read this before you read a single number/)).toBeTruthy());
-  expect(screen.getByText(/policies on the ladder/)).toBeTruthy();
-
-  // Counters snap to the artefact's value rather than animating toward it. The
-  // ladder has rows, so a "0" in the hero tiles would mean the tween never ran
-  // — which is exactly the failure a reduced-motion reader would be left with.
-  const tiles = document.querySelectorAll(".tabular-nums");
-  expect(tiles.length).toBeGreaterThan(0);
-  expect([...tiles].some((el) => el.textContent.trim() !== "0")).toBe(true);
-
-  // Every section still renders its data, not an error card.
-  expect(screen.getByText(/Read this before you read a single number/)).toBeTruthy();
-  expect(screen.queryByText(/MISSING or invalid/)).toBeNull();
-});
+// The reduced-motion path lives in App.reducedMotion.test.jsx, not here.
+// framer-motion latches its answer in module scope on the first render, so a
+// second test in THIS file cannot switch the preference — it would pass while
+// asserting nothing. Vitest isolates module state per file; that is the only
+// place the branch is really exercised.

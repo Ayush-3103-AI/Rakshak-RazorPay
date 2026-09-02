@@ -1072,6 +1072,40 @@ def test_a_sweep_missing_an_arm_is_refused_by_name() -> None:
         build_cost_sweep(doc)
 
 
+def test_a_null_shipped_ratio_is_a_named_absence_not_a_crash() -> None:
+    """`main` only catches ArtifactSchemaError; an unguarded float(None) escapes it."""
+    doc = _sweep_doc()
+    doc["meta"]["shipped_ratio"] = None
+    payload = build_cost_sweep(doc)
+    assert payload["shipped_ratio"] is None
+    assert payload["shipped_ratio_within_grid"] is False
+    assert payload["hold_decomposition_anchored"] is False
+
+
+def test_a_non_finite_shipped_ratio_does_not_silently_anchor_to_the_cheapest_ratio() -> None:
+    """`abs(r - nan)` is false for every r, so `min` returns the FIRST ratio.
+
+    The decomposition would then be taken at the cheapest point on the grid while the
+    panel prints "nearest the shipped cost matrix" — a wrong number under a confident
+    label, which is the failure this artefact exists to prevent. `cost_sweep.py` can emit
+    NaN here when the fraud-loss denominator is zero.
+    """
+    doc = _sweep_doc()
+    doc["meta"]["shipped_ratio"] = float("nan")
+    payload = build_cost_sweep(doc)
+    assert payload["shipped_ratio"] is None
+    assert payload["hold_decomposition_anchored"] is False
+    # The midpoint, said out loud, rather than an end of the grid that reads as a choice.
+    assert payload["hold_decomposition_at_ratio"] == payload["ratios"][len(payload["ratios"]) // 2]
+
+
+def test_the_decomposition_names_the_ratio_it_was_taken_at() -> None:
+    doc = _sweep_doc()
+    payload = build_cost_sweep(doc)
+    assert payload["hold_decomposition_anchored"] is True
+    assert payload["hold_decomposition_at_ratio"] in payload["ratios"]
+
+
 def test_a_missing_sweep_is_a_named_absence(tmp_path: Path) -> None:
     manifest = build_all(
         REPO_ROOT, sweep_path=Path("docs/results/no-such-sweep.json"), out_dir=tmp_path

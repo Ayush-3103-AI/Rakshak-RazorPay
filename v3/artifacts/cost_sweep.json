@@ -284,6 +284,8 @@
         "without_hold": 0.47254043204779217
       }
     ],
+    "hold_decomposition_anchored": true,
+    "hold_decomposition_at_ratio": 0.1,
     "meta": {
       "k": 30,
       "n_merchants": 6025,

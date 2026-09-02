@@ -225,8 +225,11 @@ export default function Results() {
                     </table>
                   </div>
                   <p className="mt-[var(--spacing-4)] max-w-[80ch] text-xs leading-relaxed text-faint">
-                    Taken at the swept ratio nearest the shipped cost matrix (index{" "}
-                    {sweepPayload.shipped_ratio_nearest_index}). Read this as a limit on the claim, not
+                    Taken at swept ratio {fmtNum(sweepPayload.hold_decomposition_at_ratio, 5)}
+                    {sweepPayload.hold_decomposition_anchored
+                      ? " — the point on the grid nearest the shipped cost matrix"
+                      : " — the grid's midpoint, because the sweep reported no usable shipped ratio to anchor to"}
+                    . Read this as a limit on the claim, not
                     a footnote to it: the advantage is a decision-layer result, and priced as a raw
                     REVIEW-only ranking the picture changes — that arm is in the same artifact.
                   </p>
