@@ -55,14 +55,15 @@ source:
     the alternatives rejected, and the numbered process that would reverse it. The per-rung
     `gap` fields below are updated to cite it.
   standing_contradiction: >-
-    project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start"),
-    06-requirements-v2.md §E ("No MIL layer (Rung 5) and no HSMM explanation layer
-    (Rung 7) in this sprint") and STATE.md ("Deferred (do not start)") all still say Rungs
-    5-8 must not be started. GitHub #51 (2026-08-31) reverses that in as many words — "The
-    developer wants all five inside the current cycle" — and the cycle-3 pre-registration
-    §4 sequences T-0120/0121/0123/0125 after the lock. The reversal is later and explicit,
-    so the roster follows it; the three stale documents have NOT been updated to match and
-    that is a lead action, recorded here rather than smoothed over.
+    CLOSED 2026-09-02 (cycle 4). It read: 00-charter-v2.md §8, 06-requirements-v2.md §E and
+    STATE.md all still said Rungs 5-8 must not be started, while GitHub #51 (2026-08-31)
+    reversed that in as many words and the cycle-3 pre-registration §4 sequenced
+    T-0120/0121/0123/0125 after the lock. The roster followed the reversal and flagged the
+    three stale documents as a lead action. All three have since been corrected in place
+    (06-requirements-v2.md §E now carries "reversed 2026-08-31 (GitHub #51)"; STATE.md
+    records the same under its carried defects). This file was then the last copy still
+    disagreeing with the ladder, and the entries below are corrected accordingly — which is
+    the point of the flag: it named where the drift would land next, and it landed here.
 
 rungs:
   # ─── Rung 0 — the four mandatory floors ────────────────────────────────────
@@ -180,8 +181,8 @@ rungs:
   - rung: 4
     name: cost
     title: Cost-in-the-objective (FR-032, csboost-style)
-    status: cut
-    adopted: false
+    status: scored
+    adopted: null
     module: src/rakshak/models/rung4_cost.py
     ticket: null
     issue: null
@@ -189,6 +190,8 @@ rungs:
       - LIMITATIONS.md §8.5 ("Rung 4 (FR-032) loses on every seed. Cut.")
       - data/v2/eval/rung4_val_seed{42,43,44,45,46}.json
       - project-context/00-charter-v2.md §8, item 8 of the cut-first order
+      - LIMITATIONS.md §9, cycle-4 finding 7 ("Rung 4's cycle-3 cut was an artefact")
+      - docs/results/CYCLE4-VERDICT.txt (arm B savings 0.5981, the best on the ladder)
     reason: >-
       Zero of five seeds improve PR-AUC (mean −13.93%) and one of five improves savings
       (mean −15.83%), against Rung 3 on the same five declared seeds. Weighting the 960
@@ -203,14 +206,29 @@ rungs:
       Still has rows under data/v2/eval/ and therefore still appears in ladder.json. The
       ladder cannot tell you it was cut — this entry is the only place that does, which is
       #64's whole point.
+    amended: >-
+      2026-09-02, cycle 4. STATUS REVERSED cut -> scored; ADOPTION REOPENED false -> null.
+      The `reason` and `decided_in` blocks above are left exactly as written — they record
+      a decision correctly taken on the evidence available, and rewriting them would hide
+      that the evidence moved. What moved: the cut rested on cycle-3 savings measured
+      through the DECLARED exposure estimator, which LIMITATIONS.md §8.3a shows correlates
+      with realised loss at rho = 0.533 against the observed estimator's 0.935. Under the
+      corrected (arm B) estimator on cycle-4 data Rung 4 scores 0.5981 mean over five
+      seeds — the highest savings on the ladder, and above the cycle-4 volume_rank floor
+      at 5/5 seeds. `adopted` is null rather than true because Prime Directive 5's question
+      has not been put on the test split: the pre-registered gate FAILED (it was anchored
+      to the cycle-3 floor) and the split is still shut at open_count 0. Its detection
+      latency is the counter-fact and is not softened here — ttd_median_days is inf in both
+      arms, so the best savings rung on this ladder is the one that never detects inside
+      the window.
 
   # ─── Rungs 5-8 — specified, deferred, then un-deferred by #51 ──────────────
   - rung: 5
     name: mil
     title: Noisy-OR / log-sum-exp MIL pooling over payer capsules
-    status: planned
+    status: scored
     adopted: null
-    module: null
+    module: src/rakshak/models/rung5_mil.py
     ticket: T-0120
     issue: 54
     citation:
@@ -223,9 +241,15 @@ rungs:
       - project-context/06-requirements-v2.md §E ("No MIL layer (Rung 5) ... in this sprint")
       - project-context/STATE.md ("Deferred (do not start)")
     blocked_by: >-
-      EVAL-LOCK-CYCLE3.json must be sealed first. Pre-registration §4: "If any Rung 5-8 code
-      lands before step 3, this pre-registration has failed and the rung must be reported as
-      post-lock and ineligible for adoption."
+      DISCHARGED. EVAL-LOCK-CYCLE3.json was sealed before this rung's code landed, so the
+      pre-registration §4 condition held. Retained rather than deleted because a blocker
+      that was met reads differently from one that was waived.
+    amended: >-
+      2026-09-02, cycle 4. planned -> scored. Rows exist at data/v2/eval/rung5_mil_val_seed*
+      and in artifacts/ladder.json; the roster was the only place still calling it planned,
+      and it is the file the dashboard renders. Not adopted: it alerts at 1.0/day against
+      K = 30, so recall@K is 0.0132 and detection_rate_d30 is 0.0000 — a precision@K of
+      0.8533 bought by almost never firing.
     note: >-
       Carry-forward from T-0119: `capsules_as_of` is NOT bounded — payer_is_new and
       device_shared_payers scan the whole visible prefix per call — so Rung 5's NFR-04
@@ -235,9 +259,9 @@ rungs:
   - rung: 6
     name: conformal
     title: Mondrian conformal risk control over the three-action decision
-    status: planned
+    status: scored
     adopted: null
-    module: null
+    module: src/rakshak/models/rung6_conformal.py
     ticket: T-0121
     issue: 55
     citation:
@@ -251,36 +275,48 @@ rungs:
         dependency table says "Rung 6 only, cut first if time runs out". The cycle-3
         pre-registration then declares false_hold_coverage specifically so Rung 6 can be
         judged, which is not an act performed on a cut rung.
-    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+    blocked_by: DISCHARGED, as for Rung 5.
+    amended: >-
+      2026-09-02, cycle 4. planned -> scored. Two rows, one per nominal false-HOLD rate:
+      rung6_crc_base2_alpha0.05 and rung6_crc_base2_alpha0.1. It is a decision-policy
+      wrapper over Rung 2 and emits no score of its own, so both rows carry Rung 2's
+      PR-AUC of 0.6692 by construction and the two alphas are identical to four decimals
+      on every metric — the softening did not bind at either rate. It halves alerts_per_day
+      to 15 against K = 30, which is the finding, not a tuning knob.
 
   - rung: 6
     name: conformal_censoring_correction
     title: Censoring-weighted conformal correction (Rung 6b)
-    status: UNVERIFIED
+    status: cut
     adopted: null
     module: null
     ticket: T-0122
     issue: 56
     citation:
-      - 'GitHub #56, OPEN, labels ready-for-agent + blocked'
+      - 'GitHub #56, CLOSED as NOT_PLANNED, 2026-09-02'
       - 'GitHub #56 title carries the marker "[cut first]"'
+      - "grep -rn 'censoring_correction' src/ returns nothing"
     reason: >-
-      UNVERIFIED because no document states whether this is in or out. Its own issue title
-      brands it "[cut first]", which is an ordering rather than a status, and the issue is
-      simultaneously OPEN and labelled ready-for-agent. GitHub #51 does not name it
-      separately from Rung 6, and 00-charter-v2.md §8's cut list does not mention it at all.
-      A reading either way would be a guess. LEAD ACTION.
+      Cut. No code for it exists anywhere in the tree, and the issue was closed NOT_PLANNED
+      rather than completed.
+    decided_in: >-
+      2026-09-02. This entry stood at UNVERIFIED with a LEAD ACTION note because, while the
+      documents were silent, a reading either way would have been a guess. It is no longer
+      a guess: GitHub's close reason distinguishes NOT_PLANNED from COMPLETED, and #56
+      closed NOT_PLANNED on the same sweep that closed #57 COMPLETED. That resolves the
+      roster's only UNVERIFIED entry, and n_unverified is now 0.
 
   - rung: 7
     name: hsmm_nb
     title: HSMM with negative-binomial emissions, Stage-2 explainer only
-    status: planned
+    status: built
     adopted: null
-    module: null
+    module: src/rakshak/models/rung7_hsmm.py
     ticket: T-0123
     issue: 57
     citation:
-      - 'GitHub #57, OPEN, labels ready-for-agent + blocked'
+      - 'GitHub #57, CLOSED as COMPLETED, 2026-09-02'
+      - src/rakshak/models/rung7_hsmm.py and its runner src/rakshak/score_rung7.py
       - >-
         GitHub #51 ("running at Stage 2 of the cascade only — on non-PASS decisions, never
         in the scoring path, never scored on PR-AUC")
@@ -288,7 +324,13 @@ rungs:
     contradicts:
       - project-context/00-charter-v2.md §8 ("Already deferred, spec only, do not start")
       - project-context/06-requirements-v2.md §E ("No ... HSMM explanation layer (Rung 7)")
-    blocked_by: EVAL-LOCK-CYCLE3.json, as for Rung 5.
+    blocked_by: DISCHARGED, as for Rung 5.
+    amended: >-
+      2026-09-02, cycle 4. planned -> built, NOT scored. The inference core and its runner
+      are in the tree and #57 closed COMPLETED, so `planned` was wrong; `scored` would be
+      wrong too, because it registers as an explainer and has no EvalResult row by design.
+      `built` is the status this vocabulary has for exactly that state, and the note below
+      already warned a consumer not to expect a ladder row.
     note: >-
       Never scored on PR-AUC by design — it registers as an explainer, not a scorer. A
       roster consumer must not expect a ladder row for it even after it ships. GitHub #51
