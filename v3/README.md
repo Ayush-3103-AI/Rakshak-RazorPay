@@ -7,7 +7,7 @@
 
 `ver-2/v3` is **G3**, the third generation. `CLAUDE.md` and
 `project-context/00-charter-v2.md` call it **"v2"**, and call the tree at the repository root
-**"v1"**; the separate [G1 repository](https://github.com/Ayush-3103-AI/razorpay-project) also
+**"v1"**; the separate G1 tree (`ver1/`, unpublished — it has no repository on GitHub) also
 calls itself "v1". The public G1/G2/G3 labels exist to break that collision and are defined in
 [`configs/journey.yaml`](configs/journey.yaml). No charter, lock or results file was edited to
 introduce them.

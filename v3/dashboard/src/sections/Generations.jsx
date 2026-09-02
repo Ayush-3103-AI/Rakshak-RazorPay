@@ -92,17 +92,25 @@ export default function Generations() {
                     <p className="m-0 mt-[var(--spacing-3)] inline-flex flex-wrap items-center gap-[var(--spacing-2)] rounded-[var(--radius-xs)] border border-notice-border bg-notice-bg px-[var(--spacing-3)] py-[var(--spacing-2)] font-mono text-2xs font-bold tracking-wide text-notice uppercase">
                       <ExternalLink aria-hidden="true" className="h-3 w-3 shrink-0" />
                       {asText(g.provenance_note)} — different repository
-                      {g.source_repo && (
-                        <a
-                          href={g.source_repo}
-                          className="inline-flex items-center gap-[2px] underline underline-offset-2"
-                          rel="noreferrer noopener"
-                          target="_blank"
-                        >
-                          {String(g.source_repo).replace("https://github.com/", "")}
-                          <ArrowUpRight aria-hidden="true" className="h-3 w-3" />
-                        </a>
-                      )}
+                      {/* Only an http(s) source_repo becomes a link. G1's is a tree
+                          name, because the repository it used to name returns 404 —
+                          an <a> wrapping a non-URL is a broken link dressed up as a
+                          working one, which is the failure this whole marker exists
+                          to prevent. Non-URLs render as plain text. */}
+                      {g.source_repo &&
+                        (/^https?:\/\//.test(String(g.source_repo)) ? (
+                          <a
+                            href={g.source_repo}
+                            className="inline-flex items-center gap-[2px] underline underline-offset-2"
+                            rel="noreferrer noopener"
+                            target="_blank"
+                          >
+                            {String(g.source_repo).replace("https://github.com/", "")}
+                            <ArrowUpRight aria-hidden="true" className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="normal-case">{asText(g.source_repo)}</span>
+                        ))}
                     </p>
                   )}
 

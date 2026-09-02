@@ -45,7 +45,7 @@
         "id": "G1",
         "outcome": "Superseded by a different question, not by a losing number. G1's metrics are its own and stand unedited; what changed is the unit of analysis. This project's charter opens on a merchant-level problem — a pattern only visible at the merchant-week level, which a transaction scorer cannot see — so G2 started from a new thesis and a new harness rather than tuning G1.",
         "provenance_note": "cited, not recomputed",
-        "source_repo": "https://github.com/Ayush-3103-AI/razorpay-project",
+        "source_repo": "ver1/ — local tree, not published",
         "thesis": "Every merchant carries a rupee-denominated risk budget; a reinforcement-learning policy spends it under a hard mathematical constraint, and a deterministic safety filter holds final veto. The question it answers is \"how much risk can this merchant afford right now\", asked per transaction.",
         "title": "Constrained-RL merchant risk manager"
       },
@@ -193,7 +193,7 @@
     "inputs": [
       {
         "path": "configs/journey.yaml",
-        "sha256": "fc345739d5ad8f89c95cf04a9ea36005cdbd7f89c6b14fa83d769a2116274ac2"
+        "sha256": "8e70574240b2e20be9b782984c56d42eb90739e81a09573405f2f4a314d685b5"
       }
     ],
     "open_count": 0

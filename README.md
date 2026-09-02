@@ -42,13 +42,13 @@ Each one starts from the previous one's falsification, not its success.
 
 | | | Thesis | What happened |
 |---|---|---|---|
-| **G1** | [`Ayush-3103-AI/razorpay-project`](https://github.com/Ayush-3103-AI/razorpay-project) · separate repo | A per-merchant rupee risk budget, spent by a constrained RL policy under a hard safety filter | Superseded by a different question, not a losing number. ₹13.96 L net value, 95.6% fraud prevented, 0 hard-limit violations — **cited, not recomputed** |
+| **G1** | `ver1/` · separate tree, **not published** | A per-merchant rupee risk budget, spent by a constrained RL policy under a hard safety filter | Superseded by a different question, not a losing number. ₹13.96 L net value, 95.6% fraud prevented, 0 hard-limit violations — **cited, not recomputed**, and not independently checkable: G1 has no public repository |
 | **G2** | this repo, root | A per-merchant HMM over the transaction stream, four latent risk states, decisions priced by cost | **The pre-registered claim failed**, and a uniform random score beat every fitted model on savings |
 | **G3** | [`v3/`](v3/) | Fix the generator and the harness *first*, seal them, then race a ladder of policies against explicit floors | **The test split stayed shut.** One row survives every floor on every seed; four new rungs were built and all four NOT ADOPTED |
 
 > **Naming.** These public labels exist because the internal vocabulary collides:
 > `v3/project-context/00-charter-v2.md` calls G2 **"v1"** and G3 **"v2"**, while the separate
-> G1 repository calls itself **"v1"**. Nothing in any charter, lock, ADR or results file was
+> G1 tree calls itself **"v1"**. Nothing in any charter, lock, ADR or results file was
 > edited to introduce G1/G2/G3 — the mapping lives here and on
 > [`v3/configs/journey.yaml`](v3/configs/journey.yaml), and travels on `journey.json`.
 

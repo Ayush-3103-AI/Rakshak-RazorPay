@@ -22,7 +22,12 @@ generations:
   - id: G1
     charter_name: null
     external: true
-    source_repo: https://github.com/Ayush-3103-AI/razorpay-project
+    # NOT a URL, deliberately. github.com/Ayush-3103-AI/razorpay-project returns a hard
+    # 404 with no redirect — G1 was never pushed, or was deleted. `external` still holds:
+    # this generation lives outside the G3 tree and its numbers are cited rather than
+    # recomputed. What it does not do is live at an address a reader can open, and
+    # printing one that 404s would be worse than printing none.
+    source_repo: ver1/ — local tree, not published
     title: Constrained-RL merchant risk manager
     era: Aug 2026
     thesis: >-
