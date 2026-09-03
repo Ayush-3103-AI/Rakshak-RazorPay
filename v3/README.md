@@ -69,6 +69,7 @@ reader can open in the repo.
 | | |
 |---|---|
 | [`LIMITATIONS.md`](LIMITATIONS.md) | Every failure, with the number. Prime Directive 6. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How this tree is built: the layers, the four walls, what is deliberately absent. Carries no measured numbers, on purpose. |
 | [`project-context/STATE.md`](project-context/STATE.md) | The resume point. Read first, every session. |
 | [`project-context/`](project-context/) | Charter, requirements, feature register, generator and harness specs, tickets. |
 | [`docs/results/`](docs/results/) | Generated result tables — the cost sweep, the cycle-4 verdict. |

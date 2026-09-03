@@ -216,7 +216,8 @@ the repo into a scratch path and builds from nothing on every push.
 | [`v3/LIMITATIONS.md`](v3/LIMITATIONS.md) | Every failure, with the number. The longest document in the repo, and deliberately so. |
 | [`v3/README.md`](v3/README.md) | The G3 tree: prime directives, make targets, the unlock rule. |
 | [`v3/project-context/STATE.md`](v3/project-context/STATE.md) | The resume point — what is open, what is closed. |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The four-layer shape and the ADRs (G2). |
+| [`v3/docs/ARCHITECTURE.md`](v3/docs/ARCHITECTURE.md) | **How G3 is built** — the layers, the four walls, and what is deliberately absent. No numbers in it, on purpose. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The same document for G2: the four-layer shape and the ADRs. |
 | [`results/`](results/) | G2's verdict, ablations, BAF validation, sensitivity, black-swan. |
 
 **Defense-only.** The generator produces fraud typologies to *test detection*; it is an
