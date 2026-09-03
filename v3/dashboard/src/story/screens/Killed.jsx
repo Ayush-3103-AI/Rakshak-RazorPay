@@ -32,23 +32,25 @@ const TONE = { cut: "negative", "not adopted": "notice", "claim falsified": "neg
 function Card({ entry }) {
   const [open, setOpen] = useState(false);
   return (
-    <Glass flat as="li" className="flex min-w-0 flex-col gap-[var(--spacing-4)] p-[var(--spacing-7)]">
-      <div className="flex flex-wrap items-center gap-[var(--spacing-3)]">
-        <Chip tone={TONE[entry.kind] ?? "muted"}>{entry.kind}</Chip>
-        {entry.rung != null && <span className="font-mono text-[11px] tracking-[0.14em] text-faint uppercase">rung {entry.rung}</span>}
+    <Glass flat as="li" className="flex min-w-0 flex-col gap-[var(--spacing-3)] p-[var(--spacing-5)]">
+      <div className="flex flex-wrap items-center gap-[var(--spacing-2)]">
+        <Chip tone={TONE[entry.kind] ?? "muted"} className="px-[var(--spacing-3)] py-[2px] text-[9px]">
+          {entry.kind}
+        </Chip>
+        {entry.rung != null && <span className="font-mono text-[9px] tracking-[0.14em] text-faint uppercase">rung {entry.rung}</span>}
       </div>
-      <h3 className="m-0 font-heading text-lg leading-snug font-bold text-foreground">{entry.title}</h3>
-      {CLAIMS[entry.name] && <p className="m-0 text-sm leading-snug text-muted-foreground">{CLAIMS[entry.name]}</p>}
+      <h3 className="m-0 line-clamp-2 font-heading text-sm leading-snug font-bold text-foreground">{entry.title}</h3>
+      {CLAIMS[entry.name] && <p className="m-0 line-clamp-2 text-xs leading-snug text-muted-foreground">{CLAIMS[entry.name]}</p>}
       {entry.verdict && (
         <div className="mt-auto">
-          <p className={cn("m-0 border-l-2 border-border-strong pl-[var(--spacing-4)] text-sm leading-relaxed text-foreground/90", !open && "line-clamp-4")}>
+          <p className={cn("m-0 border-l-2 border-border-strong pl-[var(--spacing-3)] text-xs leading-relaxed text-foreground/85", !open && "line-clamp-3")}>
             {entry.verdict}
           </p>
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            className="mt-[var(--spacing-3)] cursor-pointer border-0 bg-transparent p-0 font-mono text-[11px] font-bold tracking-[0.14em] text-primary-text uppercase hover:underline"
+            className="mt-[var(--spacing-2)] cursor-pointer border-0 bg-transparent p-0 font-mono text-[9px] font-bold tracking-[0.14em] text-primary-text uppercase hover:underline"
           >
             {open ? "Less" : "Read the verdict"}
           </button>
@@ -66,12 +68,13 @@ export default function Killed() {
   return (
     <Screen id="killed">
       <Eyebrow>The discipline</Eyebrow>
-      <Headline>
+      <Headline size="md">
         What lost is published, <span className="text-primary-text">with the number that killed it.</span>
       </Headline>
       <Lede>
-        A rung that loses is a finding, not an embarrassment. Each approach below was built, measured on the sealed
-        harness, and dropped on the record with its own verdict. {entries.length ? `${entries.length} so far.` : ""}
+        A rung that loses is a finding, not an embarrassment. Each of these{" "}
+        {entries.length ? `${entries.length} ` : ""}was built, measured on the sealed harness, and dropped with its
+        own verdict.
       </Lede>
 
       {(roster.loading || g5.loading) && <ArtifactLoading label="Loading the roster and the null run…" />}
@@ -79,14 +82,14 @@ export default function Killed() {
       {g5.error && <ArtifactError artifact="g5_confounder_null" error={g5.error} />}
 
       {entries.length > 0 && (
-        <Reveal as="ul" className="m-0 mt-[var(--spacing-10)] grid list-none grid-cols-3 gap-[var(--spacing-4)] p-0 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        <Reveal as="ul" className="m-0 mt-[var(--spacing-7)] grid list-none grid-cols-4 gap-[var(--spacing-3)] p-0 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
           {entries.map((e) => (
             <Card key={e.key} entry={e} />
           ))}
         </Reveal>
       )}
 
-      <Reveal className="mt-[var(--spacing-8)]">
+      <Reveal className="mt-[var(--spacing-6)]">
         <a href="#/evidence/killed" className="font-mono text-xs font-bold tracking-[0.14em] text-primary-text uppercase no-underline hover:underline">
           Every verdict in full, on the evidence panel →
         </a>

@@ -1,25 +1,25 @@
-// One rail, both halves of the site.
+// One rail, both halves of the site, on the RIGHT.
 //
-// The story and the evidence panel are each a fixed sequence of full screens,
-// so they want the same navigation object: the whole sequence visible at once,
-// every entry reachable in one click, and an unmistakable answer to "where am
-// I and how much is left". This renders that, and both routes pass it their
-// own items.
+// It sits on the right because the story is read left to right: the headline
+// owns the left edge and the type can run to its natural measure without a
+// navigation column pushing it inward. The panel uses the same side so the two
+// halves stay one product.
 //
-// THE SPINE IS THE POINT. A vertical line runs down the gutter behind the
+// THE SPINE IS THE JOURNEY. A hairline runs down the gutter behind the
 // markers, lit from the top to the current entry, so progress through the
-// sequence is legible without reading a single label. The dots alone said
-// "there are eight things"; the lit spine says "you are on four of eight",
-// which is the question a reader hunting a two-minute read is actually asking.
+// sequence is legible without reading a single label — "you are on four of
+// eight", which the hover-only dots this replaces could never say.
 //
-// The rail does not collapse. A rail that has to be un-collapsed to be used is
-// a rail that is not doing its job, and the previous build hid its labels
-// until hover — which is invisible to anyone who never hovers.
+// It is deliberately quiet. Every label is 12px at medium weight, the group
+// titles are 9px and dim, and the markers are small: this is a map you consult,
+// not a second headline competing with the one on screen. Quiet is not hidden,
+// though — nothing here waits for a hover to become readable, which was the
+// actual failing of the dots.
 import { motion, useReducedMotion } from "framer-motion";
 import Brand from "./Brand.jsx";
 import { cn } from "../lib/cn.js";
 
-export const RAIL_WIDTH = 268;
+export const RAIL_WIDTH = 214;
 
 function pad(n) {
   return String(n + 1).padStart(2, "0");
@@ -27,73 +27,62 @@ function pad(n) {
 
 function RailItem({ item, index, state, onSelect }) {
   const reduce = useReducedMotion();
-  const Icon = item.icon;
   const active = state === "active";
   const done = state === "done";
 
   return (
-    <li className="relative">
+    <li>
       <button
         type="button"
         onClick={() => onSelect(item.id)}
         aria-current={active ? "true" : undefined}
         className={cn(
-          "group relative flex w-full cursor-pointer items-center gap-[var(--spacing-4)] rounded-[var(--radius-md)] py-[var(--spacing-3)] pr-[var(--spacing-4)] pl-[var(--spacing-3)] text-left transition-colors duration-[var(--duration-quick)]",
-          active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+          "group relative flex w-full cursor-pointer items-center gap-[var(--spacing-3)] rounded-[var(--radius-sm)] py-[6px] pr-[var(--spacing-3)] pl-[var(--spacing-2)] text-left transition-colors duration-[var(--duration-quick)]",
+          active ? "text-foreground" : "text-muted-foreground/85 hover:text-foreground"
         )}
       >
         {active && (
           <motion.span
             layoutId="rail-active"
             aria-hidden="true"
-            className="absolute inset-0 -z-10 rounded-[var(--radius-md)] border border-primary/35 bg-primary/12"
+            className="absolute inset-0 -z-10 rounded-[var(--radius-sm)] bg-primary/10"
             transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
           />
         )}
 
         {/* the marker, sitting on the spine */}
-        <span aria-hidden="true" className="relative grid h-[18px] w-[18px] shrink-0 place-items-center">
+        <span aria-hidden="true" className="relative grid h-[14px] w-[14px] shrink-0 place-items-center">
           <span
             className={cn(
               "block rounded-full transition-all duration-[var(--duration-moderate)]",
               active
-                ? "h-[10px] w-[10px] bg-primary shadow-[0_0_12px_2px_var(--color-primary)]"
+                ? "h-[8px] w-[8px] bg-primary shadow-[0_0_10px_1px_var(--color-primary)]"
                 : done
-                  ? "h-[7px] w-[7px] bg-primary/70"
-                  : "h-[7px] w-[7px] bg-border-strong group-hover:bg-faint"
+                  ? "h-[5px] w-[5px] bg-primary/60"
+                  : "h-[5px] w-[5px] bg-border-strong group-hover:bg-faint"
             )}
           />
         </span>
 
         <span
           className={cn(
-            "shrink-0 font-mono text-[11px] tabular-nums transition-colors duration-[var(--duration-quick)]",
-            active ? "text-primary-text" : "text-faint"
+            "shrink-0 font-mono text-[10px] tabular-nums transition-colors duration-[var(--duration-quick)]",
+            active ? "text-primary-text" : "text-faint/80"
           )}
         >
           {item.eyebrow ?? pad(index)}
         </span>
 
-        <span className={cn("min-w-0 flex-1 truncate text-sm", active ? "font-semibold" : "font-medium")}>
+        <span className={cn("min-w-0 flex-1 truncate text-xs", active ? "font-semibold" : "font-medium")}>
           {item.label}
         </span>
-
-        {Icon && (
-          <Icon
-            aria-hidden="true"
-            className={cn(
-              "h-[15px] w-[15px] shrink-0 transition-colors duration-[var(--duration-quick)]",
-              active ? "text-primary" : "text-faint/70 group-hover:text-faint"
-            )}
-          />
-        )}
       </button>
     </li>
   );
 }
 
 /**
- * @param items    [{ id, label, eyebrow?, icon?, group? }] in sequence order
+ * @param items    [{ id, label, eyebrow?, group? }] in sequence order
  * @param activeId the item currently on screen
  * @param onSelect (id) => void
  * @param footer   anything to park at the bottom (a stat, a route switch)
@@ -102,8 +91,8 @@ function RailItem({ item, index, state, onSelect }) {
 export default function Rail({ items, activeId, onSelect, footer, label = "Sections" }) {
   const activeIndex = Math.max(0, items.findIndex((i) => i.id === activeId));
 
-  // Grouped only if the items say so, so the story's flat list and the panel's
-  // four groups are the same component with the same markup.
+  // Grouped only if the items say so, so the story's three groups and the
+  // panel's four are the same component with the same markup.
   const groups = [];
   items.forEach((item, index) => {
     const name = item.group ?? null;
@@ -116,33 +105,32 @@ export default function Rail({ items, activeId, onSelect, footer, label = "Secti
     <nav
       aria-label={label}
       style={{ width: RAIL_WIDTH }}
-      className="glass fixed top-0 left-0 z-30 flex h-screen flex-col gap-[var(--spacing-6)] !rounded-none !border-y-0 !border-l-0 px-[var(--spacing-5)] py-[var(--spacing-7)] max-lg:hidden"
+      className="glass fixed top-0 right-0 z-30 flex h-screen flex-col gap-[var(--spacing-6)] !rounded-none !border-y-0 !border-r-0 px-[var(--spacing-4)] py-[var(--spacing-6)] max-lg:hidden"
     >
-      <Brand href="#/" />
+      <Brand href="#/" size="xs" className="px-[var(--spacing-2)]" />
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-[var(--spacing-6)] overflow-y-auto">
-        {/* the spine, and the lit portion of it */}
+      <div className="relative flex min-h-0 flex-1 flex-col gap-[var(--spacing-5)] overflow-y-auto">
+        {/* the spine, and the lit portion of it — the journey, as one line */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-[18px] bottom-[18px] left-[20px] w-px bg-border"
+          className="pointer-events-none absolute top-[14px] bottom-[14px] left-[15px] w-px bg-border"
         />
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute top-[18px] left-[20px] w-px origin-top bg-primary/70"
+          className="pointer-events-none absolute top-[14px] bottom-[14px] left-[15px] w-px origin-top bg-primary/60"
           initial={false}
           animate={{ scaleY: items.length > 1 ? activeIndex / (items.length - 1) : 1 }}
-          transition={{ duration: 0.4, ease: [0, 0, 0.2, 1] }}
-          style={{ bottom: 18 }}
+          transition={{ duration: 0.45, ease: [0, 0, 0.2, 1] }}
         />
 
         {groups.map((group, gi) => (
-          <div key={group.name ?? gi} className="flex flex-col gap-[var(--spacing-1)]">
+          <div key={group.name ?? gi} className="flex flex-col gap-[2px]">
             {group.name && (
-              <p className="m-0 pb-[var(--spacing-2)] pl-[var(--spacing-3)] font-mono text-[10px] font-bold tracking-[0.18em] text-faint uppercase">
+              <p className="m-0 pb-[var(--spacing-2)] pl-[var(--spacing-2)] font-mono text-[9px] font-medium tracking-[0.2em] text-faint/60 uppercase">
                 {group.name}
               </p>
             )}
-            <ul className="m-0 flex list-none flex-col gap-[var(--spacing-1)] p-0">
+            <ul className="m-0 flex list-none flex-col gap-[2px] p-0">
               {group.items.map(({ item, index }) => (
                 <RailItem
                   key={item.id}

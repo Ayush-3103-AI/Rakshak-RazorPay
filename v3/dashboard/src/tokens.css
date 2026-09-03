@@ -166,9 +166,17 @@ body {
    here. A screen whose content exceeds the viewport scrolls inside itself, and
    the outer snap resumes only once that inner scroller is exhausted. */
 html {
-  scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
 }
+
+/* NO `scroll-behavior: smooth` HERE, deliberately. It reads as a nicety and it
+   breaks the lock: the browser's smooth-scroll animation and the snap
+   controller both want to own the scroll position, so a wheel gesture gets
+   animated toward a free position while the snap tries to pull it to a stop.
+   The result is the drift and the half-landed pages this had before. Every
+   place that WANTS a smooth move — the rail, the fragment jumps — asks for it
+   per call with `scrollIntoView({ behavior: "smooth" })`, which is unaffected
+   by this and does not fight the snap. */
 
 body {
   font-family: var(--font-sans);
@@ -262,6 +270,11 @@ body::before {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* And the per-call smooth scrolls above become instant jumps. */
+  html {
     scroll-behavior: auto !important;
   }
 

@@ -34,12 +34,12 @@ export default function Verify() {
 
       {failed && <ArtifactError artifact="verify" error={failed} />}
 
-      <div className="mt-[var(--spacing-10)] grid grid-cols-3 gap-[var(--spacing-4)] max-lg:grid-cols-1">
-        <Glass className="flex flex-col gap-[var(--spacing-7)]">
+      <div className="mt-[var(--spacing-7)] grid grid-cols-3 gap-[var(--spacing-4)] max-lg:grid-cols-1">
+        <Glass className="flex flex-col gap-[var(--spacing-6)]">
           <p className="m-0 flex items-center gap-[var(--spacing-2)] font-mono text-[11px] font-bold tracking-[0.18em] text-faint uppercase">
             <Lock aria-hidden="true" className="h-3 w-3" /> the seal
           </p>
-          <Stat value={locks.opens} label="times the test split was opened" note={`across ${locks.n} sealed locks`} size="lg" accent />
+          <Stat value={locks.opens} label="times the test split was opened" note={`across ${locks.n} sealed locks`} accent />
           <div className="grid grid-cols-2 gap-[var(--spacing-5)]">
             <Stat value={locks.n} label="eval locks" note="superseding forward" size="sm" />
             <Stat value={locks.preRegistered} label="pre-registered" note="claims written before the run" size="sm" />
@@ -92,11 +92,11 @@ export default function Verify() {
         </Glass>
       </div>
 
-      <Reveal className="mt-[var(--spacing-10)] grid gap-[var(--spacing-3)] border-t border-border pt-[var(--spacing-7)]">
-        <p className="m-0 text-[length:var(--text-lede)] leading-snug text-foreground">
+      <Reveal className="mt-[var(--spacing-7)] grid gap-[var(--spacing-2)] border-t border-border pt-[var(--spacing-5)]">
+        <p className="m-0 text-base leading-snug font-semibold text-foreground">
           Built solo by Ayush for the Razorpay AI Buildathon 2026{span ? `, ${span}` : ""}.
         </p>
-        <p className="m-0 max-w-[70ch] text-[length:var(--text-body)] leading-relaxed text-muted-foreground">
+        <p className="m-0 max-w-[86ch] text-xs leading-relaxed text-muted-foreground">
           Next: open the test split once, on the record, and validate the decision layer on BAF inside this tree.
           Synthetic merchant streams with injected typologies throughout; no real Razorpay data, APIs or internal
           systems were used.

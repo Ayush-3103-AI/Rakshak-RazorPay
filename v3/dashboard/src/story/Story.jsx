@@ -154,7 +154,7 @@ export default function Story() {
         }
       />
 
-      <main style={{ marginLeft: RAIL_WIDTH }} className="max-lg:!ml-0">
+      <main style={{ marginRight: RAIL_WIDTH }} className="max-lg:!mr-0">
         <Gap />
         <ProductHole />
         <Mechanism />

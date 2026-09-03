@@ -43,6 +43,7 @@ export function Mark({ className, title }) {
 }
 
 const TILE = {
+  xs: "h-7 w-7 rounded-[var(--radius-sm)] p-[5px]",
   sm: "h-9 w-9 rounded-[var(--radius-md)] p-[7px]",
   md: "h-11 w-11 rounded-[var(--radius-lg)] p-[9px]",
 };
@@ -53,7 +54,7 @@ export function MarkTile({ size = "sm", className }) {
     <span
       className={cn(
         "relative grid shrink-0 place-items-center border border-primary/35 bg-primary/12 text-primary-text",
-        "shadow-[0_0_24px_-6px_var(--color-primary)]",
+        size === "xs" ? "shadow-[0_0_16px_-6px_var(--color-primary)]" : "shadow-[0_0_24px_-6px_var(--color-primary)]",
         TILE[size],
         className
       )}
@@ -78,20 +79,33 @@ export default function Brand({
   return (
     <Tag
       href={href}
-      className={cn("flex min-w-0 items-center gap-[var(--spacing-4)] no-underline", className)}
+      className={cn(
+        "flex min-w-0 items-center no-underline",
+        size === "xs" ? "gap-[var(--spacing-3)]" : "gap-[var(--spacing-4)]",
+        className
+      )}
     >
       <MarkTile size={size} />
       <span className="flex min-w-0 flex-col">
         <span
           className={cn(
             "truncate font-heading font-extrabold text-foreground",
-            size === "md" ? "text-lg tracking-[-0.02em]" : "text-base tracking-[-0.015em]"
+            size === "md"
+              ? "text-lg tracking-[-0.02em]"
+              : size === "xs"
+                ? "text-[13px] tracking-[-0.01em]"
+                : "text-base tracking-[-0.015em]"
           )}
         >
           RAKSHAK
         </span>
         {descriptor && (
-          <span className="truncate font-mono text-[10px] tracking-[0.16em] text-faint uppercase">
+          <span
+            className={cn(
+              "truncate font-mono tracking-[0.16em] text-faint/80 uppercase",
+              size === "xs" ? "text-[8px]" : "text-[10px]"
+            )}
+          >
             {descriptor}
           </span>
         )}

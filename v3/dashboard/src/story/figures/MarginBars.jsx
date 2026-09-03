@@ -13,7 +13,7 @@ import { fmtSigned } from "../../lib/format.js";
 const LABEL_W = 250;
 const BAR_X0 = LABEL_W + 20;
 const BAR_X1 = 880;
-const ROW_H = 30;
+const ROW_H = 28;
 
 export default function MarginBars({ rows }) {
   const reduce = useReducedMotion();

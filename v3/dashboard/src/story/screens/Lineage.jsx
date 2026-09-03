@@ -33,13 +33,13 @@ export default function Lineage() {
       {journey.error && <ArtifactError artifact="journey" error={journey.error} />}
 
       {generations.length > 0 && (
-        <Reveal as="ol" className="m-0 mt-[var(--spacing-10)] grid list-none grid-cols-3 gap-[var(--spacing-4)] p-0 max-lg:grid-cols-1">
+        <Reveal as="ol" className="m-0 mt-[var(--spacing-7)] grid list-none grid-cols-3 gap-[var(--spacing-4)] p-0 max-lg:grid-cols-1">
           {generations.map((g) => (
             <Glass
               flat
               as="li"
               key={g.id}
-              className={cn("flex min-w-0 flex-col gap-[var(--spacing-4)] border-t-4 p-[var(--spacing-7)]", g.external ? "border-t-notice" : "border-t-primary")}
+              className={cn("flex min-w-0 flex-col gap-[var(--spacing-3)] border-t-4 p-[var(--spacing-6)]", g.external ? "border-t-notice" : "border-t-primary")}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-[var(--spacing-3)]">
                 <span className="font-mono text-[length:var(--text-stat-sm)] leading-none font-bold tracking-[-0.03em] text-primary-text">
@@ -47,14 +47,14 @@ export default function Lineage() {
                 </span>
                 {g.era && <span className="font-mono text-[11px] tracking-[0.14em] text-faint uppercase">{asText(g.era)}</span>}
               </div>
-              <h3 className="m-0 font-heading text-xl leading-snug font-bold text-foreground">{asText(g.title)}</h3>
+              <h3 className="m-0 line-clamp-2 font-heading text-lg leading-snug font-bold text-foreground">{asText(g.title)}</h3>
               {g.external && (
                 <Chip tone="notice" className="self-start">
                   <ExternalLink aria-hidden="true" className="h-3 w-3" />
                   {asText(g.provenance_note)}
                 </Chip>
               )}
-              <p className="m-0 line-clamp-5 text-sm leading-relaxed text-muted-foreground">
+              <p className="m-0 line-clamp-4 text-xs leading-relaxed text-muted-foreground">
                 <strong className="font-semibold text-foreground">Outcome.</strong> {asText(g.outcome)}
               </p>
               {g.figures?.length > 0 && (

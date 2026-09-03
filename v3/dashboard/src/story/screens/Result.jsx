@@ -52,7 +52,7 @@ export default function Result() {
       {ladder.loading && <ArtifactLoading label="Loading the ladder…" />}
       {ladder.error && <ArtifactError artifact="ladder" error={ladder.error} />}
 
-      <div className="mt-[var(--spacing-8)] grid grid-cols-[4fr_8fr] items-start gap-[clamp(20px,3vw,48px)] max-lg:grid-cols-1">
+      <div className="mt-[var(--spacing-7)] grid grid-cols-[4fr_8fr] items-start gap-[clamp(20px,3vw,48px)] max-lg:grid-cols-1">
         <Reveal className="grid grid-cols-2 gap-x-[var(--spacing-6)] gap-y-[var(--spacing-7)] self-start max-lg:grid-cols-4 max-sm:grid-cols-2">
           <Stat value={s} label={s === 1 ? "row beat every floor" : "rows beat every floor"} note={d.survivorLabel ?? "none"} size="lg" accent className="col-span-2 max-lg:col-span-4 max-sm:col-span-2" />
           <Stat value={n} label="policies scored" note="against the same floors" size="xs" />

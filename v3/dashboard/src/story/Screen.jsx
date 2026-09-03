@@ -11,6 +11,13 @@
 // motion agree about what to read first. The reveal runs once — coming back to
 // a screen you have already read should not replay it.
 //
+// THE INNER SCROLLER IS A FALLBACK, NOT A LAYOUT. Every screen is authored to
+// fit one viewport at a normal desktop height, and it is worth the effort:
+// even 40px of inner overflow means a wheel gesture scrolls a little way
+// INSIDE the screen before the page advances, which reads to a person as the
+// page lock failing. The scroller exists so that a short window or a long
+// translation is still readable, not as licence to overfill a screen.
+//
 // THE FIGURES ARE PLAYED, NOT SCRUBBED. Pass `play={2.4}` and `children` is
 // called with a MotionValue that runs 0→1 over 2.4 seconds when the screen
 // arrives. This replaces the earlier scroll-scrubbed pinning, which required a
@@ -188,7 +195,7 @@ export default function Screen({ id, play, children, className, contentClassName
     >
       {/* The scroller is this element, so a tall screen scrolls inside itself
           rather than pushing the snap point away from the top of the section. */}
-      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] py-[clamp(56px,7vh,88px)] max-lg:pt-[96px]">
+      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] py-[clamp(40px,5vh,72px)] max-lg:pt-[92px]">
         <motion.div
           className={cn("mx-auto flex min-h-full w-full max-w-[1240px] flex-col justify-center", contentClassName)}
           variants={container}
