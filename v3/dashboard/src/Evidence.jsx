@@ -14,9 +14,10 @@
 //
 // Under `prefers-reduced-motion` the snap is dropped entirely (tokens.css) and
 // this becomes an ordinary scrolling document again.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Chrome from "./Chrome.jsx";
 import { RAIL_WIDTH } from "./components/Rail.jsx";
+import { usePagedScroll } from "./usePagedScroll.js";
 import { TooltipProvider } from "./components/ui/Tooltip.jsx";
 import { readFragment, writeFragment } from "./fragment.js";
 import ConfounderNull from "./sections/ConfounderNull.jsx";
@@ -39,6 +40,9 @@ export default function Evidence() {
   // `#/evidence/verdict` before the reader ever ran — so every deep link
   // landed on section zero. A lazy state initialiser runs before any effect.
   const [initialTarget] = useState(readFragment);
+  const ids = useMemo(() => SECTIONS.map((s) => s.id), []);
+
+  usePagedScroll(ids);
 
   useEffect(() => {
     writeFragment(SECTIONS[activeSection]?.id);

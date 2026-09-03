@@ -1,29 +1,22 @@
-// The front door: eight locked screens, a two-minute read.
+// The front door: eight pages, a two-minute read.
 //
 // Gap → the product hole → the mechanism → the result → the stress test →
 // what was killed → the lineage → verify. The problem first, in one breath;
-// the number on screen four; the honesty after it, where a reader who has seen
+// the number on page four; the honesty after it, where a reader who has seen
 // the claim goes looking for the catch.
 //
-// One gesture, one screen. The locking is CSS scroll-snap (tokens.css), not a
-// wheel handler, so find-in-page, Page Down, Home/End and screen readers all
-// keep working — the distinction that separates this from the scroll-jacking
-// v1 was criticised for. The rail is the map: every screen visible at once,
-// one click to any of them, and a lit spine showing how far in you are.
+// ONE DELIBERATE PUSH, ONE PAGE. `usePagedScroll` catches the wheel and moves
+// exactly one page; CSS snapping (tokens.css) stays underneath as the safety
+// net for every other way of moving — Page Down, Home, End, find-in-page, a
+// clicked page title. Nothing else is intercepted, so the document still
+// scrolls and its position is still real.
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
-import {
-  Activity,
-  ArrowRight,
-  GitBranch,
-  Layers,
-  ListChecks,
-  ShieldAlert,
-  Table2,
-  TrendingUp,
-} from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Brand from "../components/Brand.jsx";
 import Rail, { RAIL_WIDTH, RailChips } from "../components/Rail.jsx";
+import TopBar from "../components/TopBar.jsx";
+import { usePagedScroll } from "../usePagedScroll.js";
 import Gap from "./screens/Gap.jsx";
 import Killed from "./screens/Killed.jsx";
 import Lineage from "./screens/Lineage.jsx";
@@ -34,15 +27,17 @@ import StressTest from "./screens/StressTest.jsx";
 import Verify from "./screens/Verify.jsx";
 
 export const STORY_SCREENS = [
-  { id: "gap", label: "The gap", icon: ShieldAlert, group: "The problem" },
-  { id: "product", label: "The product", icon: Layers, group: "The problem" },
-  { id: "mechanism", label: "The mechanism", icon: Activity, group: "The problem" },
-  { id: "result", label: "The result", icon: Table2, group: "The evidence" },
-  { id: "stress", label: "The stress test", icon: TrendingUp, group: "The evidence" },
-  { id: "killed", label: "What we killed", icon: ListChecks, group: "The discipline" },
-  { id: "lineage", label: "The lineage", icon: GitBranch, group: "The discipline" },
-  { id: "verify", label: "Verify", icon: ShieldAlert, group: "The discipline" },
+  { id: "gap", label: "The gap" },
+  { id: "product", label: "The product" },
+  { id: "mechanism", label: "The mechanism" },
+  { id: "result", label: "The result" },
+  { id: "stress", label: "The stress test" },
+  { id: "killed", label: "What we killed" },
+  { id: "lineage", label: "The lineage" },
+  { id: "verify", label: "Verify" },
 ];
+
+const SCREEN_IDS = STORY_SCREENS.map((s) => s.id);
 
 function Backdrop({ progress }) {
   const reduce = useReducedMotion();
@@ -90,29 +85,14 @@ function useActiveScreen() {
   return active;
 }
 
-/** The rail's foot: the read's length, and the way into the evidence panel. */
-function RailFooter() {
-  return (
-    <div className="flex flex-col gap-[var(--spacing-4)]">
-      <p className="m-0 font-mono text-[10px] tracking-[0.16em] text-faint uppercase">
-        {STORY_SCREENS.length} screens · ~2 min
-      </p>
-      <a
-        href="#/evidence"
-        className="inline-flex items-center justify-between gap-[var(--spacing-3)] rounded-[var(--radius-md)] border border-primary/35 bg-primary/12 px-[var(--spacing-5)] py-[var(--spacing-4)] font-mono text-[11px] font-bold tracking-[0.14em] text-primary-text uppercase no-underline transition-colors duration-[var(--duration-quick)] hover:bg-primary/22"
-      >
-        Full evidence
-        <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-      </a>
-    </div>
-  );
-}
-
 export default function Story() {
   const { scrollYProgress } = useScroll();
   const reduce = useReducedMotion();
   const bar = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
   const active = useActiveScreen();
+  const ids = useMemo(() => SCREEN_IDS, []);
+
+  usePagedScroll(ids);
 
   const go = useCallback((id) => {
     document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -128,22 +108,27 @@ export default function Story() {
         style={{ scaleX: reduce ? scrollYProgress : bar }}
       />
 
-      <Rail
-        items={STORY_SCREENS}
-        activeId={active}
-        onSelect={go}
-        footer={<RailFooter />}
-        label="Story screens"
+      <TopBar
+        action={
+          <a
+            href="#/evidence"
+            className="inline-flex items-center gap-[var(--spacing-2)] rounded-full border border-primary/40 bg-primary/15 px-[var(--spacing-5)] py-[var(--spacing-3)] font-mono text-[11px] font-bold tracking-[0.14em] text-primary-text uppercase no-underline transition-colors duration-[var(--duration-quick)] hover:bg-primary/25"
+          >
+            Full evidence <ArrowRight aria-hidden="true" className="h-3 w-3" />
+          </a>
+        }
       />
+
+      <Rail items={STORY_SCREENS} activeId={active} onSelect={go} label="Story pages" />
 
       <RailChips
         items={STORY_SCREENS}
         activeId={active}
         onSelect={go}
-        label="Story screens"
+        label="Story pages"
         leading={
           <>
-            <Brand href="#/" descriptor={null} className="mr-[var(--spacing-3)] shrink-0" />
+            <Brand href="#/" size="xs" descriptor={null} className="mr-[var(--spacing-3)] shrink-0" />
             <a
               href="#/evidence"
               className="shrink-0 rounded-full border border-primary/40 bg-primary/15 px-[var(--spacing-4)] py-[var(--spacing-2)] font-mono text-[11px] font-bold tracking-[0.1em] text-primary-text uppercase no-underline"

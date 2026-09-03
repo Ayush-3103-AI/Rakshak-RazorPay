@@ -195,7 +195,7 @@ export default function Screen({ id, play, children, className, contentClassName
     >
       {/* The scroller is this element, so a tall screen scrolls inside itself
           rather than pushing the snap point away from the top of the section. */}
-      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] py-[clamp(40px,5vh,72px)] max-lg:pt-[92px]">
+      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] pt-[clamp(72px,8vh,104px)] pb-[clamp(28px,4vh,56px)] max-lg:pt-[92px]">
         <motion.div
           className={cn("mx-auto flex min-h-full w-full max-w-[1240px] flex-col justify-center", contentClassName)}
           variants={container}

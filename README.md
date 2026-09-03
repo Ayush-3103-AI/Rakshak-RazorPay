@@ -1,8 +1,41 @@
-# Rakshak — post-onboarding merchant risk sentinel
+<h1 align="center">Rakshak</h1>
+<p align="center"><b>Post-onboarding merchant risk sentinel</b><br/>
+Razorpay AI Buildathon 2026 · Track 02 (AI Risk Manager) · solo build</p>
 
-**Razorpay AI Buildathon 2026 · Track 02 (AI Risk Manager) · solo build**
+<h2 align="center">▶ START HERE — open the dashboard first</h2>
 
-**Live evidence panel:** https://ayush-3103-ai.github.io/Rakshak-RazorPay/ ·
+<p align="center">
+  <a href="https://ayush-3103-ai.github.io/Rakshak-RazorPay/"><b>https://ayush-3103-ai.github.io/Rakshak-RazorPay/</b></a>
+</p>
+
+<p align="center">
+  <b>A two-minute read, eight pages, one scroll each.</b><br/>
+  It is the intended entry point for this submission and it answers, in order:<br/>
+  what the gap is · where it sits in Razorpay's stack · what Rakshak decides ·<br/>
+  what the result was · whether it survives stress · what we killed · how to check it.
+</p>
+
+<p align="center">
+  Every figure on it is read at load time from the committed artifacts in this repo.<br/>
+  Nothing on it is typed in by hand, so it cannot drift from what was measured.
+</p>
+
+---
+
+> **Reviewers: please open the dashboard before reading further.** This README is the
+> written version of the same argument, and it is long on purpose. The dashboard is the
+> two-minute version, and it is the one built to be read first. Deeper technical evidence
+> sits behind the **Full evidence** link in its top-right corner.
+>
+> **If the hosted link is unavailable**, run it locally — it is a static build over the
+> committed artifacts and needs no backend, no keys and no network:
+>
+> ```bash
+> cd v3/dashboard
+> npm ci
+> npm run dev        # then open the URL it prints
+> ```
+
 **Current tree:** [`v3/`](v3/) · **Honest failures, with numbers:** [`v3/LIMITATIONS.md`](v3/LIMITATIONS.md)
 
 > **16 policies. 5 seeds. 4 sealed locks. One row survived.**

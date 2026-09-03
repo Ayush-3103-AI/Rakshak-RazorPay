@@ -1,25 +1,24 @@
-// One rail, both halves of the site, on the RIGHT.
+// The page list, on the right, with no panel around it.
 //
-// It sits on the right because the story is read left to right: the headline
-// owns the left edge and the type can run to its natural measure without a
-// navigation column pushing it inward. The panel uses the same side so the two
-// halves stay one product.
+// Borderless on purpose: it is a marker of where you are, not a piece of
+// furniture. No glass, no border, no background — just the page titles, their
+// numbers, and the spine. Anything that belongs to the site rather than to the
+// sequence (the brand, the route switch, the lock count) lives in the top bar,
+// which is where it was before this got promoted into a full sidebar.
 //
-// THE SPINE IS THE JOURNEY. A hairline runs down the gutter behind the
-// markers, lit from the top to the current entry, so progress through the
-// sequence is legible without reading a single label — "you are on four of
-// eight", which the hover-only dots this replaces could never say.
+// THE SPINE IS THE JOURNEY. A hairline behind the markers, lit from the top
+// down to the current page, so how far in you are is legible without reading a
+// word. It animates between pages.
 //
-// It is deliberately quiet. Every label is 12px at medium weight, the group
-// titles are 9px and dim, and the markers are small: this is a map you consult,
-// not a second headline competing with the one on screen. Quiet is not hidden,
-// though — nothing here waits for a hover to become readable, which was the
-// actual failing of the dots.
+// Every title is readable at rest. The version this restores revealed labels
+// only on hover, which is invisible to anyone who never hovers and to everyone
+// on a touchscreen; quiet is the goal, hidden is not.
 import { motion, useReducedMotion } from "framer-motion";
-import Brand from "./Brand.jsx";
 import { cn } from "../lib/cn.js";
 
-export const RAIL_WIDTH = 214;
+// What the main column must leave clear on the right. The list itself is
+// narrower; this is the list plus its breathing room.
+export const RAIL_WIDTH = 208;
 
 function pad(n) {
   return String(n + 1).padStart(2, "0");
@@ -37,28 +36,19 @@ function RailItem({ item, index, state, onSelect }) {
         onClick={() => onSelect(item.id)}
         aria-current={active ? "true" : undefined}
         className={cn(
-          "group relative flex w-full cursor-pointer items-center gap-[var(--spacing-3)] rounded-[var(--radius-sm)] py-[6px] pr-[var(--spacing-3)] pl-[var(--spacing-2)] text-left transition-colors duration-[var(--duration-quick)]",
-          active ? "text-foreground" : "text-muted-foreground/85 hover:text-foreground"
+          "group flex w-full cursor-pointer items-center gap-[var(--spacing-3)] rounded-[var(--radius-xs)] py-[5px] text-left transition-colors duration-[var(--duration-quick)]",
+          active ? "text-foreground" : "text-muted-foreground/70 hover:text-foreground"
         )}
       >
-        {active && (
-          <motion.span
-            layoutId="rail-active"
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 rounded-[var(--radius-sm)] bg-primary/10"
-            transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
-          />
-        )}
-
-        {/* the marker, sitting on the spine */}
         <span aria-hidden="true" className="relative grid h-[14px] w-[14px] shrink-0 place-items-center">
-          <span
+          <motion.span
+            layout={!reduce}
             className={cn(
-              "block rounded-full transition-all duration-[var(--duration-moderate)]",
+              "block rounded-full transition-colors duration-[var(--duration-moderate)]",
               active
                 ? "h-[8px] w-[8px] bg-primary shadow-[0_0_10px_1px_var(--color-primary)]"
                 : done
-                  ? "h-[5px] w-[5px] bg-primary/60"
+                  ? "h-[5px] w-[5px] bg-primary/55"
                   : "h-[5px] w-[5px] bg-border-strong group-hover:bg-faint"
             )}
           />
@@ -67,7 +57,7 @@ function RailItem({ item, index, state, onSelect }) {
         <span
           className={cn(
             "shrink-0 font-mono text-[10px] tabular-nums transition-colors duration-[var(--duration-quick)]",
-            active ? "text-primary-text" : "text-faint/80"
+            active ? "text-primary-text" : "text-faint/70"
           )}
         >
           {item.eyebrow ?? pad(index)}
@@ -82,76 +72,51 @@ function RailItem({ item, index, state, onSelect }) {
 }
 
 /**
- * @param items    [{ id, label, eyebrow?, group? }] in sequence order
- * @param activeId the item currently on screen
+ * @param items    [{ id, label, eyebrow? }] in sequence order
+ * @param activeId the page currently on screen
  * @param onSelect (id) => void
- * @param footer   anything to park at the bottom (a stat, a route switch)
  * @param label    the nav's accessible name
  */
-export default function Rail({ items, activeId, onSelect, footer, label = "Sections" }) {
+export default function Rail({ items, activeId, onSelect, label = "Pages" }) {
   const activeIndex = Math.max(0, items.findIndex((i) => i.id === activeId));
-
-  // Grouped only if the items say so, so the story's three groups and the
-  // panel's four are the same component with the same markup.
-  const groups = [];
-  items.forEach((item, index) => {
-    const name = item.group ?? null;
-    const last = groups[groups.length - 1];
-    if (last && last.name === name) last.items.push({ item, index });
-    else groups.push({ name, items: [{ item, index }] });
-  });
 
   return (
     <nav
       aria-label={label}
-      style={{ width: RAIL_WIDTH }}
-      className="glass fixed top-0 right-0 z-30 flex h-screen flex-col gap-[var(--spacing-6)] !rounded-none !border-y-0 !border-r-0 px-[var(--spacing-4)] py-[var(--spacing-6)] max-lg:hidden"
+      className="fixed top-1/2 right-[clamp(12px,2vw,28px)] z-30 -translate-y-1/2 max-lg:hidden"
     >
-      <Brand href="#/" size="xs" className="px-[var(--spacing-2)]" />
-
-      <div className="relative flex min-h-0 flex-1 flex-col gap-[var(--spacing-5)] overflow-y-auto">
-        {/* the spine, and the lit portion of it — the journey, as one line */}
+      <div className="relative">
+        {/* the spine, and the lit portion of it */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute top-[14px] bottom-[14px] left-[15px] w-px bg-border"
+          className="pointer-events-none absolute top-[12px] bottom-[12px] left-[7px] w-px bg-border"
         />
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute top-[14px] bottom-[14px] left-[15px] w-px origin-top bg-primary/60"
+          className="pointer-events-none absolute top-[12px] bottom-[12px] left-[7px] w-px origin-top bg-primary/60"
           initial={false}
           animate={{ scaleY: items.length > 1 ? activeIndex / (items.length - 1) : 1 }}
           transition={{ duration: 0.45, ease: [0, 0, 0.2, 1] }}
         />
 
-        {groups.map((group, gi) => (
-          <div key={group.name ?? gi} className="flex flex-col gap-[2px]">
-            {group.name && (
-              <p className="m-0 pb-[var(--spacing-2)] pl-[var(--spacing-2)] font-mono text-[9px] font-medium tracking-[0.2em] text-faint/60 uppercase">
-                {group.name}
-              </p>
-            )}
-            <ul className="m-0 flex list-none flex-col gap-[2px] p-0">
-              {group.items.map(({ item, index }) => (
-                <RailItem
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  state={index === activeIndex ? "active" : index < activeIndex ? "done" : "todo"}
-                  onSelect={onSelect}
-                />
-              ))}
-            </ul>
-          </div>
-        ))}
+        <ul className="m-0 flex list-none flex-col gap-0 p-0">
+          {items.map((item, index) => (
+            <RailItem
+              key={item.id}
+              item={item}
+              index={index}
+              state={index === activeIndex ? "active" : index < activeIndex ? "done" : "todo"}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
       </div>
-
-      {footer && <div className="shrink-0">{footer}</div>}
     </nav>
   );
 }
 
 /** The same destinations as a scrolling chip strip, for narrow viewports. */
-export function RailChips({ items, activeId, onSelect, leading, label = "Sections" }) {
+export function RailChips({ items, activeId, onSelect, leading, label = "Pages" }) {
   return (
     <nav
       aria-label={label}
