@@ -2,9 +2,9 @@
 //
 // Re-price a wrong HOLD against a missed fraud across the artifact's whole
 // ratio grid, refit nothing, and watch the survivor's line stay above the
-// floor. The pin lets the line draw as the reader scrolls, which is the one
-// place on the site where scroll-driven drawing IS the argument: the point of
-// the figure is that it never dips.
+// floor. The line draws left to right on arrival rather than appearing whole,
+// because the point of the figure is that it never dips — and a line you watch
+// being drawn makes that claim in a way a finished line does not.
 //
 // The decision-layer share is derived, not stored: the HOLD decomposition's
 // delta over the margin above the floor, both at the ratio the decomposition
@@ -25,7 +25,7 @@ export default function StressTest() {
   const spanText = sweep?.span ? `${fmtNum(sweep.span, 0)}×` : "orders of magnitude";
 
   return (
-    <Screen id="stress" pin={260}>
+    <Screen id="stress" play={2.6}>
       {(progress) => (
         <div className="grid grid-cols-[5fr_7fr] items-center gap-[clamp(24px,4vw,64px)] max-lg:grid-cols-1">
           <div>

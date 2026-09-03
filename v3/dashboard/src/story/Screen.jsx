@@ -1,35 +1,39 @@
 // One screen of the story, and the handful of pieces every screen is made of.
 //
-// A screen is a full-viewport section whose children reveal in a stagger the
-// first time it scrolls into view: each piece rises, un-blurs and settles, in
-// reading order, so the type scale and the motion agree about what to read
-// first. The reveal runs once — scrolling back up should not replay a page
-// that has already been read.
+// A screen is exactly one viewport tall and it is a snap stop: one gesture
+// takes you to the next screen and only the next screen (tokens.css). Content
+// that will not fit scrolls INSIDE the screen, and the outer snap resumes once
+// that inner scroller is exhausted — so nothing is ever unreachable, and the
+// page still advances a screen at a time.
 //
-// A screen may PIN. Pass `pin={240}` and the section becomes 240vh tall with
-// its content stuck to the viewport, and `children` is called with a
-// MotionValue that runs 0→1 across that height. That is CSS `position: sticky`
-// plus a scroll read — no wheel handler, no preventDefault, nothing owning
-// the scrollbar. Find-in-page, Page Down and screen readers all keep working,
-// which is the line this project drew against v1's playhead and will not
-// cross again. Under reduced motion, or below 900px, the pin is dropped and
-// the figure renders in its settled state.
-import { motion, useMotionValue, useReducedMotion, useScroll } from "framer-motion";
-import { useRef } from "react";
+// Children reveal in a stagger the first time the screen arrives: each piece
+// rises, un-blurs and settles, in reading order, so the type scale and the
+// motion agree about what to read first. The reveal runs once — coming back to
+// a screen you have already read should not replay it.
+//
+// THE FIGURES ARE PLAYED, NOT SCRUBBED. Pass `play={2.4}` and `children` is
+// called with a MotionValue that runs 0→1 over 2.4 seconds when the screen
+// arrives. This replaces the earlier scroll-scrubbed pinning, which required a
+// section several viewports tall and is therefore incompatible with locking
+// one gesture to one page. The figures draw exactly the same sequence; what
+// changed is the clock driving them. Under reduced motion the value starts at
+// 1 and the figure renders complete, which is also what it does if the tween
+// is interrupted — the settled state is always the truth.
+import { animate, motion, useInView, useMotionValue, useReducedMotion } from "framer-motion";
+import { useEffect, useRef } from "react";
 import Counter from "../components/Counter.jsx";
 import { cn } from "../lib/cn.js";
-import { useCinematic } from "./useCinematic.js";
 
 export const EASE = [0.2, 0.65, 0.2, 1];
 
 export const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.08 } },
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.06 } },
 };
 
 export const item = {
-  hidden: { opacity: 0, y: 32, filter: "blur(10px)" },
-  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.85, ease: EASE } },
+  hidden: { opacity: 0, y: 28, filter: "blur(10px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: EASE } },
 };
 
 /** Anything that should take part in its screen's stagger. */
@@ -67,7 +71,7 @@ export function Headline({ as = "h2", size = "lg", children, className }) {
     <Reveal
       as={as}
       className={cn(
-        "m-0 mt-[var(--spacing-5)] max-w-[15ch] font-heading font-extrabold tracking-[-0.035em] text-balance text-foreground",
+        "m-0 mt-[var(--spacing-4)] max-w-[15ch] font-heading font-extrabold tracking-[-0.035em] text-balance text-foreground",
         HEADLINE_SIZE[size],
         className
       )}
@@ -82,7 +86,7 @@ export function Lede({ children, className }) {
     <Reveal
       as="p"
       className={cn(
-        "m-0 mt-[var(--spacing-7)] max-w-[56ch] text-[length:var(--text-lede)] leading-[1.55] text-muted-foreground",
+        "m-0 mt-[var(--spacing-6)] max-w-[56ch] text-[length:var(--text-lede)] leading-[1.5] text-muted-foreground",
         className
       )}
     >
@@ -98,7 +102,7 @@ export function Glass({ as = "div", flat = false, className, children, ...rest }
       as={as}
       className={cn(
         flat ? "glass-flat" : "glass",
-        "rounded-[var(--radius-3xl)] p-[clamp(20px,2.4vw,36px)]",
+        "rounded-[var(--radius-2xl)] p-[clamp(16px,2vw,30px)]",
         className
       )}
       {...rest}
@@ -121,7 +125,7 @@ export function Chip({ tone = "muted", className, children }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-[var(--spacing-2)] rounded-full border px-[var(--spacing-5)] py-[var(--spacing-3)] font-mono text-[11px] font-bold tracking-[0.14em] uppercase",
+        "inline-flex items-center gap-[var(--spacing-2)] rounded-full border px-[var(--spacing-4)] py-[var(--spacing-2)] font-mono text-[11px] font-bold tracking-[0.14em] uppercase",
         CHIP_TONE[tone],
         className
       )}
@@ -139,7 +143,7 @@ export function Stat({ value, format, label, note, size = "md", className, accen
     size === "lg"
       ? "text-[length:var(--text-stat)]"
       : size === "xs"
-        ? "text-[clamp(26px,2.4vw,38px)]"
+        ? "text-[clamp(24px,2.2vw,34px)]"
         : "text-[length:var(--text-stat-sm)]",
     accent ? "text-primary-text" : "text-foreground"
   );
@@ -150,22 +154,29 @@ export function Stat({ value, format, label, note, size = "md", className, accen
       ) : (
         <span className={cls}>{value}</span>
       )}
-      <p className="m-0 mt-[var(--spacing-4)] text-base leading-snug font-semibold text-foreground">{label}</p>
-      {note && <p className="m-0 mt-[var(--spacing-2)] text-sm leading-snug text-faint">{note}</p>}
+      <p className="m-0 mt-[var(--spacing-3)] text-sm leading-snug font-semibold text-foreground">{label}</p>
+      {note && <p className="m-0 mt-[var(--spacing-1)] text-xs leading-snug text-faint">{note}</p>}
     </div>
   );
 }
 
-export default function Screen({ id, pin, children, className, contentClassName }) {
+export default function Screen({ id, play, children, className, contentClassName }) {
   const reduce = useReducedMotion();
   const ref = useRef(null);
-  const cinematic = useCinematic() && Boolean(pin);
-  // Always attached to the section and always subscribed: a target ref that
-  // is sometimes unmounted is a warning from framer-motion, and the read costs
-  // nothing when the value is unused.
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const settled = useMotionValue(1);
-  const progress = cinematic ? scrollYProgress : settled;
+  const inView = useInView(ref, { once: true, amount: 0.35 });
+  const progress = useMotionValue(play && !reduce ? 0 : 1);
+
+  useEffect(() => {
+    if (!play) return undefined;
+    if (reduce) {
+      progress.set(1);
+      return undefined;
+    }
+    if (!inView) return undefined;
+    const controls = animate(progress, 1, { duration: play, ease: "linear" });
+    return () => controls.stop();
+  }, [inView, play, reduce, progress]);
+
   const body = typeof children === "function" ? children(progress) : children;
 
   return (
@@ -173,17 +184,13 @@ export default function Screen({ id, pin, children, className, contentClassName 
       ref={ref}
       id={id}
       data-screen={id}
-      style={cinematic ? { height: `${pin}vh` } : undefined}
-      className={cn("relative w-full", className)}
+      className={cn("relative h-screen w-full snap-start snap-always max-lg:h-auto max-lg:min-h-screen", className)}
     >
-      <div
-        className={cn(
-          "flex w-full items-center px-[clamp(20px,5vw,72px)] py-[clamp(72px,10vh,112px)]",
-          cinematic ? "sticky top-0 h-screen overflow-hidden" : "min-h-screen"
-        )}
-      >
+      {/* The scroller is this element, so a tall screen scrolls inside itself
+          rather than pushing the snap point away from the top of the section. */}
+      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] py-[clamp(56px,7vh,88px)] max-lg:pt-[96px]">
         <motion.div
-          className={cn("mx-auto w-full max-w-[1320px]", contentClassName)}
+          className={cn("mx-auto flex min-h-full w-full max-w-[1240px] flex-col justify-center", contentClassName)}
           variants={container}
           initial={reduce ? false : "hidden"}
           whileInView="show"

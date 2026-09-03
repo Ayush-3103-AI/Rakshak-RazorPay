@@ -78,7 +78,7 @@ it("shows every counter at its artifact value under prefers-reduced-motion", asy
     lockState.locks.length,
   ].map((n) => n.toLocaleString("en-IN"));
 
-  render(<App />);
+  const { container } = render(<App />);
   // Wait on something only the ARTIFACTS can produce. The tile labels are static
   // copy and render at frame zero with every counter still at its initial value,
   // so waiting on those samples the page before the data has arrived and reads
@@ -98,7 +98,12 @@ it("shows every counter at its artifact value under prefers-reduced-motion", asy
   // `[data-counter]`, not `.tabular-nums` — the latter matches every mono figure
   // on the page, which is how this assertion used to pass on a journey literal
   // while all four counters sat at "0".
-  const counters = [...document.querySelectorAll("[data-counter]")].map((el) => el.textContent.trim());
+  //
+  // Scoped to THIS render's container rather than to `document`. A global query
+  // also picks up any node another test file left behind in the shared jsdom
+  // document, which made this assertion intermittently see the story's counters
+  // as well as the panel's and fail with a longer array than it expected.
+  const counters = [...container.querySelectorAll("[data-counter]")].map((el) => el.textContent.trim());
   expect(counters).toEqual(expected);
 
   // A counter still at its starting value is precisely the failure a reduced-motion

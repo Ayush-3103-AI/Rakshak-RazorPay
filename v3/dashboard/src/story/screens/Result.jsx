@@ -52,13 +52,13 @@ export default function Result() {
       {ladder.loading && <ArtifactLoading label="Loading the ladder…" />}
       {ladder.error && <ArtifactError artifact="ladder" error={ladder.error} />}
 
-      <div className="mt-[var(--spacing-10)] grid grid-cols-[4fr_8fr] gap-[clamp(20px,3vw,48px)] max-lg:grid-cols-1">
-        <Reveal className="grid grid-cols-2 gap-x-[var(--spacing-6)] gap-y-[var(--spacing-9)] max-lg:grid-cols-4 max-sm:grid-cols-2">
+      <div className="mt-[var(--spacing-8)] grid grid-cols-[4fr_8fr] items-start gap-[clamp(20px,3vw,48px)] max-lg:grid-cols-1">
+        <Reveal className="grid grid-cols-2 gap-x-[var(--spacing-6)] gap-y-[var(--spacing-7)] self-start max-lg:grid-cols-4 max-sm:grid-cols-2">
           <Stat value={s} label={s === 1 ? "row beat every floor" : "rows beat every floor"} note={d.survivorLabel ?? "none"} size="lg" accent className="col-span-2 max-lg:col-span-4 max-sm:col-span-2" />
-          <Stat value={n} label="policies scored" note="against the same floors" size="sm" />
-          <Stat value={d.seedCount} label={d.seedsUniform ? "seeds per policy" : "seeds, thinnest row"} note="scored on each, not averaged over one" size="sm" />
-          <Stat value={locks.n} label="sealed eval locks" note={locks.authoritative?.file ?? "—"} size="sm" />
-          <Stat value={locks.opens} label="test split opened" note="the number that keeps every figure honest" size="sm" />
+          <Stat value={n} label="policies scored" note="against the same floors" size="xs" />
+          <Stat value={d.seedCount} label={d.seedsUniform ? "seeds per policy" : "seeds, thinnest row"} note="scored on each, not averaged" size="xs" />
+          <Stat value={locks.n} label="sealed eval locks" note={locks.authoritative?.file ?? "—"} size="xs" />
+          <Stat value={locks.opens} label="test split opened" note="what keeps every figure honest" size="xs" />
         </Reveal>
 
         <Glass>

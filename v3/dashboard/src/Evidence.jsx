@@ -15,7 +15,8 @@
 // Under `prefers-reduced-motion` the snap is dropped entirely (tokens.css) and
 // this becomes an ordinary scrolling document again.
 import { useCallback, useEffect, useState } from "react";
-import Chrome, { RAIL_NARROW, RAIL_WIDE } from "./Chrome.jsx";
+import Chrome from "./Chrome.jsx";
+import { RAIL_WIDTH } from "./components/Rail.jsx";
 import { TooltipProvider } from "./components/ui/Tooltip.jsx";
 import { readFragment, writeFragment } from "./fragment.js";
 import ConfounderNull from "./sections/ConfounderNull.jsx";
@@ -29,34 +30,23 @@ import Verdict from "./sections/Verdict.jsx";
 import { SECTIONS } from "./sections.js";
 import { useScrolledSection } from "./useInView.js";
 
-const COLLAPSE_KEY = "rakshak-v3-rail-collapsed";
-
 export default function Evidence() {
   const activeSection = useScrolledSection();
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* private-mode storage can throw; the rail still toggles for this load */
-    }
-  }, [collapsed]);
+  // Captured during the FIRST RENDER, not in an effect. The effect below writes
+  // the active section back into the hash, effects run in declaration order,
+  // and it therefore used to overwrite `#/evidence/ladder` with
+  // `#/evidence/verdict` before the reader ever ran — so every deep link
+  // landed on section zero. A lazy state initialiser runs before any effect.
+  const [initialTarget] = useState(readFragment);
 
   useEffect(() => {
     writeFragment(SECTIONS[activeSection]?.id);
   }, [activeSection]);
 
   useEffect(() => {
-    const target = readFragment();
-    if (target) document.getElementById(target)?.scrollIntoView({ block: "start" });
-  }, []);
+    if (initialTarget) document.getElementById(initialTarget)?.scrollIntoView({ block: "start" });
+  }, [initialTarget]);
 
   const go = useCallback((id) => {
     document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -64,16 +54,8 @@ export default function Evidence() {
 
   return (
     <TooltipProvider>
-      <Chrome
-        activeSection={activeSection}
-        collapsed={collapsed}
-        onToggleCollapsed={() => setCollapsed((c) => !c)}
-        onSelect={go}
-      />
-      <main
-        className="transition-[margin] duration-[var(--duration-moderate)] ease-[var(--ease-entrance)] max-md:!ml-0"
-        style={{ marginLeft: collapsed ? RAIL_NARROW : RAIL_WIDE }}
-      >
+      <Chrome activeSection={activeSection} onSelect={go} />
+      <main style={{ marginLeft: RAIL_WIDTH }} className="max-lg:!ml-0">
         <Verdict />
         <Generations />
         <Ladder />

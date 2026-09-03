@@ -95,10 +95,13 @@ it("renders the story from the committed artefacts, every number derived", async
 
 it("switches to the evidence panel on its hash route", async () => {
   window.location.hash = "#/evidence";
-  render(<App />);
+  const { container } = render(<App />);
   await waitFor(() => {
     expect(screen.getAllByText("eval_module_sha256").length).toBeGreaterThan(0);
   });
   expect(screen.queryByText(/policies raced/)).toBeNull();
   expect(screen.getAllByText(/Back to the story/).length).toBeGreaterThan(0);
+  // The panel's four verdict tiles, and only those: the story's counters must
+  // not be in the tree at all on this route.
+  expect(container.querySelectorAll("[data-counter]").length).toBe(4);
 });

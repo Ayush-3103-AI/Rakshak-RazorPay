@@ -39,7 +39,7 @@ export default function Mechanism() {
   const failed = sweep.error ?? ladder.error;
 
   return (
-    <Screen id="mechanism" pin={260}>
+    <Screen id="mechanism" play={2.6}>
       {(progress) => (
         <div className="grid grid-cols-[5fr_7fr] items-center gap-[clamp(24px,4vw,64px)] max-lg:grid-cols-1">
           <div>

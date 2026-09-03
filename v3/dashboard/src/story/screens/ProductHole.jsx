@@ -1,10 +1,10 @@
 // Screen 2 — Razorpay's two guards, and the hole between them.
 //
 // This is the screen that shows the product was understood, so it is the one
-// with the most deliberate picture. It pins: the axis draws, Bumblebee stamps
-// day zero, Vulcan's comb sweeps under the line, the empty stretch gets its
-// name, the chargeback lands, and only then does Rakshak's row of daily
-// decisions appear over the gap.
+// with the most deliberate picture. It plays on arrival: the axis draws,
+// Bumblebee stamps day zero, Vulcan's comb sweeps under the line, the empty
+// stretch gets its name, the chargeback lands, and only then does Rakshak's
+// row of daily decisions appear over the gap.
 import GapAxis from "../figures/GapAxis.jsx";
 import Screen, { Eyebrow, Glass, Headline, Lede, Reveal } from "../Screen.jsx";
 
@@ -16,7 +16,7 @@ const GUARDS = [
 
 export default function ProductHole() {
   return (
-    <Screen id="product" pin={260}>
+    <Screen id="product" play={2.8}>
       {(progress) => (
         <div className="grid grid-cols-[5fr_7fr] items-center gap-[clamp(24px,4vw,64px)] max-lg:grid-cols-1">
           <div>

@@ -30,7 +30,7 @@ export default function Page({
   return (
     <section
       id={id}
-      className="flex h-screen snap-start snap-always flex-col px-[var(--spacing-7)] pt-[calc(52px+var(--spacing-5))] pb-[var(--spacing-5)] max-md:h-auto max-md:min-h-screen max-md:px-[var(--spacing-4)] max-md:pt-[108px]"
+      className="flex h-screen snap-start snap-always flex-col px-[var(--spacing-7)] py-[var(--spacing-7)] max-lg:h-auto max-lg:min-h-screen max-lg:px-[var(--spacing-4)] max-lg:pt-[88px]"
     >
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 26, scale: 0.985 }}

@@ -1,24 +1,23 @@
 /* RAKSHAK v3 — token layer, built on Tailwind v4's CSS-first theming.
-   Every value below is read from Razorpay's real Blade design system
-   (razorpay/blade on GitHub — packages/blade/src/tokens/global/*.ts and
-   theme/bladeTheme.ts), not guessed from memory. Where a value differs from
-   Blade it is called out in the comment beside it.
+   The structural values below are read from Razorpay's real Blade design
+   system (razorpay/blade on GitHub — packages/blade/src/tokens/global/*.ts and
+   theme/bladeTheme.ts), not guessed from memory: the 0–11 spacing scale, the
+   radius scale, the desktop type scale, and the entrance/exit easings.
 
    Blade's own font pairing is Inter (text) + TASA Orbiter (heading) — TASA
-   Orbiter is a licensed face with no public CDN distribution, so display
-   type uses Inter Tight (same designer lineage as Inter, a legitimate
-   substitute) instead. Everything else — the chromatic scale (azure/emerald/
-   crimson/cider/sapphire), the 12-step spacing scale, the 9-step radius
-   scale, the desktop type scale, the three-level elevation system, and the
-   entrance/exit easings — is Blade's actual shipped values.
+   Orbiter is a licensed face with no public CDN distribution, so display type
+   uses Inter Tight (same designer lineage as Inter, a legitimate substitute)
+   instead. JetBrains Mono carries every numeric and hash value, so digits are
+   always tabular.
 
-   THE DARK THEME IS GLASS. The story (front door) is always dark; the evidence
-   panel keeps Blade's light theme behind its toggle. In dark, surfaces are
-   translucent white over a navy gradient with a top hairline where light
-   catches the edge — the frosted-panel look — and the values below are tuned
-   so that every text token still clears WCAG AA on the frosted surface, which
-   is the constraint that rules out the softer glass styles for a page that is
-   mostly numbers. */
+   ONE THEME, DARK. Both the story and the evidence panel render Razorpay-navy
+   glass — translucent surfaces over a navy gradient, with a brighter hairline
+   where light catches the top edge. The light theme and its toggle are gone:
+   glass on a light ground is not glass, and two token systems is two systems
+   to keep honest. The chromatic values are Blade's onDark 400s, the brighter
+   step Blade itself substitutes for legibility on dark, each nudged so it
+   still clears WCAG AA against the frosted surface rather than against the
+   flat background it was measured on. */
 @import "tailwindcss";
 
 @theme {
@@ -48,9 +47,7 @@
   --radius-3xl: 32px;
   --radius-full: 9999px;
 
-  /* ---- type: Inter (Blade's text face) + Inter Tight standing in for
-     Blade's licensed TASA Orbiter heading face; JetBrains Mono for every
-     numeric/hash value, so digits are always tabular. --------------------- */
+  /* ---- type ------------------------------------------------------------- */
   --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-heading: "Inter Tight", "Inter", -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
@@ -79,7 +76,7 @@
   --text-6xl: 56px;
   --text-6xl--line-height: 64px;
 
-  /* ---- motion: Blade's entrance/exit easings and duration steps -------- */
+  /* ---- motion: Blade's entrance/exit easings and duration steps --------- */
   --ease-entrance: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.17, 0, 1, 1);
   --duration-2xquick: 80ms;
@@ -89,75 +86,12 @@
   --duration-xmoderate: 360ms;
   --duration-gentle: 480ms;
 
-  /* ---- semantic colors. Light values live HERE, as the theme tokens
-     themselves, and the dark/story blocks below override the same names.
-     One level of variable, on purpose: a `--color-x: var(--x)` alias is
-     resolved at :root and inherited as a fixed colour, so a scoped override
-     of `--x` (the .story block) would never reach a utility class. -------- */
-  --color-background: hsl(0 0% 97%);
-  --color-canvas-well: hsl(204 8% 95%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(0 0% 2%);
-  --color-foreground: hsl(0 0% 2%);
-  --color-muted-foreground: hsl(206 9% 34%);
-  --color-faint: hsl(204 9% 42%);
-  --color-border: hsl(204 8% 88%);
-  --color-border-strong: hsl(203 8% 80%);
-  --color-primary: hsl(218 89% 51%);
-  --color-primary-foreground: hsl(0 0% 100%);
-  --color-primary-text: hsl(218 89% 51%);
-  --color-ring: hsl(218 89% 51%);
-  --color-positive: hsl(150 100% 23%);
-  --color-positive-bg: hsl(150 39% 93%);
-  --color-positive-border: hsl(150 38% 72%);
-  --color-negative: hsl(4 85% 36%);
-  --color-negative-bg: hsl(5 75% 97%);
-  --color-negative-border: hsl(5 76% 85%);
-  --color-notice: hsl(25 100% 34%);
-  --color-notice-bg: hsl(23 100% 97%);
-  --color-notice-border: hsl(25 100% 82%);
-  --color-information: hsl(200 100% 33%);
-  --color-information-bg: hsl(198 85% 95%);
-  --color-information-border: hsl(200 83% 79%);
-}
-
-/* ============================================================================
-   Light (default) — Blade onLight: surface.background.gray + chromatic 600s.
-   Only the evidence panel ever renders this; the story forces dark below.
-   ========================================================================== */
-:root {
-  /* Blade's own 700/500 pairing lands under 4.5:1 for small text on white, so
-     the @theme block above steps muted-foreground/faint one stop darker —
-     blueGrayLight 800/700 — which keeps the hierarchy and clears AA. The only
-     two places this panel departs from Blade's literal value, and it departs
-     toward Blade's own scale. */
-  --shadow-low: 0px 2px 4px 0px hsl(200 10% 18% / 0.06);
-  --shadow-mid: 0px 16px 12px 0px hsl(200 10% 18% / 0.06);
-  --shadow-high: 0px 8px 24px -4px hsl(200 10% 18% / 0.06);
-
-  /* Glass has no meaning on a light ground; these resolve to plain surfaces. */
-  --glass: hsl(0 0% 100%);
-  --glass-strong: hsl(0 0% 100%);
-  --glass-border: hsl(204 8% 88%);
-  --glass-highlight: hsl(0 0% 100%);
-  --glow-a: transparent;
-  --glow-b: transparent;
-  --glow-c: transparent;
-
-  color-scheme: light;
-}
-
-/* ============================================================================
-   Dark — Razorpay navy glass. Blade onDark's chromatic 400s (the brighter step
-   Blade itself substitutes for text/icon-on-dark legibility) over a navy
-   ground; every surface translucent so the gradient behind it shows through.
-
-   `.story` is in the selector list on purpose: the front door is always dark,
-   whatever the evidence panel's toggle says, and this is the one block that
-   makes it so. Keep the media-query copy below in lockstep with this one.
-   ========================================================================== */
-:root[data-theme="dark"],
-.story {
+  /* ---- semantic colours -------------------------------------------------
+     Defined HERE, as the theme tokens themselves, rather than as aliases onto
+     a second set of variables. `--color-x: var(--x)` resolves once at :root
+     and inherits as a fixed colour, so a scoped override of `--x` deeper in
+     the tree would never reach a utility class — which is exactly the bug
+     that shape produced when the story first tried to theme itself. */
   --color-background: hsl(225 58% 6%);
   --color-canvas-well: hsl(226 52% 4%);
   --color-card: hsl(216 80% 98% / 0.06);
@@ -173,7 +107,7 @@
   --color-primary-text: hsl(213 100% 76%);
   --color-ring: hsl(213 100% 76%);
 
-  --color-positive: hsl(150 52% 52%); /* emerald 400, lifted one step for the frost */
+  --color-positive: hsl(150 52% 52%); /* emerald 400, lifted a step for the frost */
   --color-positive-bg: hsl(150 100% 28% / 0.18);
   --color-positive-border: hsl(150 100% 40% / 0.4);
   --color-negative: hsl(5 82% 68%); /* crimson 400 */
@@ -185,7 +119,12 @@
   --color-information: hsl(199 90% 64%); /* sapphire 400 */
   --color-information-bg: hsl(200 100% 41% / 0.18);
   --color-information-border: hsl(200 100% 55% / 0.4);
+}
 
+:root {
+  /* Blade's three elevation levels, re-cut for a dark ground: a cast shadow
+     plus the inset top hairline that makes a translucent panel read as glass
+     rather than as a flat tint. */
   --shadow-low: 0px 2px 6px 0px hsl(226 60% 2% / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.08);
   --shadow-mid: 0px 12px 32px -8px hsl(226 60% 2% / 0.6), inset 0 1px 0 hsl(0 0% 100% / 0.1);
   --shadow-high: 0px 32px 80px -24px hsl(226 70% 2% / 0.85), inset 0 1px 0 hsl(0 0% 100% / 0.14);
@@ -201,47 +140,6 @@
   color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-background: hsl(225 58% 6%);
-    --color-canvas-well: hsl(226 52% 4%);
-    --color-card: hsl(216 80% 98% / 0.06);
-    --color-card-foreground: hsl(210 40% 98%);
-    --color-foreground: hsl(210 40% 98%);
-    --color-muted-foreground: hsl(216 24% 80%);
-    --color-faint: hsl(216 18% 66%);
-    --color-border: hsl(0 0% 100% / 0.11);
-    --color-border-strong: hsl(0 0% 100% / 0.24);
-    --color-primary: hsl(213 100% 62%);
-    --color-primary-foreground: hsl(0 0% 100%);
-    --color-primary-text: hsl(213 100% 76%);
-    --color-ring: hsl(213 100% 76%);
-    --color-positive: hsl(150 52% 52%);
-    --color-positive-bg: hsl(150 100% 28% / 0.18);
-    --color-positive-border: hsl(150 100% 40% / 0.4);
-    --color-negative: hsl(5 82% 68%);
-    --color-negative-bg: hsl(4 85% 44% / 0.18);
-    --color-negative-border: hsl(4 85% 55% / 0.4);
-    --color-notice: hsl(24 100% 66%);
-    --color-notice-bg: hsl(25 100% 44% / 0.18);
-    --color-notice-border: hsl(25 100% 55% / 0.4);
-    --color-information: hsl(199 90% 64%);
-    --color-information-bg: hsl(200 100% 41% / 0.18);
-    --color-information-border: hsl(200 100% 55% / 0.4);
-    --shadow-low: 0px 2px 6px 0px hsl(226 60% 2% / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.08);
-    --shadow-mid: 0px 12px 32px -8px hsl(226 60% 2% / 0.6), inset 0 1px 0 hsl(0 0% 100% / 0.1);
-    --shadow-high: 0px 32px 80px -24px hsl(226 70% 2% / 0.85), inset 0 1px 0 hsl(0 0% 100% / 0.14);
-    --glass: hsl(216 80% 98% / 0.06);
-    --glass-strong: hsl(216 80% 98% / 0.1);
-    --glass-border: hsl(0 0% 100% / 0.12);
-    --glass-highlight: hsl(0 0% 100% / 0.22);
-    --glow-a: hsl(213 100% 58% / 0.34);
-    --glow-b: hsl(198 100% 62% / 0.2);
-    --glow-c: hsl(236 80% 45% / 0.32);
-    color-scheme: dark;
-  }
-}
-
 /* ============================================================================
    Base
    ========================================================================== */
@@ -255,23 +153,20 @@ body {
   padding: 0;
 }
 
-/* ---- paging (evidence panel only) -----------------------------------------
-   One gesture, one screen. `mandatory` puts a snap point at the top of every
-   page and `scroll-snap-stop: always` (set per-page in Page.jsx) forbids the
-   scroller from flying past one, which together are the whole of "each scroll
-   takes you to the next page, and only the next page".
+/* ---- page locking ---------------------------------------------------------
+   One gesture, one screen, on BOTH routes. `mandatory` puts a snap point at
+   the top of every screen and `scroll-snap-stop: always` (set per-screen)
+   forbids the scroller from flying past one, which together are the whole of
+   "each scroll takes you to the next page, and only the next page".
 
-   This is the CSS scroll-snap module doing it, NOT a wheel handler: no event is
-   swallowed, so find-in-page, Page Down, Home/End, keyboard focus and screen
-   readers all keep working. That is the line between this and scroll-jacking,
-   and it is the reason #61's objection to v1's playhead does not apply here.
-
-   The story is a free-scrolling document, so the snap is keyed on the route
-   attribute App.jsx stamps on <html> rather than applied globally. */
+   This is the CSS scroll-snap module doing it, NOT a wheel handler: no event
+   is swallowed, so find-in-page, Page Down, Home/End, keyboard focus and
+   screen readers all keep working. That is the line between this and
+   scroll-jacking, and it is why the objection to v1's playhead does not apply
+   here. A screen whose content exceeds the viewport scrolls inside itself, and
+   the outer snap resumes only once that inner scroller is exhausted. */
 html {
   scroll-behavior: smooth;
-}
-html[data-route="evidence"] {
   scroll-snap-type: y mandatory;
 }
 
@@ -283,15 +178,13 @@ body {
 }
 
 /* The navy ground with its three glows, as a fixed layer the frosted panels
-   blur. Painted only in dark: on the light theme the glows are transparent and
-   the layer is a no-op, so one rule serves both. */
+   blur. The story paints its own drifting copy at the same depth, later in the
+   DOM, so it wins where it renders. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  /* The story paints its own backdrop (Story.jsx) at the same z-index, later
-     in the DOM, so it wins; the light body layer must never show through. */
   pointer-events: none;
   background:
     radial-gradient(60% 50% at 12% 8%, var(--glow-a), transparent 62%),
@@ -300,9 +193,9 @@ body::before {
     linear-gradient(180deg, var(--color-background), var(--color-canvas-well));
 }
 
-/* Every numeric/hash value is tabular — the column-to-column comparisons
-   this panel exists for (seed spreads, PR-AUC, sha prefixes) break the
-   instant digits aren't monospaced-width. */
+/* Every numeric/hash value is tabular — the column-to-column comparisons this
+   panel exists for (seed spreads, PR-AUC, sha prefixes) break the instant
+   digits are not monospaced-width. */
 .tabular,
 .font-mono {
   font-variant-numeric: tabular-nums;
@@ -330,15 +223,18 @@ body::before {
 /* ---- story type scale ------------------------------------------------------
    The narrative's own scale: it is meant to be read at arm's length in two
    minutes, so the display sizes are viewport-relative and sit well above
-   Blade's dashboard scale. Everything on the evidence panel keeps Blade's. */
+   Blade's dashboard scale. Everything on the evidence panel keeps Blade's.
+   Tightened from the first cut because every screen is now locked to exactly
+   one viewport — a headline that was previously allowed to push the page
+   taller now has to fit inside it. */
 .story {
-  --text-display: clamp(44px, 7.4vw, 118px);
-  --text-display-md: clamp(36px, 5.4vw, 88px);
-  --text-display-sm: clamp(30px, 4vw, 60px);
-  --text-stat: clamp(64px, 9.5vw, 156px);
-  --text-stat-sm: clamp(36px, 4.2vw, 64px);
-  --text-lede: clamp(17px, 1.35vw, 21px);
-  --text-body: clamp(15px, 1.1vw, 17px);
+  --text-display: clamp(38px, 6vw, 96px);
+  --text-display-md: clamp(30px, 4.3vw, 70px);
+  --text-display-sm: clamp(26px, 3.4vw, 50px);
+  --text-stat: clamp(52px, 7.2vw, 118px);
+  --text-stat-sm: clamp(32px, 3.6vw, 54px);
+  --text-lede: clamp(15px, 1.2vw, 19px);
+  --text-body: clamp(14px, 1.05vw, 16px);
 }
 
 :focus-visible {
@@ -373,7 +269,7 @@ body::before {
      scroll and finishes it for them. Someone who has asked for reduced motion
      gets an ordinary scrolling document instead; the pages are still pages,
      they just stop being sprung. */
-  html[data-route="evidence"] {
+  html {
     scroll-snap-type: none;
   }
 }

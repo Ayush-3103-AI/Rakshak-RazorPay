@@ -31,7 +31,7 @@ export default function Gap() {
         the sentinel for that gap: one decision per merchant, per day, with a reason attached.
       </Lede>
 
-      <Reveal className="mt-[var(--spacing-10)] flex flex-wrap gap-[var(--spacing-3)]">
+      <Reveal className="mt-[var(--spacing-9)] flex flex-wrap gap-[var(--spacing-3)]">
         <Chip>Solo build</Chip>
         <Chip>Synthetic data · no Razorpay data or APIs</Chip>
         {lockState.data && (
@@ -42,7 +42,7 @@ export default function Gap() {
         )}
       </Reveal>
 
-      <Reveal className="mt-[14vh] flex items-center gap-[var(--spacing-4)] font-mono text-xs tracking-[0.14em] text-faint uppercase">
+      <Reveal className="mt-[clamp(32px,8vh,80px)] flex items-center gap-[var(--spacing-4)] font-mono text-xs tracking-[0.14em] text-faint uppercase">
         <motion.span
           aria-hidden="true"
           className="grid h-9 w-9 place-items-center rounded-full border border-border"
