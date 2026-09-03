@@ -134,7 +134,12 @@ export default function LadderTable({ ladder, windowDaysBySplit = {} }) {
   const rungs = ladder?.payload?.rungs ?? [];
 
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-sm)] border border-border">
+    // `h-full overflow-auto`, not `overflow-x-auto`: under the paged shell this
+    // box is handed a definite height and has to be the ONE scroll container in
+    // both axes. Nesting it inside a second vertical scroller is what detaches
+    // `sticky top-0` below from the thing actually scrolling, and the header
+    // silently stops sticking on the longest table on the panel.
+    <div className="h-full overflow-auto rounded-[var(--radius-sm)] border border-border">
       <table className="w-full min-w-[1080px] border-collapse text-sm">
         <thead>
           <tr>

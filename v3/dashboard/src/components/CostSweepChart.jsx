@@ -65,8 +65,12 @@ export default function CostSweepChart({ ratios, series, shippedRatio, shippedWi
   );
 
   return (
-    <div className="chart-inner min-w-[560px]">
-      <ResponsiveContainer width="100%" height={340}>
+    // Fills its container rather than pinning 340px: under the snap-paged shell
+    // this figure is the whole point of its screen, and a fixed height either
+    // strands it in dead space on a tall display or overflows a short one. The
+    // floor keeps it readable when the viewport really is small.
+    <div className="chart-inner h-full min-h-[260px] min-w-[560px]">
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 12, right: 28, bottom: 12, left: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis

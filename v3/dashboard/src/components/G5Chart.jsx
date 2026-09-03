@@ -64,8 +64,9 @@ export default function G5Chart({ nDays, windows, series, nominalAlertRate, exce
   const residual = series.find((s) => s.detector === "cohort-residual");
 
   return (
-    <div className="chart-inner min-w-[560px]">
-      <ResponsiveContainer width="100%" height={360}>
+    // Fills its container — see the note in CostSweepChart.jsx.
+    <div className="chart-inner h-full min-h-[260px] min-w-[560px]">
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 12, right: 24, bottom: 8, left: 4 }}>
           <defs>
             <pattern id={hatchId} width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">

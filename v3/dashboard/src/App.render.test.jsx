@@ -54,8 +54,15 @@ function stubEnvironment() {
   });
 }
 
-beforeEach(() => stubEnvironment());
+beforeEach(() => {
+  stubEnvironment();
+  // The story is the front door now; this file tests the evidence panel, which
+  // App mounts only behind its hash route. Set before render so the route hook's
+  // initial read sees it.
+  window.location.hash = "#/evidence";
+});
 afterEach(() => {
+  window.location.hash = "";
   // Explicit, because this project does not run vitest with `globals: true` —
   // which is what @testing-library/react's auto-cleanup hooks itself onto. Without
   // it the second test mounts a second <App /> beside the first and every
@@ -71,13 +78,27 @@ it("renders every section from the committed artefacts without falling back to a
   // the lot. Waiting per section instead multiplies the timeout budget by six for
   // no extra coverage — and that is what pushed this file past the default.
   //
-  // The wait is on a hash out of lock_state.json, not on a section heading: every
+  // The wait is on rendered ARTIFACT output, not on a section heading: every
   // heading here is static copy that renders at frame zero, so waiting on one
   // returns before any artifact has landed.
-  await waitFor(() => expect(screen.getAllByText("eval_module_sha256").length).toBeGreaterThan(0));
+  //
+  // One gate per artefact the assertions below read. Gating on the lock hash
+  // alone was a race — it happened to pass whenever the fetches resolved in the
+  // same tick and failed under parallel load, because the very next assertion
+  // reads ladder.json. "Parallel" is a claim about the fetches, not about when
+  // they land.
+  await waitFor(() => {
+    expect(screen.getAllByText("eval_module_sha256").length).toBeGreaterThan(0); // lock_state
+    expect(screen.getAllByText(/under volume_rank/).length).toBeGreaterThan(0); // ladder
+    expect(screen.getByText("G1")).toBeTruthy(); // journey
+    expect(screen.getByText(/shipped ratio/)).toBeTruthy(); // cost_sweep
+    expect(screen.getByText(/Alert rate by simulation day/)).toBeTruthy(); // g5
+    expect(screen.getAllByText("cut").length).toBeGreaterThan(0); // rung_roster
+    expect(screen.getAllByText("PRESENT").length).toBeGreaterThan(0); // manifest
+  });
 
   // §0 — the verdict, computed from the artefacts rather than typed into the hero.
-  expect(screen.getByText(/policies on the ladder/)).toBeTruthy();
+  expect(screen.getByText(/policies scored/)).toBeTruthy();
   expect(screen.getByText(/sealed eval locks/)).toBeTruthy();
   expect(screen.getByText(/rows? beat every floor/)).toBeTruthy();
   // The disclosure that governs how every figure below it must be read.
@@ -89,17 +110,20 @@ it("renders every section from the committed artefacts without falling back to a
   expect(screen.getByText("G3")).toBeTruthy();
   expect(screen.getAllByText(/cited, not recomputed/).length).toBeGreaterThan(0);
 
-  // §2 — the method, argued before any number is shown.
-  expect(screen.getByText(/Read this before you read a single number/)).toBeTruthy();
+  // §5 — the method. It now sits AFTER the evidence rather than before it (the
+  // claim leads; the guard is where a reader goes looking for the catch), so the
+  // headline changed with it. What must still hold is that the lock chain's real
+  // hashes are on the page, not a prose claim that they exist.
+  expect(screen.getByText(/makes those numbers worth reading/)).toBeTruthy();
   expect(screen.getAllByText("eval_module_sha256").length).toBeGreaterThan(0);
   expect(screen.getByText(/The floors, named/)).toBeTruthy();
 
-  // §3a — the ladder rendered rows and named the floor each one loses to.
+  // §2 — the ladder rendered rows and named the floor each one loses to.
   expect(screen.getByText(/Every policy, against the same floors/)).toBeTruthy();
   expect(screen.getAllByText(/under volume_rank/).length).toBeGreaterThan(0);
 
-  // §3b — the sweep, its operating point, and the decomposition beneath it.
-  expect(screen.getByText(/Does the ranking survive a different cost matrix/)).toBeTruthy();
+  // §3 — the sweep, its operating point, and the decomposition beside it.
+  expect(screen.getByText(/when you change the price of being wrong/)).toBeTruthy();
   // The operating point, from the artifact's own `shipped_ratio_within_grid` —
   // matched on "shipped ratio" rather than "inside the grid", which G3's journey
   // note also contains.
@@ -117,7 +141,7 @@ it("renders every section from the committed artefacts without falling back to a
   // resolved would fail for a good reason and teach nothing. What must hold is
   // that the section is roster-driven at all, so it asserts on the statuses the
   // committed roster does carry.
-  expect(screen.getByText(/Specified, gated, and either unscored or not adopted/)).toBeTruthy();
+  expect(screen.getByText(/What we killed, with the numbers/)).toBeTruthy();
   expect(screen.getAllByText("scored").length).toBeGreaterThan(0);
   expect(screen.getAllByText("cut").length).toBeGreaterThan(0);
 

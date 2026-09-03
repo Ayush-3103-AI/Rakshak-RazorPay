@@ -1,20 +1,20 @@
-// §2 — how the numbers are guarded, argued BEFORE any number is shown (#79).
+// §5 — how the numbers are guarded.
 //
-// This section exists because the previous shell had nowhere to put it. The lock
-// panel was buried two thirds of the way down a section titled "Trajectory &
-// ladder", where a reader met the ladder's figures first and the reason to trust
-// them second, if at all. The reordering is the point: a risk operator who has
-// seen a thousand backtests needs the harness before the result.
+// #79 put this BEFORE the results, reasoning that an operator who has seen a
+// thousand backtests needs the harness before the number. That reordering was
+// right about the argument and wrong about the reader: a judge who has not yet
+// been given a claim has no reason to care how it was guarded. So the claim now
+// leads and the guard sits here — the screen a reader reaches at exactly the
+// moment they start looking for the catch.
 //
 // Nothing here is asserted in prose that the artifacts do not carry. The lock
 // chain, its hashes, the open counter and each cycle's pre-registration document
 // come from lock_state.json; the floor vocabulary is derived from the ladder's
 // own metric keys, so a floor added upstream appears here without an edit.
-import { motion, useReducedMotion } from "framer-motion";
 import { FileCheck2, KeyRound, Ruler } from "lucide-react";
 import LockPanel from "../components/LockPanel.jsx";
+import Page from "../components/Page.jsx";
 import Card from "../components/ui/Card.jsx";
-import StatusChip from "../components/ui/StatusChip.jsx";
 import { ArtifactError, ArtifactLoading } from "../components/ui/ArtifactState.jsx";
 import { useArtifact } from "../lib/artifacts.js";
 
@@ -25,18 +25,14 @@ const FLOOR_GLOSS = {
   all_hold: "Hold everyone. The other trivial extreme, and the one that bankrupts the platform.",
   random: "Alert on K merchants at random. Beats a fitted model more often than anyone expects.",
   random_at_k: "Alert on K merchants at random. Beats a fitted model more often than anyone expects.",
-  volume_rank:
-    "Rank merchants by transaction volume. No learning at all — and the hardest floor on this ladder.",
+  volume_rank: "Rank by transaction volume. No learning at all — and the hardest floor on this ladder.",
 };
 
-function prettyFloor(key) {
-  return key.replace(/^savings_floor_/, "");
-}
+const prettyFloor = (key) => key.replace(/^savings_floor_/, "");
 
 export default function Method() {
   const lockState = useArtifact("lock_state");
   const ladder = useArtifact("ladder");
-  const reduce = useReducedMotion();
 
   const payload = lockState.data?.payload;
   const locks = payload?.locks ?? [];
@@ -47,13 +43,11 @@ export default function Method() {
   const PILLARS = [
     {
       Icon: KeyRound,
-      title: "The harness is sealed before the models exist",
+      title: "Sealed before the models existed",
       body: (
         <>
-          Each cycle hashes the eval module, the generator module and the scenario config into a lock
-          file, records the commit that froze it, and carries an <em>open counter</em> for the test
-          split. The chain below supersedes forward and is checkable rather than asserted — and the
-          counter reads{" "}
+          Each cycle hashes the eval module, the generator and the scenario config into a lock file,
+          records the commit that froze it, and carries an open counter for the test split. It reads{" "}
           <strong className="text-foreground">
             {payload?.test_split_opened ? "opened" : "0, across every lock"}
           </strong>
@@ -63,101 +57,84 @@ export default function Method() {
     },
     {
       Icon: FileCheck2,
-      title: "Claims are pre-registered, then reported either way",
+      title: "Pre-registered, then reported either way",
       body: (
         <>
-          {preRegistered.length} of {locks.length} locks name a pre-registration document written{" "}
-          <em>before</em> the run that tested them. When a gate failed, it was reported as a failure —
-          including a cycle-4 gate that turned out to be anchored to a threshold its own regeneration
-          had invalidated, recorded as a pre-registration error rather than quietly re-anchored.
+          {preRegistered.length} of {locks.length} locks name a document written <em>before</em> the run
+          that tested them. A cycle-4 gate anchored to a threshold its own regeneration had invalidated
+          was recorded as a pre-registration error, not quietly re-anchored.
         </>
       ),
     },
     {
       Icon: Ruler,
-      title: "Every policy is scored against explicit floors",
+      title: "Scored against explicit floors",
       body: (
         <>
-          A model that beats nothing is not a result. Every row on the ladder is priced against{" "}
-          {floors.length || "the"} named floors, and a row losing to one is marked as losing{" "}
-          <em>to that named floor</em> rather than quietly ranked above it.
+          A model that beats nothing is not a result. Every row is priced against {floors.length || "the"}{" "}
+          named floors, and a row losing to one is marked as losing <em>to that named floor</em>.
         </>
       ),
     },
   ];
 
   return (
-    <div className="border-b border-border bg-canvas-well px-[var(--spacing-8)] py-[var(--spacing-10)] max-md:px-[var(--spacing-5)] max-md:py-[var(--spacing-7)]">
-      <div className="mx-auto max-w-[1180px]">
-        <p className="m-0 mb-[var(--spacing-3)] font-mono text-xs font-bold tracking-[0.16em] text-primary-text uppercase">
-          §2 · How it is measured
-        </p>
-        <h2 className="m-0 max-w-[30ch] font-heading text-3xl font-bold tracking-tight text-foreground">
-          Read this before you read a single number
-        </h2>
-        <p className="mt-[var(--spacing-4)] max-w-[72ch] text-base leading-relaxed text-muted-foreground">
-          Any project can show you a chart where its model wins. The only thing that separates this
-          one from that is what was fixed <em>before</em> the chart existed — so the harness comes
-          first here, and the results come after it.
-        </p>
-
-        <div className="mt-[var(--spacing-8)] grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-[var(--spacing-4)]">
-          {PILLARS.map((p, i) => (
-            <motion.div
-              key={p.title}
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: reduce ? 0 : i * 0.08, duration: 0.5, ease: [0, 0, 0.2, 1] }}
-            >
-              <Card pad="regular" elevation="low" className="h-full">
-                <p.Icon aria-hidden="true" className="h-5 w-5 text-primary" />
-                <h3 className="m-0 mt-[var(--spacing-3)] font-heading text-base font-semibold text-foreground">
-                  {p.title}
-                </h3>
-                <p className="m-0 mt-[var(--spacing-2)] text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-              </Card>
-            </motion.div>
+    <Page
+      id="method"
+      eyebrow="§5 · Discipline"
+      title="Now the part that makes those numbers worth reading."
+      lede="Any project can show you a chart where its model wins. The only thing separating this one is what was fixed before the chart existed — and left checkable afterwards."
+    >
+      <div className="flex h-full min-h-0 flex-col gap-[var(--spacing-4)]">
+        <div className="grid shrink-0 grid-cols-3 gap-[var(--spacing-4)] max-lg:grid-cols-1">
+          {PILLARS.map((p) => (
+            <Card key={p.title} pad="regular" elevation="low" className="h-full">
+              <p.Icon aria-hidden="true" className="h-[18px] w-[18px] text-primary" />
+              <h3 className="m-0 mt-[var(--spacing-3)] font-heading text-sm font-semibold text-foreground">
+                {p.title}
+              </h3>
+              <p className="m-0 mt-[var(--spacing-2)] text-xs leading-relaxed text-muted-foreground">
+                {p.body}
+              </p>
+            </Card>
           ))}
         </div>
 
-        {floors.length > 0 && (
-          <div className="mt-[var(--spacing-8)]">
-            <h3 className="m-0 mb-[var(--spacing-4)] font-heading text-xl font-bold text-foreground">
-              The floors, named
-            </h3>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-[var(--spacing-4)]">
-              {floors.map((floor) => (
-                <Card key={floor} pad="compact" elevation="low">
-                  <code className="font-mono text-sm font-bold text-foreground">{floor}</code>
-                  <p className="m-0 mt-[var(--spacing-2)] text-xs leading-relaxed text-muted-foreground">
-                    {FLOOR_GLOSS[floor] ?? "Reported on every row; see the ladder for its column."}
-                  </p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.5fr] gap-[var(--spacing-4)] max-xl:grid-cols-1">
+          {floors.length > 0 && (
+            <Card pad="regular" elevation="low" className="flex min-h-0 flex-col overflow-hidden">
+              <h3 className="m-0 shrink-0 font-heading text-base font-semibold text-foreground">
+                The floors, named
+              </h3>
+              <ul className="m-0 mt-[var(--spacing-3)] min-h-0 flex-1 list-none space-y-[var(--spacing-3)] overflow-auto p-0">
+                {floors.map((floor) => (
+                  <li key={floor} className="rounded-[var(--radius-sm)] border border-border bg-canvas-well p-[var(--spacing-4)]">
+                    <code className="font-mono text-xs font-bold text-foreground">{floor}</code>
+                    <p className="m-0 mt-[var(--spacing-1)] text-2xs leading-relaxed text-muted-foreground">
+                      {FLOOR_GLOSS[floor] ?? "Reported on every row; see the ladder for its column."}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
-        <div className="mt-[var(--spacing-9)]">
-          <div className="mb-[var(--spacing-2)] flex flex-wrap items-center gap-[var(--spacing-3)]">
-            <h3 className="m-0 font-heading text-xl font-bold text-foreground">The lock chain</h3>
-            <StatusChip status={payload?.test_split_opened ? "MISSING" : "PRESENT"} />
-            <span className="font-mono text-2xs text-faint">
-              {payload?.test_split_opened
-                ? "the test split has been opened"
-                : "the test split has never been opened"}
-            </span>
-          </div>
-          <p className="mt-0 mb-[var(--spacing-4)] max-w-[72ch] text-sm text-muted-foreground">
-            Three hashes, the open counter, the freezing commit and the pre-registration document, for
-            every lock in the chain.
-          </p>
-          {lockState.loading && <ArtifactLoading label="Loading lock_state.json…" />}
-          {lockState.error && <ArtifactError artifact="lock_state" error={lockState.error} />}
-          {lockState.data && <LockPanel lockState={lockState.data} variant="full" />}
+          <Card pad="regular" elevation="low" className="flex min-h-0 flex-col overflow-hidden">
+            <h3 className="m-0 shrink-0 font-heading text-base font-semibold text-foreground">
+              The lock chain
+            </h3>
+            <p className="m-0 mt-[var(--spacing-1)] shrink-0 text-2xs text-faint">
+              Three hashes, the open counter, the freezing commit and the pre-registration document, for
+              every lock in the chain.
+            </p>
+            <div className="mt-[var(--spacing-3)] min-h-0 flex-1 overflow-auto">
+              {lockState.loading && <ArtifactLoading label="Loading lock_state.json…" />}
+              {lockState.error && <ArtifactError artifact="lock_state" error={lockState.error} />}
+              {lockState.data && <LockPanel lockState={lockState.data} variant="full" />}
+            </div>
+          </Card>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
