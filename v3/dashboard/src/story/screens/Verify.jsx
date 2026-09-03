@@ -16,7 +16,7 @@ export default function Verify() {
   const journey = useArtifact("journey");
   const locks = deriveLocks(lockState.data);
   const manifest = deriveManifest(manifestDoc.data);
-  const { generations, span } = deriveJourney(journey.data);
+  const { generations } = deriveJourney(journey.data);
   const repo = generations.find((g) => !g.external && /^https?:/.test(asText(g.source_repo)))?.source_repo ?? null;
   const failed = lockState.error ?? manifestDoc.error;
 
@@ -94,7 +94,7 @@ export default function Verify() {
 
       <Reveal className="mt-[var(--spacing-7)] grid gap-[var(--spacing-2)] border-t border-border pt-[var(--spacing-5)]">
         <p className="m-0 text-base leading-snug font-semibold text-foreground">
-          Built solo by Ayush for the Razorpay AI Buildathon 2026{span ? `, ${span}` : ""}.
+          Built solo by Ayush for the Razorpay AI Buildathon 2026.
         </p>
         <p className="m-0 max-w-[86ch] text-xs leading-relaxed text-muted-foreground">
           Next: open the test split once, on the record, and validate the decision layer on BAF inside this tree.
