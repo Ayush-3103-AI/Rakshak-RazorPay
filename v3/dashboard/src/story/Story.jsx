@@ -1,22 +1,20 @@
-// The front door: eight pages, a two-minute read.
+// The front door: eight screens, a two-minute read, free-scrolling.
 //
 // Gap → the product hole → the mechanism → the result → the stress test →
 // what was killed → the lineage → verify. The problem first, in one breath;
 // the number on page four; the honesty after it, where a reader who has seen
 // the claim goes looking for the catch.
 //
-// ONE DELIBERATE PUSH, ONE PAGE. `usePagedScroll` catches the wheel and moves
-// exactly one page; CSS snapping (tokens.css) stays underneath as the safety
-// net for every other way of moving — Page Down, Home, End, find-in-page, a
-// clicked page title. Nothing else is intercepted, so the document still
-// scrolls and its position is still real.
+// No wheel-jacking here — that objection was already made once, against v1's
+// playhead. This is an ordinary scrolling document; each screen just reveals
+// its contents once it arrives (Screen.jsx). Paging-by-gesture stays on the
+// evidence panel (Evidence.jsx), which is a separate, unchanged tree.
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Brand from "../components/Brand.jsx";
 import Rail, { RAIL_WIDTH, RailChips } from "../components/Rail.jsx";
 import TopBar from "../components/TopBar.jsx";
-import { usePagedScroll } from "../usePagedScroll.js";
 import Gap from "./screens/Gap.jsx";
 import Killed from "./screens/Killed.jsx";
 import Lineage from "./screens/Lineage.jsx";
@@ -36,8 +34,6 @@ export const STORY_SCREENS = [
   { id: "lineage", label: "The lineage" },
   { id: "verify", label: "Verify" },
 ];
-
-const SCREEN_IDS = STORY_SCREENS.map((s) => s.id);
 
 function Backdrop({ progress }) {
   const reduce = useReducedMotion();
@@ -90,9 +86,6 @@ export default function Story() {
   const reduce = useReducedMotion();
   const bar = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.4 });
   const active = useActiveScreen();
-  const ids = useMemo(() => SCREEN_IDS, []);
-
-  usePagedScroll(ids);
 
   const go = useCallback((id) => {
     document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });

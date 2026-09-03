@@ -44,6 +44,13 @@ export default function Evidence() {
 
   usePagedScroll(ids);
 
+  // The snap CSS (tokens.css) is scoped to this class so the story route,
+  // which shares the same document, stays a free scroll.
+  useEffect(() => {
+    document.documentElement.classList.add("paged");
+    return () => document.documentElement.classList.remove("paged");
+  }, []);
+
   useEffect(() => {
     writeFragment(SECTIONS[activeSection]?.id);
   }, [activeSection]);

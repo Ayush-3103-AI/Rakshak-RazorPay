@@ -1,22 +1,13 @@
 // One screen of the story, and the handful of pieces every screen is made of.
 //
-// A screen is exactly one viewport tall and it is a snap stop: one gesture
-// takes you to the next screen and only the next screen (tokens.css). Content
-// that will not fit scrolls INSIDE the screen, and the outer snap resumes once
-// that inner scroller is exhausted — so nothing is ever unreachable, and the
-// page still advances a screen at a time.
+// Free-scrolling: a screen is a normal block, sized to its content, with
+// min-h-screen just for breathing room on a normal desktop height. Nothing
+// locks the gesture to one screen at a time.
 //
 // Children reveal in a stagger the first time the screen arrives: each piece
 // rises, un-blurs and settles, in reading order, so the type scale and the
 // motion agree about what to read first. The reveal runs once — coming back to
 // a screen you have already read should not replay it.
-//
-// THE INNER SCROLLER IS A FALLBACK, NOT A LAYOUT. Every screen is authored to
-// fit one viewport at a normal desktop height, and it is worth the effort:
-// even 40px of inner overflow means a wheel gesture scrolls a little way
-// INSIDE the screen before the page advances, which reads to a person as the
-// page lock failing. The scroller exists so that a short window or a long
-// translation is still readable, not as licence to overfill a screen.
 //
 // THE FIGURES ARE PLAYED, NOT SCRUBBED. Pass `play={2.4}` and `children` is
 // called with a MotionValue that runs 0→1 over 2.4 seconds when the screen
@@ -191,21 +182,20 @@ export default function Screen({ id, play, children, className, contentClassName
       ref={ref}
       id={id}
       data-screen={id}
-      className={cn("relative h-screen w-full snap-start snap-always max-lg:h-auto max-lg:min-h-screen", className)}
+      className={cn(
+        "relative flex min-h-screen w-full flex-col justify-center px-[clamp(20px,3.4vw,56px)] pt-[clamp(72px,8vh,104px)] pb-[clamp(28px,4vh,56px)] max-lg:pt-[92px]",
+        className
+      )}
     >
-      {/* The scroller is this element, so a tall screen scrolls inside itself
-          rather than pushing the snap point away from the top of the section. */}
-      <div className="h-full w-full overflow-y-auto px-[clamp(20px,3.4vw,56px)] pt-[clamp(72px,8vh,104px)] pb-[clamp(28px,4vh,56px)] max-lg:pt-[92px]">
-        <motion.div
-          className={cn("mx-auto flex min-h-full w-full max-w-[1240px] flex-col justify-center", contentClassName)}
-          variants={container}
-          initial={reduce ? false : "hidden"}
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          {body}
-        </motion.div>
-      </div>
+      <motion.div
+        className={cn("mx-auto w-full max-w-[1240px]", contentClassName)}
+        variants={container}
+        initial={reduce ? false : "hidden"}
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+      >
+        {body}
+      </motion.div>
     </section>
   );
 }

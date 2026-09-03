@@ -9,7 +9,7 @@ Razorpay AI Buildathon 2026 · Track 02 (AI Risk Manager) · solo build</p>
 </p>
 
 <p align="center">
-  <b>A two-minute read, eight pages, one scroll each.</b><br/>
+  <b>A two-minute, free-scrolling read across eight screens.</b><br/>
   It is the intended entry point for this submission and it answers, in order:<br/>
   what the gap is · where it sits in Razorpay's stack · what Rakshak decides ·<br/>
   what the result was · whether it survives stress · what we killed · how to check it.

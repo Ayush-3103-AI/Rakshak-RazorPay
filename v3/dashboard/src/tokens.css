@@ -153,11 +153,13 @@ body {
   padding: 0;
 }
 
-/* ---- page locking ---------------------------------------------------------
-   One gesture, one screen, on BOTH routes. `mandatory` puts a snap point at
-   the top of every screen and `scroll-snap-stop: always` (set per-screen)
-   forbids the scroller from flying past one, which together are the whole of
-   "each scroll takes you to the next page, and only the next page".
+/* ---- page locking (evidence panel only) -----------------------------------
+   One gesture, one screen — but only on `#/evidence` (`html.paged`, toggled by
+   Evidence.jsx). The story is an ordinary free-scrolling document. `mandatory`
+   puts a snap point at the top of every screen and `scroll-snap-stop: always`
+   (set per-screen) forbids the scroller from flying past one, which together
+   are the whole of "each scroll takes you to the next page, and only the next
+   page".
 
    This is the CSS scroll-snap module doing it, NOT a wheel handler: no event
    is swallowed, so find-in-page, Page Down, Home/End, keyboard focus and
@@ -165,7 +167,7 @@ body {
    scroll-jacking, and it is why the objection to v1's playhead does not apply
    here. A screen whose content exceeds the viewport scrolls inside itself, and
    the outer snap resumes only once that inner scroller is exhausted. */
-html {
+html.paged {
   scroll-snap-type: y mandatory;
 }
 
@@ -282,7 +284,7 @@ body::before {
      scroll and finishes it for them. Someone who has asked for reduced motion
      gets an ordinary scrolling document instead; the pages are still pages,
      they just stop being sprung. */
-  html {
+  html.paged {
     scroll-snap-type: none;
   }
 }
