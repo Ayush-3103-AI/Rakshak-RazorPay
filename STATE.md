@@ -1,4 +1,12 @@
-# STATE — Rakshak
+# STATE — Rakshak (G2)
+
+> **This is G2's state file and it is closed. It is not the resume point for this repository.**
+> The live one is [`v3/project-context/STATE.md`](v3/project-context/STATE.md). Everything below
+> describes the tree at the repository root as it stood on **2026-08-30**, including a
+> `NEXT ACTION` that was overtaken when G2 was superseded by G3 — it is left unedited because
+> a status quietly rewritten to match a later result is not a record. For what G2 concluded,
+> read [`results/verdict.md`](results/verdict.md); for where the project actually stands, read
+> the README.
 
 PHASE:        5 — EXECUTE, in progress
 LAST SESSION: 2026-08-30 — **four tickets closed: T-0022b, T-0020, T-0018, T-0023.** T-0022b: harness data-path seam (`transactions_path=` / `state_paths_path=`), built after tracing found the ticket's Build list missed four dataset readers — see below. T-0020: `LICENSE`, `project-context/09-interfaces.md`, `pymoo` dropped. T-0018: `docs/ARCHITECTURE.md` + parse-checked Mermaid diagram, the third graded artifact, no numbers in it. T-0023: `project-context/15-lit-survey-drift-detection.md`, nine ADR verdicts, **ADR-0004 and ADR-0006 reconsidered and their addenda applied**. `200 passed, 2 xfailed`, `ruff` clean, no committed number moved. **Two carried defects below: `results/ablations.md:94` is now factually false, and `src/rakshak/explain/` is empty.**

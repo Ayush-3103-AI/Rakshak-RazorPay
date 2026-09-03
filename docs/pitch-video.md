@@ -1,5 +1,13 @@
 # Rakshak — pitch video: script, shot list, edit checklist
 
+> **SUPERSEDED — this is the G2 script.** Every number in it is a **G2** number and is
+> immutable under Prime Directive 2, so nothing below has been edited. It is also **not the
+> script for the submitted video**: the submission is G3 (`v3/`), whose ladder, verdict and
+> cost sweep report entirely different figures. Record from
+> [`../v3/docs/pitch-video.md`](../v3/docs/pitch-video.md) instead. This file is kept as the
+> record of what G2's argument was, and as the shot-list and pacing template the G3 script
+> inherits.
+
 **Ticket:** T-0019. **Status:** script drafted before the freeze, per the ticket's own instruction
 ("the narrative does not depend on the verdict — only the numbers do"). **Numbers finalised** off
 `README.md` as committed at `7fc2b77` (T-0013) plus `results/verdict.md`, `results/reasons.json`,
