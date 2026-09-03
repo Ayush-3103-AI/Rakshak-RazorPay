@@ -150,7 +150,14 @@ def _free_gb() -> float:
     if sys.platform == "win32":
         stat = _MEMORYSTATUSEX()
         stat.dwLength = ctypes.sizeof(_MEMORYSTATUSEX)
-        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+        # Reached through an `Any` alias because `ctypes.windll` does not EXIST
+        # in the stubs mypy loads on Linux, and CI type-checks on Linux: the
+        # branch above is a RUNTIME guard, not one mypy can narrow through on
+        # the wrong platform. A bare `type: ignore` only moves the failure --
+        # under `strict` it is reported as an unused ignore when the same check
+        # runs on Windows, where the attribute does exist.
+        win: Any = ctypes
+        win.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
         return float(stat.ullAvailPhys) / 1e9
     return os.sysconf("SC_AVAIL_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1e9
 
