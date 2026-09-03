@@ -196,7 +196,7 @@ Three stages, and the arithmetic is the whole argument for them:
 | Stage | Runs on | Features | Budget |
 |---|---|---|---|
 | 0 — screen | every merchant, every day | Tier 1 only | ≤ 0.5 ms per merchant-epoch |
-| 1 — score | the top slice from stage 0 | Tier 1 + Tier 2 + cohort | ≤ 10 ms per merchant-epoch |
+| 1 — score | the top 10% from stage 0 | Tier 1 + Tier 2 + cohort | ≤ 10 ms per merchant-epoch |
 | 2 — explain | non-`PASS` decisions only | reason codes, HSMM narrative | ≤ 50 ms per decision |
 
 A single-stage design fits the daily sweep budget on today's population. What it does not do is
@@ -345,9 +345,9 @@ accepts it and the scoring path cannot reach it.
 
 ### 5.4 The test split is a one-way door with one guard
 
-`cli.py` is the only entry point every `make` target goes through, and every path that scores
-anything calls `require_unlocked_or_refuse(split)` and then `verify_lock()` before a single row
-is read. The unlock environment variable is checked in exactly one place and reached from exactly
+Every pipeline stage — `gen`, `features`, `train`, `eval`, `report` — enters through `cli.py`
+rather than into a module, and every path there that scores anything calls
+`require_unlocked_or_refuse(split)` and then `verify_lock()` before a single row is read. The unlock environment variable is checked in exactly one place and reached from exactly
 one place. `make eval` refuses the test split unless it is set, and it is not set anywhere in
 this repository.
 
